@@ -337,9 +337,9 @@ public abstract class WSCommon
 
             try
             {
-                var l_Task = Socket.CloseOutputAsync(closeStatus ?? WebSocketCloseStatus.NormalClosure, reason ?? string.Empty, CancellationToken.None);
-                l_Task.ConfigureAwait(false);
-                l_Task.Wait();
+                var closeTask = Socket.CloseOutputAsync(closeStatus ?? WebSocketCloseStatus.NormalClosure, reason ?? string.Empty, CancellationToken.None);
+                closeTask.ConfigureAwait(false);
+                closeTask.Wait();
             }
             catch (Exception)
             {

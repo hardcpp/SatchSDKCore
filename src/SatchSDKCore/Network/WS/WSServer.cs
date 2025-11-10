@@ -34,6 +34,7 @@ public class WSServer<TSession,  TSessionID> : HTTP.IHTTPServerRequestHandler
     ////////////////////////////////////////////////////////////////////////////
 
     public readonly HTTP.HTTPServer HTTPServer;
+    public readonly string          AbsolutePath;
     public readonly int             MaxReceiveQueueSize;
     public readonly int             MaxFrameLength;
     public readonly int             MaxMessageLength;
@@ -46,6 +47,7 @@ public class WSServer<TSession,  TSessionID> : HTTP.IHTTPServerRequestHandler
     /// Constructor
     /// </summary>
     /// <param name="httpServer">HTTPServer instance</param>
+    /// <param name="absolutePath">URL absolutePath</param>
     /// <param name="makeSession">Session factory</param>
     /// <param name="workerCount">Worker count</param>
     /// <param name="minConcurentSessions">Minimum concurent sessions for memory allocation</param>
@@ -54,6 +56,7 @@ public class WSServer<TSession,  TSessionID> : HTTP.IHTTPServerRequestHandler
     /// <param name="maxMessageLength">Max message length in bytes</param>
     public WSServer(
         HTTP.HTTPServer httpServer,
+        string          absolutePath,
         d_MakeSession   makeSession,
         int             workerCount          = 4,
         int             minConcurentSessions = 500,
@@ -67,10 +70,13 @@ public class WSServer<TSession,  TSessionID> : HTTP.IHTTPServerRequestHandler
         ArgumentNullException.ThrowIfNull(httpServer);
         ArgumentNullException.ThrowIfNull(makeSession);
 
+        if (!absolutePath.StartsWith("/"))
+            throw new UriFormatException("Absolute path need to start with '/'");
 
         HTTPServer = httpServer;
         HTTPServer.AddRequestHandler(this);
 
+        AbsolutePath                = absolutePath;
         MaxReceiveQueueSize = maxReceiveQueueSize;
         MaxFrameLength      = maxFrameLength;
         MaxMessageLength    = maxMessageLength;
@@ -173,13 +179,13 @@ public class WSServer<TSession,  TSessionID> : HTTP.IHTTPServerRequestHandler
         while (_isRunning)
         {
             /// Look for new session to queue
-            if (newSessions.TryDequeue(out var l_NewSession))
+            if (newSessions.TryDequeue(out var newSession))
             {
-                l_NewSession.InternalOnSessionOpen();
+                newSession.InternalOnSessionOpen();
                 lock (_sessions)
-                    _sessions.Add(l_NewSession);
+                    _sessions.Add(newSession);
 
-                sessions.Add(l_NewSession);
+                sessions.Add(newSession);
             }
 
             /// Update all sessions
@@ -242,7 +248,9 @@ public class WSServer<TSession,  TSessionID> : HTTP.IHTTPServerRequestHandler
 
         ArgumentNullException.ThrowIfNull(context);
 
-        if (context.ListenerRequest.HttpMethod != "GET" || !context.ListenerRequest.IsWebSocketRequest)
+        if (context.ListenerRequest.HttpMethod != "GET"
+            || !context.ListenerRequest.IsWebSocketRequest
+            || context.ListenerRequest.Url?.AbsolutePath != AbsolutePath)
             return false;
 
         var acceptTask = context.ListenerContext.AcceptWebSocketAsync(null, TimeSpan.FromSeconds(5));
