@@ -54,7 +54,10 @@ public class HTTPServer
 
         m_Workers = new Thread[workerCount];
         for (int l_I = 0; l_I < m_Workers.Length; l_I++)
-            m_Workers[l_I] = new Thread(WorkerLoop);
+        {
+            m_Workers[l_I]      = new Thread(WorkerLoop);
+            m_Workers[l_I].Name = $"HTTPServer {this.GetHashCode()} Worker #{l_I + 1}";
+        }
 
         m_ContextQueue      = new ConcurrentQueue<HttpListenerContext>();
         m_ContextQueueEvent = new ManualResetEvent(false);
