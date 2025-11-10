@@ -13,22 +13,22 @@ namespace SSC.Network.WS;
 /// <summary>
 /// WebSocket server class
 /// </summary>
-public class WSServer<t_Session,  t_SessionID> : HTTP.IHTTPServerRequestHandler
-    where t_Session : WSServerSession<t_Session, t_SessionID>
+public class WSServer<TSession,  TSessionID> : HTTP.IHTTPServerRequestHandler
+    where TSession   : WSServerSession<TSession, TSessionID>
+    where TSessionID : notnull
 {
-    public delegate t_Session d_MakeSession(WSServer<t_Session, t_SessionID> server, WebSocket webSocket);
+    public delegate TSession d_MakeSession(WSServer<TSession, TSessionID> server, WebSocket webSocket);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly Thread[]                     m_Workers;
-    private readonly List<t_Session>[]            m_WorkerSessions;
-    private readonly ConcurrentQueue<t_Session>[] m_WorkerNewSessions;
+    private readonly d_MakeSession                              _sessionFactory;
+    private readonly List<TSession>                             _sessions = new(100);
+    private readonly Thread[]                                   _workers;
+    private readonly List<TSession>[]                           _workerSessions;
+    private readonly ConcurrentQueue<TSession>[]                _workerNewSessions;
 
-    private readonly List<t_Session>              m_Sessions;
-
-    private          bool m_IsRunning = false;
-    private d_MakeSession m_SessionFactory;
+    private bool _isRunning = false;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -67,7 +67,6 @@ public class WSServer<t_Session,  t_SessionID> : HTTP.IHTTPServerRequestHandler
         ArgumentNullException.ThrowIfNull(httpServer);
         ArgumentNullException.ThrowIfNull(makeSession);
 
-        m_SessionFactory = makeSession;
 
         HTTPServer = httpServer;
         HTTPServer.AddRequestHandler(this);
@@ -77,21 +76,21 @@ public class WSServer<t_Session,  t_SessionID> : HTTP.IHTTPServerRequestHandler
         MaxMessageLength    = maxMessageLength;
         Allocator           = ArrayPool<byte>.Create(maxMessageLength, minConcurentSessions * maxReceiveQueueSize);
 
-        m_Workers           = new Thread[workerCount];
-        m_WorkerSessions    = new List<t_Session>[workerCount];
-        m_WorkerNewSessions = new ConcurrentQueue<t_Session>[workerCount];
-        for (int l_I = 0; l_I < m_Workers.Length; l_I++)
+        _sessionFactory = makeSession;
+
+        _workers           = new Thread[workerCount];
+        _workerSessions    = new List<TSession>[workerCount];
+        _workerNewSessions = new ConcurrentQueue<TSession>[workerCount];
+        for (int i = 0; i < _workers.Length; i++)
         {
-            var workerID = l_I;
+            var workerID = i;
 
-            m_Workers[l_I]      = new Thread(() => WorkerLoop(workerID));
-            m_Workers[l_I].Name = $"WebSocketServer {this.GetHashCode()} Worker #{l_I + 1}";
+            _workers[i]      = new Thread(() => WorkerLoop(workerID));
+            _workers[i].Name = $"WebSocketServer {this.GetHashCode()} Worker #{i + 1}";
 
-            m_WorkerSessions[l_I]    = new List<t_Session>(100);
-            m_WorkerNewSessions[l_I] = new ConcurrentQueue<t_Session>();
+            _workerSessions[i]    = new List<TSession>(100);
+            _workerNewSessions[i] = new ConcurrentQueue<TSession>();
         }
-
-        m_Sessions = new List<t_Session>(100 * workerCount);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -102,34 +101,34 @@ public class WSServer<t_Session,  t_SessionID> : HTTP.IHTTPServerRequestHandler
     /// </summary>
     public void Start()
     {
-        m_IsRunning = true;
+        _isRunning = true;
 
-        for (int l_I = 0; l_I < m_Workers.Length; l_I++)
-            m_Workers[l_I].Start();
+        for (int i = 0; i < _workers.Length; i++)
+            _workers[i].Start();
     }
     /// <summary>
     /// Stop the HTTP server and wait for all the threads to stop
     /// </summary>
     public void Stop()
     {
-        m_IsRunning = false;
+        _isRunning = false;
 
-        for (int l_I = 0; l_I < m_Workers.Length; l_I++)
-            m_Workers[l_I].Join();
+        for (int i = 0; i < _workers.Length; i++)
+            _workers[i].Join();
 
-        m_Sessions.Clear();
+        _sessions.Clear();
 
         /// Close remaining queued session
-        for (int l_I = 0; l_I < m_Workers.Length; l_I++)
+        for (int i = 0; i < _workers.Length; i++)
         {
-            while (m_WorkerNewSessions[l_I].TryDequeue(out var l_NewSession))
+            while (_workerNewSessions[i].TryDequeue(out var newSession))
             {
                 try
                 {
-                    if (l_NewSession.IsConnected)
-                        l_NewSession.Close(WebSocketCloseStatus.NormalClosure, "Server stopping", sendClosure: true, fromRemote: false);
+                    if (newSession.IsConnected)
+                        newSession.Close(WebSocketCloseStatus.NormalClosure, "Server stopping", sendClosure: true, fromRemote: false);
 
-                    l_NewSession.InternalOnSessionRemove();
+                    newSession.InternalOnSessionRemove();
                 }
                 catch (Exception)
                 {
@@ -148,13 +147,13 @@ public class WSServer<t_Session,  t_SessionID> : HTTP.IHTTPServerRequestHandler
     /// <param name="predicate">Predicate to match the session</param>
     /// <param name="default">Default session to return if none matched</param>
     /// <returns>Matched session or default</returns>
-    public t_Session? FindSession(Func<t_Session, bool> predicate, t_Session? @default = null)
+    public TSession? FindSession(Func<TSession, bool> predicate, TSession? @default = null)
     {
-        lock (m_Sessions)
+        lock (_sessions)
         {
-            var l_SubRes = m_Sessions.FirstOrDefault(predicate);
-            if (l_SubRes != null)
-                return l_SubRes;
+            var linqResult = _sessions.FirstOrDefault(predicate);
+            if (linqResult != null)
+                return linqResult;
         }
 
         return @default;
@@ -168,62 +167,62 @@ public class WSServer<t_Session,  t_SessionID> : HTTP.IHTTPServerRequestHandler
     /// </summary>
     private void WorkerLoop(int workerID)
     {
-        var l_Sessions    = m_WorkerSessions[workerID];
-        var l_NewSessions = m_WorkerNewSessions[workerID];
+        var sessions    = _workerSessions[workerID];
+        var newSessions = _workerNewSessions[workerID];
 
-        while (m_IsRunning)
+        while (_isRunning)
         {
             /// Look for new session to queue
-            if (l_NewSessions.TryDequeue(out var l_NewSession))
+            if (newSessions.TryDequeue(out var l_NewSession))
             {
                 l_NewSession.InternalOnSessionOpen();
-                lock (m_Sessions)
-                    m_Sessions.Add(l_NewSession);
+                lock (_sessions)
+                    _sessions.Add(l_NewSession);
 
-                l_Sessions.Add(l_NewSession);
+                sessions.Add(l_NewSession);
             }
 
             /// Update all sessions
-            for (var l_I = 0; l_I < l_Sessions.Count; ++l_I)
+            for (var i = 0; i < sessions.Count; ++i)
             {
-                var l_CurrentSession = l_Sessions[l_I];
+                var currentSession = sessions[i];
 
                 /// Look if the session is invalid/expired
-                if (!l_CurrentSession.IsConnected)
+                if (!currentSession.IsConnected)
                 {
-                    lock (m_Sessions)
-                        m_Sessions.Remove(l_CurrentSession);
+                    lock (_sessions)
+                        _sessions.Remove(currentSession);
 
-                    l_Sessions.RemoveAt(l_I);
-                    l_I--;
+                    sessions.RemoveAt(i);
+                    i--;
 
-                    l_CurrentSession.Close(WebSocketCloseStatus.EndpointUnavailable, "Lost connection", sendClosure: false, fromRemote: false);
-                    l_CurrentSession.InternalOnSessionRemove();
+                    currentSession.Close(WebSocketCloseStatus.EndpointUnavailable, "Lost connection", sendClosure: false, fromRemote: false);
+                    currentSession.InternalOnSessionRemove();
 
                     continue;
                 }
 
-                l_CurrentSession.InternalOnSessionUpdate();
+                currentSession.InternalOnSessionUpdate();
             }
 
-            if (l_Sessions.Count > 10)
+            if (sessions.Count > 10)
                 Thread.Yield();
             else
                 Thread.Sleep(1);
         }
 
         /// Close all sessions
-        for (var l_I = 0; l_I < l_Sessions.Count; ++l_I)
+        for (var i = 0; i < sessions.Count; ++i)
         {
-            var l_CurrentSession = l_Sessions[l_I];
+            var currentSession = sessions[i];
 
-            if (l_CurrentSession.IsConnected)
-                l_CurrentSession.Close(WebSocketCloseStatus.NormalClosure, "Server stopping", sendClosure: true, fromRemote: false);
+            if (currentSession.IsConnected)
+                currentSession.Close(WebSocketCloseStatus.NormalClosure, "Server stopping", sendClosure: true, fromRemote: false);
 
-            l_CurrentSession.InternalOnSessionRemove();
+            currentSession.InternalOnSessionRemove();
         }
 
-        l_Sessions.Clear();
+        sessions.Clear();
 
         /// Pending new session cleaning is handled by the Stop method
     }
@@ -238,7 +237,7 @@ public class WSServer<t_Session,  t_SessionID> : HTTP.IHTTPServerRequestHandler
     /// <returns>True if the request was handled</returns>
     protected override bool TryHandleImplementation(HTTP.HTTPServerRequestContext context)
     {
-        if (!m_IsRunning)
+        if (!_isRunning)
             return false;
 
         ArgumentNullException.ThrowIfNull(context);
@@ -246,32 +245,32 @@ public class WSServer<t_Session,  t_SessionID> : HTTP.IHTTPServerRequestHandler
         if (context.ListenerRequest.HttpMethod != "GET" || !context.ListenerRequest.IsWebSocketRequest)
             return false;
 
-        var l_AcceptTask = context.ListenerContext.AcceptWebSocketAsync(null, TimeSpan.FromSeconds(5));
-        l_AcceptTask.Wait();
+        var acceptTask = context.ListenerContext.AcceptWebSocketAsync(null, TimeSpan.FromSeconds(5));
+        acceptTask.Wait();
 
-        if (l_AcceptTask.Status != TaskStatus.RanToCompletion)
+        if (acceptTask.Status != TaskStatus.RanToCompletion)
         {
             Logging.Log(ELogSeverity.Error, "Failed to accept websocket request");
-            if (l_AcceptTask.Exception != null)
-                Logging.Log(ELogSeverity.Error, l_AcceptTask.Exception);
+            if (acceptTask.Exception != null)
+                Logging.Log(ELogSeverity.Error, acceptTask.Exception);
 
             return false;
         }
 
-        var l_WebSocketContext = l_AcceptTask.Result;
-        var l_WebSocket        = l_WebSocketContext.WebSocket;
-        if (l_WebSocket.State != WebSocketState.Open)
+        var webSocketContext = acceptTask.Result;
+        var webSocket        = webSocketContext.WebSocket;
+        if (webSocket.State != WebSocketState.Open)
             return false;
 
         context.ConnectionUpgraded = true;
 
-        var l_WebSocketServerSession = m_SessionFactory.Invoke(this, l_WebSocket);
-        l_WebSocketServerSession.NegociatingHeaders = l_WebSocketContext.Headers;
-        l_WebSocketServerSession.LocalEndPoint      = context.ListenerRequest.LocalEndPoint;
-        l_WebSocketServerSession.RemoteEndPoint     = context.ListenerRequest.RemoteEndPoint;
+        var webSocketServerSession = _sessionFactory.Invoke(this, webSocket);
+        webSocketServerSession.NegociatingHeaders = webSocketContext.Headers;
+        webSocketServerSession.LocalEndPoint      = context.ListenerRequest.LocalEndPoint;
+        webSocketServerSession.RemoteEndPoint     = context.ListenerRequest.RemoteEndPoint;
 
-        var leastBusyWorker = Array.IndexOf(m_WorkerSessions, m_WorkerSessions.OrderBy((x) => x.Count).FirstOrDefault());
-        m_WorkerNewSessions[leastBusyWorker].Enqueue(l_WebSocketServerSession);
+        var leastBusyWorker = Array.IndexOf(_workerSessions, _workerSessions.OrderBy((x) => x.Count).FirstOrDefault());
+        _workerNewSessions[leastBusyWorker].Enqueue(webSocketServerSession);
 
         return true;
     }

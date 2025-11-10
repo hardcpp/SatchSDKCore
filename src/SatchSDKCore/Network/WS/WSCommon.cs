@@ -17,20 +17,19 @@ namespace SSC.Network.WS;
 /// </summary>
 public abstract class WSCommon
 {
-    protected readonly SemaphoreSlim m_SendSemaphore      = new(1, 1);
-    protected readonly SemaphoreSlim m_RecvQueueSemaphore = new(1, 1);
+    protected readonly SemaphoreSlim _sendSemaphore = new(1, 1);
 
     protected readonly BlockingCollection<(byte[] data, int size, WebSocketMessageType messageType)>
-        m_ReceivedMessages;
+        _receivedMessages;
 
-    protected CancellationTokenSource m_CancellationTokenSource = new();
+    protected CancellationTokenSource _cancellationTokenSource = new();
 
-    private readonly int m_MaxFrameLength;
-    private readonly int m_MaxMessageLength;
+    private readonly int _maxFrameLength;
+    private readonly int _maxMessageLength;
 
-    private bool   m_CloseSignaled     = false;
-    private byte[] m_ReceiveBuffer     = null!;
-    private int    m_ReceiveBufferWPos = 0;
+    private bool   _closeSignaled     = false;
+    private byte[] _receiveBuffer     = null!;
+    private int    _receiveBufferWPos = 0;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -68,12 +67,12 @@ public abstract class WSCommon
         Socket    = webSocket;
         Allocator = allocator ?? ArrayPool<byte>.Shared;
 
-        m_ReceivedMessages = new BlockingCollection<(byte[], int, WebSocketMessageType)>(maxReceiveQueueSize);
+        _receivedMessages = new BlockingCollection<(byte[], int, WebSocketMessageType)>(maxReceiveQueueSize);
 
-        m_MaxFrameLength   = maxFrameLength;
-        m_MaxMessageLength = maxMessageLength;
+        _maxFrameLength   = maxFrameLength;
+        _maxMessageLength = maxMessageLength;
 
-        m_ReceiveBuffer = new byte[m_MaxMessageLength];
+        _receiveBuffer = new byte[_maxMessageLength];
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -121,33 +120,33 @@ public abstract class WSCommon
         while (true)
         {
             /// Stop reading if the socket is not connected
-            if (!IsConnected || Socket == null || m_CancellationTokenSource.IsCancellationRequested)
+            if (!IsConnected || Socket == null || _cancellationTokenSource.IsCancellationRequested)
                 break;
 
             try
             {
-                var l_IdealSize           = Math.Min(m_MaxFrameLength, m_ReceiveBuffer.Length - m_ReceiveBufferWPos);
-                var l_ReceiveArraySegment = new ArraySegment<byte>(m_ReceiveBuffer, m_ReceiveBufferWPos, l_IdealSize);
-                var l_Received            = await Socket.ReceiveAsync(l_ReceiveArraySegment, m_CancellationTokenSource.Token).ConfigureAwait(false);
+                var idealSize           = Math.Min(_maxFrameLength, _receiveBuffer.Length - _receiveBufferWPos);
+                var receiveArraySegment = new ArraySegment<byte>(_receiveBuffer, _receiveBufferWPos, idealSize);
+                var received            = await Socket.ReceiveAsync(receiveArraySegment, _cancellationTokenSource.Token).ConfigureAwait(false);
 
-                if (l_Received.MessageType == WebSocketMessageType.Binary || l_Received.MessageType == WebSocketMessageType.Text)
+                if (received.MessageType == WebSocketMessageType.Binary || received.MessageType == WebSocketMessageType.Text)
                 {
-                    m_ReceiveBufferWPos += l_Received.Count;
+                    _receiveBufferWPos += received.Count;
 
-                    if (l_Received.EndOfMessage)
+                    if (received.EndOfMessage)
                     {
-                        if (!m_CloseSignaled)
+                        if (!_closeSignaled)
                         {
-                            var l_Array = Allocator.Rent(m_ReceiveBufferWPos);
+                            var array = Allocator.Rent(_receiveBufferWPos);
                             try
                             {
-                                m_ReceiveBuffer.AsMemory(0, m_ReceiveBufferWPos).CopyTo(l_Array);
+                                _receiveBuffer.AsMemory(0, _receiveBufferWPos).CopyTo(array);
 
-                                m_ReceivedMessages.Add((l_Array, m_ReceiveBufferWPos, l_Received.MessageType));
+                                _receivedMessages.Add((array, _receiveBufferWPos, received.MessageType));
                             }
                             catch (Exception exception)
                             {
-                                Allocator.Return(l_Array);
+                                Allocator.Return(array);
 
                                 Logging.Log(
                                     ELogSeverity.Error,
@@ -161,13 +160,13 @@ public abstract class WSCommon
                             }
                         }
 
-                        m_ReceiveBufferWPos = 0;
+                        _receiveBufferWPos = 0;
 
                         /// Continue reading
                         continue;
                     }
                     /// Overflow detection
-                    else if ((m_ReceiveBuffer.Length - m_ReceiveBufferWPos) == 0)
+                    else if ((_receiveBuffer.Length - _receiveBufferWPos) == 0)
                     {
                         Logging.Log(
                             ELogSeverity.Error,
@@ -178,15 +177,15 @@ public abstract class WSCommon
                         break;
                     }
                 }
-                else if (l_Received.MessageType == WebSocketMessageType.Close)
+                else if (received.MessageType == WebSocketMessageType.Close)
                 {
-                    Close(l_Received.CloseStatus, l_Received.CloseStatusDescription, sendClosure: false);
+                    Close(received.CloseStatus, received.CloseStatusDescription, sendClosure: false);
                     break;
                 }
             }
             catch (Exception exception)
             {
-                if (!m_CloseSignaled)
+                if (!_closeSignaled)
                 {
                     Logging.Log(
                         ELogSeverity.Error,
@@ -208,29 +207,22 @@ public abstract class WSCommon
     /// <returns>True if sended</returns>
     protected bool Send(string data, Encoding? encoding = null)
     {
-        if (string.IsNullOrEmpty(data))
-        {
-            Logging.Log(
-                ELogSeverity.Error,
-                "[Network.WebSocket][WebSocketSession.Send] Trying to send null data"
-            );
-            return false;
-        }
+        ArgumentNullException.ThrowIfNullOrEmpty(data);
 
         if (encoding == null)
             encoding = Encoding.UTF8;
 
-        var l_BytesSize = FastTextEncoding.GetByteCount(data, encoding);
-        var l_Array     = Allocator.Rent(l_BytesSize);
+        var bytesSize = FastTextEncoding.GetByteCount(data, encoding);
+        var array     = Allocator.Rent(bytesSize);
 
         try
         {
-            var l_FinalSize = FastTextEncoding.GetBytes(data, encoding, l_Array.AsSpan());
-            return Send(l_Array.AsMemory(0, l_FinalSize), WebSocketMessageType.Text);
+            var l_FinalSize = FastTextEncoding.GetBytes(data, encoding, array.AsSpan());
+            return Send(array.AsMemory(0, l_FinalSize), WebSocketMessageType.Text);
         }
         finally
         {
-            Allocator.Return(l_Array);
+            Allocator.Return(array);
         }
     }
     /// <summary>
@@ -244,15 +236,6 @@ public abstract class WSCommon
     protected bool Send(byte[] data, int offset = 0, int length = -1, WebSocketMessageType type = WebSocketMessageType.Binary)
     {
         ArgumentNullException.ThrowIfNull(data);
-
-        if (data == null)
-        {
-            Logging.Log(
-                ELogSeverity.Error,
-                $"[Network.WebSocket][WebSocketSession.Send] Trying to send null data on websocket {RemoteEndPoint}"
-            );
-            return false;
-        }
 
         var l_FixedLength = length != -1 ? length : data!.Length;
         return Send(new ReadOnlyMemory<byte>(data, offset, l_FixedLength), type);
@@ -277,6 +260,7 @@ public abstract class WSCommon
             return false;
         }
 
+        /// Get the ArraySegment to avoid potential copy in native send implementation
         if (!MemoryMarshal.TryGetArray(data, out var l_ArraySegment))
         {
             Logging.Log(
@@ -286,25 +270,25 @@ public abstract class WSCommon
             return false;
         }
 
-        var l_SkipRelease = false;
+        var skipRelease = false;
         try
         {
-            m_SendSemaphore.Wait();
+            _sendSemaphore.Wait();
 
-            var l_Sent      = 0;
-            var l_Remaining = l_ArraySegment.Count;
+            var totalSentSize = 0;
+            var remainingSize = l_ArraySegment.Count;
 
-            while (l_Remaining > 0)
+            while (remainingSize > 0)
             {
-                var l_ToSend = Math.Min(l_Remaining, m_MaxFrameLength);
-                var l_IsLast = l_ToSend == l_Remaining;
+                var frameSize = Math.Min(remainingSize, _maxFrameLength);
+                var isLastFrame = frameSize == remainingSize;
 
-                var l_Task = Socket.SendAsync(l_ArraySegment.Slice(l_Sent, l_ToSend), type, l_IsLast, m_CancellationTokenSource.Token);
-                l_Task.ConfigureAwait(false);
-                l_Task.Wait();
+                var sendTask = Socket.SendAsync(l_ArraySegment.Slice(totalSentSize, frameSize), type, isLastFrame, _cancellationTokenSource.Token);
+                sendTask.ConfigureAwait(false);
+                sendTask.Wait();
 
-                l_Sent      += l_ToSend;
-                l_Remaining -= l_ToSend;
+                totalSentSize += frameSize;
+                remainingSize -= frameSize;
             }
 
             return true;
@@ -317,8 +301,8 @@ public abstract class WSCommon
             );
             Logging.Log(ELogSeverity.Error, exception);
 
-            m_SendSemaphore.Release();
-            l_SkipRelease = true;
+            _sendSemaphore.Release();
+            skipRelease = true;
 
             Close(WebSocketCloseStatus.ProtocolError, "Error while writting", sendClosure: true, fromRemote: false);
 
@@ -326,8 +310,8 @@ public abstract class WSCommon
         }
         finally
         {
-            if (!l_SkipRelease)
-                m_SendSemaphore.Release();
+            if (!skipRelease)
+                _sendSemaphore.Release();
         }
     }
     /// <summary>
@@ -339,17 +323,17 @@ public abstract class WSCommon
     /// <param name="fromRemote">Is the closure originated from remote?</param>
     public void Close(WebSocketCloseStatus? closeStatus, string? reason, bool sendClosure, bool fromRemote = false)
     {
-        if (m_CloseSignaled)
+        if (_closeSignaled)
             return;
 
-        m_CloseSignaled = true;
+        _closeSignaled = true;
 
-        if (!m_CancellationTokenSource.IsCancellationRequested)
-            m_CancellationTokenSource.Cancel();
+        if (!_cancellationTokenSource.IsCancellationRequested)
+            _cancellationTokenSource.Cancel();
 
         if (sendClosure && Socket != null && IsConnected)
         {
-            m_SendSemaphore.Wait();
+            _sendSemaphore.Wait();
 
             try
             {
@@ -363,7 +347,7 @@ public abstract class WSCommon
             }
             finally
             {
-                m_SendSemaphore.Release();
+                _sendSemaphore.Release();
             }
         }
 
@@ -388,7 +372,7 @@ public abstract class WSCommon
 
         Socket = null;
 
-        while (m_ReceivedMessages.TryTake(out var l_Message))
-            Allocator.Return(l_Message.data);
+        while (_receivedMessages.TryTake(out var pendingMessage))
+            Allocator.Return(pendingMessage.data);
     }
 }

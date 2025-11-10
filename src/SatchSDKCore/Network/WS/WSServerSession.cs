@@ -6,11 +6,12 @@ namespace SSC.Network.WS;
 /// <summary>
 /// WSServer session
 /// </summary>
-public abstract class WSServerSession<t_Session, t_SessionID> : WSCommon
-    where t_Session : WSServerSession<t_Session, t_SessionID>
+public abstract class WSServerSession<TSession, TSessionID> : WSCommon
+    where TSession   : WSServerSession<TSession, TSessionID>
+    where TSessionID : notnull
 {
-    public readonly WSServer<t_Session, t_SessionID>    Server;
-    public readonly t_SessionID                         SessionID;
+    public readonly WSServer<TSession, TSessionID> Server;
+    public readonly TSessionID                     SessionID;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -20,7 +21,7 @@ public abstract class WSServerSession<t_Session, t_SessionID> : WSCommon
     /// </summary>
     /// <param name="server">WSServer instance</param>
     /// <param name="webSocket">WebSocket instance</param>
-    public WSServerSession(WSServer<t_Session, t_SessionID> server, WebSocket webSocket, t_SessionID sessionID)
+    public WSServerSession(WSServer<TSession, TSessionID> server, WebSocket webSocket, TSessionID sessionID)
         : base(webSocket, server.Allocator, server.MaxFrameLength, server.MaxMessageLength, server.MaxReceiveQueueSize)
     {
         ArgumentNullException.ThrowIfNull(server);
@@ -76,12 +77,12 @@ public abstract class WSServerSession<t_Session, t_SessionID> : WSCommon
     /// </summary>
     internal virtual void InternalOnSessionUpdate()
     {
-        while (m_ReceivedMessages.TryTake(out var l_Message))
+        while (_receivedMessages.TryTake(out var message))
         {
-            var l_LastMsgBytes = l_Message.data;
+            var lastMsgBytes = message.data;
             try
             {
-                OnSocketMessage(l_Message.data.AsSpan(0, l_Message.size), l_Message.messageType);
+                OnSocketMessage(message.data.AsSpan(0, message.size), message.messageType);
             }
             catch (Exception exception)
             {
@@ -96,8 +97,8 @@ public abstract class WSServerSession<t_Session, t_SessionID> : WSCommon
             finally
             {
                 /// Return bytes to allocator
-                Allocator.Return(l_LastMsgBytes);
-                l_LastMsgBytes = null;
+                Allocator.Return(lastMsgBytes);
+                lastMsgBytes = null;
             }
         }
 
