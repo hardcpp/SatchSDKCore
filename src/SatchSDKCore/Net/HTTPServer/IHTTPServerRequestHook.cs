@@ -1,4 +1,4 @@
-﻿namespace SSC.Network.HTTP;
+﻿namespace SSC.Net.HTTP;
 
 public interface IHTTPServerRequestHook
 {

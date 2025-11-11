@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SSC.Network.WS;
+namespace SSC.Net.WS;
 
 /// <summary>
 /// Common class of WebSocket with utilities
@@ -280,7 +280,7 @@ public abstract class WSCommon
 
             while (remainingSize > 0)
             {
-                var frameSize = Math.Min(remainingSize, _maxFrameLength);
+                var frameSize   = Math.Min(remainingSize, _maxFrameLength);
                 var isLastFrame = frameSize == remainingSize;
 
                 var sendTask = Socket.SendAsync(l_ArraySegment.Slice(totalSentSize, frameSize), type, isLastFrame, _cancellationTokenSource.Token);

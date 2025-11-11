@@ -5,7 +5,7 @@ namespace SSC.APIServer.Handler;
 /// <summary>
 /// Swagger HTTP Server handler
 /// </summary>
-public class SwaggerHTTPServerHandler : Network.HTTP.IHTTPServerRequestHandler
+public class SwaggerHTTPServerHandler : Net.HTTP.IHTTPServerRequestHandler
 {
     public readonly Blueprint.IBlueprint MainBlueprint;
 
@@ -31,7 +31,7 @@ public class SwaggerHTTPServerHandler : Network.HTTP.IHTTPServerRequestHandler
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    protected override bool TryHandleImplementation(Network.HTTP.HTTPServerRequestContext context)
+    protected override bool TryHandleImplementation(Net.HTTP.HTTPServerRequestContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 

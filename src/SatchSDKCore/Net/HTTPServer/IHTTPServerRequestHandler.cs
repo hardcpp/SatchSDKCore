@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SSC.Network.HTTP;
+namespace SSC.Net.HTTP;
 
 /// <summary>
 /// HTTP Request handler base class
