@@ -280,7 +280,7 @@ public abstract class WSCommon
 
             while (remainingSize > 0)
             {
-                var frameSize = Math.Min(remainingSize, _maxFrameLength);
+                var frameSize   = Math.Min(remainingSize, _maxFrameLength);
                 var isLastFrame = frameSize == remainingSize;
 
                 var sendTask = Socket.SendAsync(l_ArraySegment.Slice(totalSentSize, frameSize), type, isLastFrame, _cancellationTokenSource.Token);

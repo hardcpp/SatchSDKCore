@@ -18,31 +18,37 @@ public sealed class HTTPClientResponse
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private byte[]? _bodyBytes  = null;
-    private string? _bodyString = null;
+    private byte[]?                 _bodyBytes       = null;
+    private IHTTPClientDataHandler? _bodyDataHandler = null;
+    private string?                 _bodyString      = null;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     public readonly HttpStatusCode           StatusCode;
     public readonly string?                  ReasonPhrase;
-    public          HTTPClientRateLimitInfo? RateLimitInfo { get; private set; }
+    public          HTTPClientRateLimitInfo? RateLimitInfo       { get; private set; }
     public readonly bool                     IsSuccessStatusCode;
     public readonly bool                     ShouldRetry;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public bool IsRateLimited => !IsSuccessStatusCode && StatusCode == (HttpStatusCode)429;
-    public byte[]? BodyBytes => _bodyBytes;
-    public string BodyString
-    {
+    public bool                     IsRateLimited => !IsSuccessStatusCode && StatusCode == (HttpStatusCode)429;
+    public byte[]?                  BodyBytes     => _bodyBytes;
+    public IHTTPClientDataHandler?  BodyHandler   => _bodyDataHandler;
+    public string?                  BodyString    {
         get
         {
             if (_bodyString != null)
                 return _bodyString;
 
-            if (_bodyBytes == null || _bodyBytes?.Length == 0)
+            if (_bodyBytes == null)
+            {
+                _bodyString = null;
+                return _bodyString;
+            }
+            else if (_bodyBytes.Length == 0)
             {
                 _bodyString = string.Empty;
                 return _bodyString;
@@ -67,10 +73,10 @@ public sealed class HTTPClientResponse
     /// <param name="reasonPhrase">Code reason if any</param>
     /// <param name="isSuccessStatusCode">If the status code considered success?</param>
     public HTTPClientResponse(
-            HttpStatusCode statusCode,
-            string?        reasonPhrase,
-            bool           isSuccessStatusCode
-        )
+        HttpStatusCode statusCode,
+        string?        reasonPhrase,
+        bool           isSuccessStatusCode
+    )
     {
         StatusCode          = statusCode;
         ReasonPhrase        = reasonPhrase;
@@ -93,15 +99,42 @@ public sealed class HTTPClientResponse
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Dangerous Populate data, set the body bytes
+    /// Set the body bytes
     /// </summary>
-    /// <param name="bodyBytes">Body bytes</param>
-    public void DangerousPopulate(byte[]? bodyBytes)
+    /// <param name="bodyBytes">New body bytes</param>
+    /// <exception cref="InvalidOperationException">If the content have already been set</exception>
+    public void DangerousSetBodyBytes(byte[] bodyBytes)
     {
-        _bodyBytes = bodyBytes;
-        _bodyString = null;
+        ArgumentNullException.ThrowIfNull(bodyBytes);
+
+        if (_bodyBytes != null || _bodyDataHandler != null)
+            throw new InvalidOperationException("Can not alter HTTPClientResponse body after initial set");
+
+        _bodyBytes       = bodyBytes;
+        _bodyDataHandler = null;
+        _bodyString      = null;
     }
-    public void DangerousSetRateLimit(HTTPClientRateLimitInfo? rateLimitInfo)
+    /// <summary>
+    /// Set the body data handler
+    /// </summary>
+    /// <param name="bodyDataHandler">New body data handler</param>
+    /// <exception cref="InvalidOperationException">If the content have already been set</exception>
+    public void DangerousSetBodyDataHandler(IHTTPClientDataHandler bodyDataHandler)
+    {
+        ArgumentNullException.ThrowIfNull(bodyDataHandler);
+
+        if (_bodyBytes != null || _bodyDataHandler != null)
+            throw new InvalidOperationException("Can not alter HTTPClientResponse body after initial set");
+
+        _bodyBytes       = null;
+        _bodyDataHandler = bodyDataHandler;
+        _bodyString      = null;
+    }
+    /// <summary>
+    /// Set rate limit info
+    /// </summary>
+    /// <param name="rateLimitInfo">New rate limit info</param>
+    public void DangerousSetRateLimit(HTTPClientRateLimitInfo rateLimitInfo)
     {
         RateLimitInfo = rateLimitInfo;
     }
@@ -116,6 +149,8 @@ public sealed class HTTPClientResponse
     /// <returns></returns>
     public bool TryAsJObject(out JObject? resultJObject)
     {
+        ArgumentNullException.ThrowIfNullOrEmpty(BodyString);
+
         resultJObject = null;
         try
         {
@@ -133,6 +168,8 @@ public sealed class HTTPClientResponse
     public bool TryGetObject<T>(out T? resultObject)
         where T : class, new()
     {
+        ArgumentNullException.ThrowIfNullOrEmpty(BodyString);
+
         resultObject = null;
         try
         {

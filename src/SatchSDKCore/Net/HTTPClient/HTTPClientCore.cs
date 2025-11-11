@@ -14,23 +14,20 @@ namespace SSC.Net.HTTPClient;
 
 public class HTTPClientCore : IHTTPClient
 {
-    /// <summary>
-    /// Global client instance
-    /// </summary>
-    public static readonly HTTPClientCore GlobalClient = new HTTPClientCore("", TimeSpan.FromSeconds(10));
+    public static readonly HTTPClientCore GlobalClient = new("", TimeSpan.FromSeconds(10));
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private HttpClient        _client;
-    private HttpClientHandler _clientHandler;
-    private CookieContainer?  _cookieContainer;
-    private EOptions          _options;
+    private readonly HttpClient        _client;
+    private readonly HttpClientHandler _clientHandler;
+
+    private CookieContainer? _cookieContainer;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public EOptions           Options         => _options;
+    public EOptions           Options         { get; private set; }
     public int                MaxRetry        { get; set; } = 2;
     public TimeSpan           RetryInterval   { get; set; } = TimeSpan.FromSeconds(5);
     public HttpRequestHeaders GlobalHeaders   => _client.DefaultRequestHeaders;
@@ -56,6 +53,8 @@ public class HTTPClientCore : IHTTPClient
     /// <param name="timeout">Maximum timeout</param>
     public HTTPClientCore(string baseURL, TimeSpan timeout, EOptions options = EOptions.KeepAlive)
     {
+        Options = options;
+
         _clientHandler = new HttpClientHandler()
         {
             AutomaticDecompression = DecompressionMethods.All
@@ -71,7 +70,7 @@ public class HTTPClientCore : IHTTPClient
         if (!string.IsNullOrEmpty(baseURL))
             _client.BaseAddress = new Uri(baseURL);
 
-        if (_options.HasFlag(EOptions.ForceCacheDiscard))
+        if (Options.HasFlag(EOptions.ForceCacheDiscard))
         {
             _client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue
             {
@@ -87,81 +86,49 @@ public class HTTPClientCore : IHTTPClient
 
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
 
-        _client.DefaultRequestHeaders.ConnectionClose = !_options.HasFlag(EOptions.KeepAlive);
+        _client.DefaultRequestHeaders.ConnectionClose = !Options.HasFlag(EOptions.KeepAlive);
         _client.DefaultRequestHeaders.Add("User-Agent", $"SatchSDKCore/{version}");
     }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>
-    /// Do a sync request
-    /// </summary>
-    /// <param name="url">Target URL</param>
-    /// <param name="method">HTTP method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
-    /// <param name="payload">Request payload</param>
-    /// <param name="options">Request options</param>
-    /// <param name="progressHandler">Progress reporter</param>
+    /// <inheritdoc/>
     public HTTPClientResponse? DoRequest(
-            string             method,
-            string             url,
-            HTTPClientPayload? payload         = null,
-            ERequestOptions    options         = ERequestOptions.None,
-            IProgress<float>?  progressHandler = null
-        )
+        string                  method,
+        string                  url,
+        HTTPClientPayload?      payload         = null,
+        ERequestOptions         options         = ERequestOptions.None,
+        IHTTPClientDataHandler? dataHandler     = null,
+        IProgress<float>?       progressHandler = null
+    )
     {
-        bool                isQueryCompleted = false;
-        HTTPClientResponse? result           = null;
+        var task = DoRequestImpl(method, url, null, CancellationToken.None, null, options, dataHandler, progressHandler);
+        task.Wait();
 
-        DoRequestImpl(method, url, null, CancellationToken.None, (p_Result) => { result = p_Result; isQueryCompleted = true; }, options, progressHandler).ConfigureAwait(false);
-
-        while (!isQueryCompleted)
-            Thread.Sleep(5);
-
-        return result;
+        return task.Result;
     }
-    /// <summary>
-    /// Do a non blocking request in the background with a callback
-    /// </summary>
-    /// <param name="url">Target URL</param>
-    /// <param name="method">HTTP method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <param name="payload">Request payload</param>
-    /// <param name="callback">Callback</param>
-    /// <param name="options">Request options</param>
-    /// <param name="progressHandler">Progress reporter</param>
+    /// <inheritdoc/>
     public void DoRequestInBackground(
-            string                       method,
-            string                       url,
-            CancellationToken            cancellationToken,
-            Action<HTTPClientResponse?>? callback,
-            HTTPClientPayload?           payload           = null,
-            ERequestOptions              options           = ERequestOptions.None,
-            IProgress<float>?            progressHandler   = null
-        )
-    {
-        DoRequestImpl(method, url, payload, cancellationToken, callback, options, progressHandler).ConfigureAwait(false);
-    }
-    /// <summary>
-    /// Do a async request
-    /// </summary>
-    /// <param name="url">Target URL</param>
-    /// <param name="method">HTTP method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <param name="payload">Request payload</param>
-    /// <param name="options">Request options</param>
-    /// <param name="progressHandler">Progress reporter</param>
+        string                       method,
+        string                       url,
+        CancellationToken            cancellationToken,
+        Action<HTTPClientResponse?>? callback,
+        HTTPClientPayload?           payload           = null,
+        ERequestOptions              options           = ERequestOptions.None,
+        IHTTPClientDataHandler?      dataHandler       = null,
+        IProgress<float>?            progressHandler   = null
+    ) => DoRequestImpl(method, url, payload, cancellationToken, callback, options, dataHandler, progressHandler).ConfigureAwait(false);
+    /// <inheritdoc/>
     public async Task<HTTPClientResponse?> DoRequestAsync(
-            string             method,
-            string             url,
-            CancellationToken  cancellationToken,
-            HTTPClientPayload? payload           = null,
-            ERequestOptions    options           = ERequestOptions.None,
-            IProgress<float>?  progressHandler   = null
-        )
-    {
-        return await DoRequestImpl(method, url, null, cancellationToken, null, options, progressHandler).ConfigureAwait(false);
-    }
+        string                  method,
+        string                  url,
+        CancellationToken       cancellationToken,
+        HTTPClientPayload?      payload           = null,
+        ERequestOptions         options           = ERequestOptions.None,
+        IHTTPClientDataHandler? dataHandler       = null,
+        IProgress<float>?       progressHandler   = null
+    ) => await DoRequestImpl(method, url, payload, cancellationToken, null, options, dataHandler, progressHandler).ConfigureAwait(false);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -169,19 +136,19 @@ public class HTTPClientCore : IHTTPClient
     /// <summary>
     /// Safe URL parsing
     /// </summary>
-    /// <param name="p_URL"></param>
+    /// <param name="url"></param>
     /// <returns></returns>
-    private string SafeURL(string p_URL)
+    private string SafeURL(string url)
     {
-        var l_Result = p_URL;
+        var result = url;
 
-        if (!p_URL.Contains("://"))
-            l_Result = _client.BaseAddress + l_Result;
+        if (!url.Contains("://"))
+            result = _client.BaseAddress + result;
 
-        if (l_Result.Contains("?"))
-            l_Result = l_Result.Substring(0, l_Result.IndexOf("?"));
+        if (result.Contains('?'))
+            result = result[..result.IndexOf('?', StringComparison.Ordinal)];
 
-        return l_Result;
+        return result;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -196,17 +163,19 @@ public class HTTPClientCore : IHTTPClient
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="callback">Callback</param>
     /// <param name="options">Request options</param>
+    /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns></returns>
-    private async ValueTask<HTTPClientResponse?> DoRequestImpl(
-            string                       method,
-            string                       url,
-            HTTPClientPayload?           payload,
-            CancellationToken            cancellationToken,
-            Action<HTTPClientResponse?>? callback,
-            ERequestOptions              options,
-            IProgress<float>?            progressHandler
-        )
+    private async Task<HTTPClientResponse?> DoRequestImpl(
+        string                       method,
+        string                       url,
+        HTTPClientPayload?           payload,
+        CancellationToken            cancellationToken,
+        Action<HTTPClientResponse?>? callback,
+        ERequestOptions              options,
+        IHTTPClientDataHandler?      dataHandler,
+        IProgress<float>?            progressHandler
+    )
     {
 #if DEBUG
         Logging.Log(ELogSeverity.Debug, $"[CP_SDK.Network][WebClientCore] {method} " + url);
@@ -228,11 +197,10 @@ public class HTTPClientCore : IHTTPClient
             {
                 progressHandler?.Report(0.0f);
 
-                lastResponse = null;
+                lastResponse     = null;
                 baseHttpResponse = await PrepareAndStartRequest(method, url, payload, cancellationToken).ConfigureAwait(false);
 
-                if (cancellationToken.IsCancellationRequested)
-                    break;
+                cancellationToken.ThrowIfCancellationRequested();
 
                 lastResponse = new HTTPClientResponse(baseHttpResponse);
 
@@ -245,7 +213,7 @@ public class HTTPClientCore : IHTTPClient
                         break;
                 }
 
-                await HandleResponse(baseHttpResponse, lastResponse, cancellationToken, options, progressHandler);
+                await HandleResponse(baseHttpResponse, lastResponse, cancellationToken, options, dataHandler, progressHandler);
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
@@ -260,9 +228,6 @@ public class HTTPClientCore : IHTTPClient
                     Logging.Log(ELogSeverity.Debug, $"[CP_SDK.Network][WebClientCore] Request {SafeURL(url)} failed with code {lastResponse.StatusCode}:\"{lastResponse.ReasonPhrase}\", next try in {RetryInterval} seconds...");
 
                     await Task.Delay(RetryInterval, cancellationToken).ConfigureAwait(false);
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
-
                     continue;
                 }
 
@@ -299,47 +264,25 @@ public class HTTPClientCore : IHTTPClient
     /// <returns>The prepared and started core http request resultResponse</returns>
     /// <exception cref="ArgumentException">If the method is not supported/implemented</exception>
     private async ValueTask<HttpResponseMessage> PrepareAndStartRequest(
-            string              method,
-            string              url,
-            HTTPClientPayload?  payload,
-            CancellationToken   cancellationToken
-        )
+        string              method,
+        string              url,
+        HTTPClientPayload?  payload,
+        CancellationToken   cancellationToken
+    )
     {
-        switch (method)
+        ByteArrayContent? content = null;
+        if (payload != null)
         {
-            case "GET":
-                return await _client.GetAsync(url, cancellationToken).ConfigureAwait(false);
-
-            case "POST":
-                ByteArrayContent? postContent = null;
-                if (payload != null)
-                {
-                    postContent = new ByteArrayContent(payload.Bytes);
-                    postContent.Headers.ContentType = null;
-                    postContent.Headers.Remove("Content-Type");
-                    postContent.Headers.TryAddWithoutValidation("Content-Type", payload.Type);
-                }
-
-                return await _client.PostAsync(url, postContent, cancellationToken).ConfigureAwait(false);
-
-            case "PATCH":
-            case "PUT":
-                ByteArrayContent? patchPutContent = null;
-                if (payload != null)
-                {
-                    patchPutContent = new ByteArrayContent(payload.Bytes);
-                    patchPutContent.Headers.ContentType = null;
-                    patchPutContent.Headers.Remove("Content-Type");
-                    patchPutContent.Headers.TryAddWithoutValidation("Content-Type", payload.Type);
-                }
-
-                return await _client.SendAsync(new HttpRequestMessage(new HttpMethod(method), url) { Content = patchPutContent, }, cancellationToken).ConfigureAwait(false);
-
-            case "DELETE":
-                return await _client.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+            content = new ByteArrayContent(payload.Bytes);
+            content.Headers.ContentType = null;
+            content.Headers.Remove("Content-Type");
+            content.Headers.TryAddWithoutValidation("Content-Type", payload.Type);
         }
 
-        throw new ArgumentException($"Unsuported HTTP method '{method}' in {nameof(HTTPClientCore)}");
+        var requestMessage = new HttpRequestMessage(HttpMethod.Parse(method), url);
+        requestMessage.Content = content;
+
+        return await _client.SendAsync(requestMessage, cancellationToken).ConfigureAwait(false);
     }
     /// <summary>
     /// Handle the rate limit response
@@ -350,16 +293,16 @@ public class HTTPClientCore : IHTTPClient
     /// <param name="options">Request options</param>
     /// <returns>ENestedFlowControl for the caller</returns>
     private async ValueTask<ENestedFlowControl> HandleRateLimit(
-            HttpResponseMessage baseHttpResponse,
-            HTTPClientResponse  resultResponse,
-            CancellationToken   cancellationToken,
-            ERequestOptions     options
-        )
+        HttpResponseMessage baseHttpResponse,
+        HTTPClientResponse  resultResponse,
+        CancellationToken   cancellationToken,
+        ERequestOptions     options
+    )
     {
         var rateLimitInfo = HTTPClientRateLimitInfo.Get(baseHttpResponse);
         if (rateLimitInfo == null)
         {
-            resultResponse.DangerousSetRateLimit(rateLimitInfo);
+            // TODO log unable to get rate limit info
             return ENestedFlowControl.Break;
         }
 
@@ -367,7 +310,7 @@ public class HTTPClientCore : IHTTPClient
         if (remainingMilliseconds <= 0)
             return ENestedFlowControl.None;
 
-        if (options.HasFlag(ERequestOptions.NoRetryOnRateLimit) || _options.HasFlag(EOptions.NoRetryOnRateLimit))
+        if (options.HasFlag(ERequestOptions.NoRetryOnRateLimit) || Options.HasFlag(EOptions.NoRetryOnRateLimit))
             return ENestedFlowControl.Break;
 
         Logging.Log(ELogSeverity.Debug, $"[CP_SDK.Network][WebClientCore] Request {SafeURL("todo")} was rate limited, retrying in {remainingMilliseconds}ms...");
@@ -388,39 +331,41 @@ public class HTTPClientCore : IHTTPClient
     /// <param name="resultResponse">Result resultResponse at the end of the DoRequest</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="options">Request options</param>
+    /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     private async ValueTask HandleResponse(
-            HttpResponseMessage baseHttpResponse,
-            HTTPClientResponse  resultResponse,
-            CancellationToken   cancellationToken,
-            ERequestOptions     options,
-            IProgress<float>?   progressHandler
-        )
+        HttpResponseMessage     baseHttpResponse,
+        HTTPClientResponse      resultResponse,
+        CancellationToken       cancellationToken,
+        ERequestOptions         options,
+        IHTTPClientDataHandler? dataHandler,
+        IProgress<float>?       progressHandler
+    )
     {
-        if (progressHandler == null)
-        {
-            resultResponse.DangerousPopulate(await baseHttpResponse.Content.ReadAsByteArrayAsync().ConfigureAwait(false));
-            return;
-        }
-
         var memoryStream   = new MemoryStream();
         var responseStream = await baseHttpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
-        var readBuffer     = new byte[8 * 1024];
+        var readBuffer     = new byte[dataHandler?.IdealBufferSize ?? 8 * 1024];
         var contentLength  = baseHttpResponse.Content.Headers.ContentLength;
         var totalReaded    = 0L;
 
         // TODO handle chunked encoding
         try
         {
+            dataHandler?.Begin();
+
             while (true)
             {
                 int currentReaded;
                 if ((currentReaded = await responseStream.ReadAsync(readBuffer, 0, readBuffer.Length, cancellationToken).ConfigureAwait(false)) > 0)
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                        return;
+                    // Handle potential late cancel at the end of ReadAsync
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                    await memoryStream.WriteAsync(readBuffer, 0, currentReaded, cancellationToken).ConfigureAwait(false);
+                    if (dataHandler != null)
+                        await dataHandler.ProcessAsync(readBuffer.AsSpan(0, currentReaded), contentLength.HasValue ? contentLength.Value : null).ConfigureAwait(false);
+                    else
+                        await memoryStream.WriteAsync(readBuffer, 0, currentReaded, cancellationToken).ConfigureAwait(false);
+
                     totalReaded += currentReaded;
 
                     if (contentLength.HasValue)
@@ -429,7 +374,15 @@ public class HTTPClientCore : IHTTPClient
                 else
                 {
                     progressHandler?.Report(1.0f);
-                    resultResponse.DangerousPopulate(memoryStream.ToArray());
+
+                    if (dataHandler != null)
+                    {
+                        dataHandler.End();
+                        resultResponse.DangerousSetBodyDataHandler(dataHandler);
+                    }
+                    else
+                        resultResponse.DangerousSetBodyBytes(memoryStream.ToArray());
+
                     break;
                 }
             }

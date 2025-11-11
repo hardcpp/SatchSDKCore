@@ -37,7 +37,7 @@ public sealed class HTTPClientRateLimitInfo
         if (coreHttpResponseMessage == null)
             throw new ArgumentNullException(nameof(coreHttpResponseMessage));
 
-        var headers = GetTransformedHeaders(coreHttpResponseMessage);
+        var headers = GetFlattenedHeaders(coreHttpResponseMessage);
 
         return new HTTPClientRateLimitInfo()
         {
@@ -51,23 +51,28 @@ public sealed class HTTPClientRateLimitInfo
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Get transformed headers from a HttpResponseMessage
+    /// Get flattened headers from a HttpResponseMessage
     /// </summary>
     /// <param name="coreHttpResponseMessage">Response</param>
     /// <returns></returns>
-    private static Dictionary<string, string> GetTransformedHeaders(HttpResponseMessage coreHttpResponseMessage)
+    private static Dictionary<string, string> GetFlattenedHeaders(HttpResponseMessage coreHttpResponseMessage)
     {
-        var l_Result = new Dictionary<string, string>();
+        var result = new Dictionary<string, string>();
 
-        foreach (var l_KVP in coreHttpResponseMessage.Headers)
+        foreach (var kvp in coreHttpResponseMessage.Headers)
         {
-            if (l_KVP.Value.FirstOrDefault().Contains(","))
-                l_Result.Add(l_KVP.Key, l_KVP.Value.FirstOrDefault().Split(',').FirstOrDefault()?.Trim());
+            var value = kvp.Value.FirstOrDefault(string.Empty);
+            if (value.Contains(','))
+            {
+                var parts = value.Split(',');
+                if (parts.Length > 0)
+                    result.Add(kvp.Key, parts[0].Trim());
+            }
             else
-                l_Result.Add(l_KVP.Key, l_KVP.Value.FirstOrDefault().Trim());
+                result.Add(kvp.Key, value.Trim());
         }
 
-        return l_Result;
+        return result;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -76,19 +81,19 @@ public sealed class HTTPClientRateLimitInfo
     /// <summary>
     /// Get limit value from header
     /// </summary>
-    /// <param name="p_TransformedHeaders">Transformed headers</param>
+    /// <param name="transformedHeaders">Transformed headers</param>
     /// <returns></returns>
-    private static int GetLimit(Dictionary<string, string> p_TransformedHeaders)
+    private static int GetLimit(IReadOnlyDictionary<string, string> transformedHeaders)
     {
-        foreach (var l_KVP in p_TransformedHeaders)
+        foreach (var kvp in transformedHeaders)
         {
-            var l_Lower = l_KVP.Key.ToLower();
-            if (   l_Lower == "x-rate-limit-limit" || l_Lower == "x-ratelimit-limit"
-                || l_Lower == "rate-limit-limit"   || l_Lower == "ratelimit-limit"
-                || l_Lower == "x-rate-limit-total" || l_Lower == "x-ratelimit-total"
-                || l_Lower == "rate-limit-total"   || l_Lower == "ratelimit-total")
+            var keyLower = kvp.Key.ToLower();
+            if (   keyLower == "x-rate-limit-limit" || keyLower == "x-ratelimit-limit"
+                || keyLower == "rate-limit-limit"   || keyLower == "ratelimit-limit"
+                || keyLower == "x-rate-limit-total" || keyLower == "x-ratelimit-total"
+                || keyLower == "rate-limit-total"   || keyLower == "ratelimit-total")
             {
-                if (int.TryParse(l_KVP.Value, out var l_Value))
+                if (int.TryParse(kvp.Value, out var l_Value))
                     return l_Value;
                 else
                     return -1;
@@ -100,17 +105,17 @@ public sealed class HTTPClientRateLimitInfo
     /// <summary>
     /// Get remaining value from header
     /// </summary>
-    /// <param name="p_TransformedHeaders">Transformed headers</param>
+    /// <param name="transformedHeaders">Transformed headers</param>
     /// <returns></returns>
-    private static int GetRemaining(Dictionary<string, string> p_TransformedHeaders)
+    private static int GetRemaining(IReadOnlyDictionary<string, string> transformedHeaders)
     {
-        foreach (var l_KVP in p_TransformedHeaders)
+        foreach (var kvp in transformedHeaders)
         {
-            var l_Lower = l_KVP.Key.ToLower();
-            if (   l_Lower == "x-rate-limit-remaining" || l_Lower == "x-ratelimit-remaining"
-                || l_Lower == "rate-limit-remaining"   || l_Lower == "ratelimit-remaining")
+            var keyLower = kvp.Key.ToLower();
+            if (   keyLower == "x-rate-limit-remaining" || keyLower == "x-ratelimit-remaining"
+                || keyLower == "rate-limit-remaining"   || keyLower == "ratelimit-remaining")
             {
-                if (int.TryParse(l_KVP.Value, out var l_Value))
+                if (int.TryParse(kvp.Value, out var l_Value))
                     return l_Value;
                 else
                     return -1;
@@ -122,17 +127,17 @@ public sealed class HTTPClientRateLimitInfo
     /// <summary>
     /// Get reset time from header
     /// </summary>
-    /// <param name="p_TransformedHeaders">Transformed headers</param>
+    /// <param name="transformedHeaders">Transformed headers</param>
     /// <returns></returns>
-    private static DateTime GetReset(Dictionary<string, string> p_TransformedHeaders)
+    private static DateTime GetReset(IReadOnlyDictionary<string, string> transformedHeaders)
     {
-        foreach (var l_KVP in p_TransformedHeaders)
+        foreach (var kvp in transformedHeaders)
         {
-            var l_Lower = l_KVP.Key.ToLower();
-            if (   l_Lower == "x-rate-limit-reset" || l_Lower == "x-ratelimit-reset"
-                || l_Lower == "rate-limit-reset"   || l_Lower == "ratelimit-reset")
+            var keyLower = kvp.Key.ToLower();
+            if (   keyLower == "x-rate-limit-reset" || keyLower == "x-ratelimit-reset"
+                || keyLower == "rate-limit-reset"   || keyLower == "ratelimit-reset")
             {
-                if (!long.TryParse(l_KVP.Value, out var l_Value))
+                if (!long.TryParse(kvp.Value, out var l_Value))
                     return DateTime.Now.AddSeconds(2);
 
                 if (l_Value < 1000000000)
