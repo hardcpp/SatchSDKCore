@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SSC.Network.WS;
+namespace SSC.Net.WS;
 
 /// <summary>
 /// Common class of WebSocket with utilities

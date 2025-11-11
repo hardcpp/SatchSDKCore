@@ -9,7 +9,7 @@ namespace SSC.APIServer.Handler;
 /// <summary>
 /// REST HTTP Server handler
 /// </summary>
-public class RESTHTTPServerHandler : Network.HTTP.IHTTPServerRequestHandler
+public class RESTHTTPServerHandler : Net.HTTP.IHTTPServerRequestHandler
 {
     public readonly Blueprint.RESTBlueprint MainBlueprint = new Blueprint.RESTBlueprint("Main");
 
@@ -27,7 +27,7 @@ public class RESTHTTPServerHandler : Network.HTTP.IHTTPServerRequestHandler
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    protected override bool TryHandleImplementation(Network.HTTP.HTTPServerRequestContext context)
+    protected override bool TryHandleImplementation(Net.HTTP.HTTPServerRequestContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 

@@ -7,7 +7,7 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SSC.Network.WS;
+namespace SSC.Net.WS;
 
 
 /// <summary>

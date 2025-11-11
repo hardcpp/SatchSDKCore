@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net.WebSockets;
 
-namespace SSC.Network.WS;
+namespace SSC.Net.WS;
 
 /// <summary>
 /// WSServer session

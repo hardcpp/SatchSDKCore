@@ -10,7 +10,7 @@ namespace SSC.APIServer.Request;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public sealed class HTTPRequest : IRequest
 {
-    public readonly Network.HTTP.HTTPServerRequestContext Context;
+    public readonly Net.HTTP.HTTPServerRequestContext Context;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -19,7 +19,7 @@ public sealed class HTTPRequest : IRequest
     /// Constructor
     /// </summary>
     /// <param name="context">HTTP request context</param>
-    public HTTPRequest(Network.HTTP.HTTPServerRequestContext context)
+    public HTTPRequest(Net.HTTP.HTTPServerRequestContext context)
         : base()
     {
         ArgumentNullException.ThrowIfNull(context);

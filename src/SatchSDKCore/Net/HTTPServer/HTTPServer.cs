@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 
-namespace SSC.Network.HTTP;
+namespace SSC.Net.HTTP;
 
 /// <summary>
 /// HTTP Server class
