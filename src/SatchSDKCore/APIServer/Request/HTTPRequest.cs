@@ -5,12 +5,12 @@ using System.Net;
 namespace SSC.APIServer.Request;
 
 /// <summary>
-/// HTTP Request class
+/// HTTPServer Request class
 /// </summary>
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public sealed class HTTPRequest : IRequest
 {
-    public readonly Net.HTTP.HTTPServerRequestContext Context;
+    public readonly Net.HTTPServer.HTTPServerRequestContext Context;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -18,8 +18,8 @@ public sealed class HTTPRequest : IRequest
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="context">HTTP request context</param>
-    public HTTPRequest(Net.HTTP.HTTPServerRequestContext context)
+    /// <param name="context">HTTPServer request context</param>
+    public HTTPRequest(Net.HTTPServer.HTTPServerRequestContext context)
         : base()
     {
         ArgumentNullException.ThrowIfNull(context);

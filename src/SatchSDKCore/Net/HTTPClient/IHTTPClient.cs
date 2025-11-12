@@ -49,7 +49,7 @@ public interface IHTTPClient
     /// Do a sync request
     /// </summary>
     /// <param name="url">Target URL</param>
-    /// <param name="method">HTTP method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
+    /// <param name="method">HTTPServer method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
     /// <param name="payload">Request payload</param>
     /// <param name="options">Request options</param>
     /// <param name="dataHandler">Optional data handler</param>
@@ -67,7 +67,7 @@ public interface IHTTPClient
     /// Do a non-blocking request in the background with a callback
     /// </summary>
     /// <param name="url">Target URL</param>
-    /// <param name="method">HTTP method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
+    /// <param name="method">HTTPServer method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="callback">Callback</param>
     /// <param name="payload">Request payload</param>
@@ -88,7 +88,7 @@ public interface IHTTPClient
     /// Do an async request
     /// </summary>
     /// <param name="url">Target URL</param>
-    /// <param name="method">HTTP method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
+    /// <param name="method">HTTPServer method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="payload">Request payload</param>
     /// <param name="options">Request options</param>

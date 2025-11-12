@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace SSC.Net.HTTPClient;
 
 /// <summary>
-/// HTTP client data handler interface
+/// HTTPServer client data handler interface
 /// </summary>
 public interface IHTTPClientDataHandler
 {

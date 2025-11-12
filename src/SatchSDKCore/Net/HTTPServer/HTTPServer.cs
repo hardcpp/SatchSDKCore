@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 
-namespace SSC.Net.HTTP;
+namespace SSC.Net.HTTPServer;
 
 /// <summary>
 /// HTTP Server class
@@ -190,7 +190,7 @@ public class HTTPServer
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Start the HTTP server and threads
+    /// Start the HTTPServer server and threads
     /// </summary>
     public void Start()
     {
@@ -211,7 +211,7 @@ public class HTTPServer
         m_ListenerThread.Join();
     }
     /// <summary>
-    /// Stop the HTTP server and wait for all the threads to stop
+    /// Stop the HTTPServer server and wait for all the threads to stop
     /// </summary>
     public void Stop()
     {

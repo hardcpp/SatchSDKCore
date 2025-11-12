@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace SSC.Net.HTTP;
+namespace SSC.Net.HTTPServer;
 
 /// <summary>
 /// HTTP Server request context
