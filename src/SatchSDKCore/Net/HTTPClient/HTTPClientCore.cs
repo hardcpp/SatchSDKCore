@@ -257,7 +257,7 @@ public class HTTPClientCore : IHTTPClient
     /// <summary>
     /// Prepare and start a request
     /// </summary>
-    /// <param name="method">HTTP method</param>
+    /// <param name="method">HTTPServer method</param>
     /// <param name="url">URL to request</param>
     /// <param name="payload">Request payload</param>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -288,7 +288,7 @@ public class HTTPClientCore : IHTTPClient
     /// Handle the rate limit response
     /// </summary>
     /// <param name="baseHttpResponse">Base core http response</param>
-    /// <param name="resultResponse">Result resultResponse at the end of the DoRequest</param>
+    /// <param name="resultResponse">Result resultResponse at the end of the DoCall</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="options">Request options</param>
     /// <returns>ENestedFlowControl for the caller</returns>
@@ -328,7 +328,7 @@ public class HTTPClientCore : IHTTPClient
     /// Handle the resultResponse from the core http client
     /// </summary>
     /// <param name="baseHttpResponse">Base core http response</param>
-    /// <param name="resultResponse">Result resultResponse at the end of the DoRequest</param>
+    /// <param name="resultResponse">Result resultResponse at the end of the DoCall</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="options">Request options</param>
     /// <param name="dataHandler">Optional data handler</param>

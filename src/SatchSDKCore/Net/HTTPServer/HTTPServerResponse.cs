@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 
-namespace SSC.Net.HTTP;
+namespace SSC.Net.HTTPServer;
 
 /// <summary>
 /// HTTP Server response

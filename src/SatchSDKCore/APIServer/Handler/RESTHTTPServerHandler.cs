@@ -7,9 +7,9 @@ using System.Threading;
 namespace SSC.APIServer.Handler;
 
 /// <summary>
-/// REST HTTP Server handler
+/// REST HTTPServer Server handler
 /// </summary>
-public class RESTHTTPServerHandler : Net.HTTP.IHTTPServerRequestHandler
+public class RESTHTTPServerHandler : Net.HTTPServer.IHTTPServerRequestHandler
 {
     public readonly Blueprint.RESTBlueprint MainBlueprint = new Blueprint.RESTBlueprint("Main");
 
@@ -27,7 +27,7 @@ public class RESTHTTPServerHandler : Net.HTTP.IHTTPServerRequestHandler
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    protected override bool TryHandleImplementation(Net.HTTP.HTTPServerRequestContext context)
+    protected override bool TryHandleImplementation(Net.HTTPServer.HTTPServerRequestContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 

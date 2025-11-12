@@ -17,7 +17,7 @@ public sealed class RESTResponse : IResponse
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public readonly Net.HTTP.HTTPServerResponse HTTPServerResponse;
+    public readonly Net.HTTPServer.HTTPServerResponse HTTPServerResponse;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -32,7 +32,7 @@ public sealed class RESTResponse : IResponse
     public RESTResponse(Request.IRequest request, HttpStatusCode code, HttpContent? content, Encoding? contentEncoding)
         : base(request)
     {
-        HTTPServerResponse = new Net.HTTP.HTTPServerResponse(code, content, contentEncoding);
+        HTTPServerResponse = new Net.HTTPServer.HTTPServerResponse(code, content, contentEncoding);
     }
 
     ////////////////////////////////////////////////////////////////////////////
