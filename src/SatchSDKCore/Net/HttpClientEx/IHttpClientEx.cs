@@ -4,12 +4,12 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SSC.Net.HTTPClient;
+namespace SSC.Net.HttpClientEx;
 
 /// <summary>
-/// Web Client interface
+/// Advance Http Client interface
 /// </summary>
-public interface IHTTPClient
+public interface IHttpClientEx
 {
     /// <summary>
     /// Global client options
@@ -55,12 +55,12 @@ public interface IHTTPClient
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns>The response if the request reached the server</returns>
-    public HTTPClientResponse? DoRequest(
+    public HttpClientExResponse? DoRequest(
         string                  method,
         string                  url,
-        HTTPClientPayload?      payload         = null,
+        HttpClientExPayload?      payload         = null,
         ERequestOptions         options         = ERequestOptions.None,
-        IHTTPClientDataHandler? dataHandler     = null,
+        IHttpClientExDataHandler? dataHandler     = null,
         IProgress<float>?       progressHandler = null
     );
     /// <summary>
@@ -78,10 +78,10 @@ public interface IHTTPClient
         string                       method,
         string                       url,
         CancellationToken            cancellationToken,
-        Action<HTTPClientResponse?>? callback,
-        HTTPClientPayload?           payload           = null,
+        Action<HttpClientExResponse?>? callback,
+        HttpClientExPayload?           payload           = null,
         ERequestOptions              options           = ERequestOptions.None,
-        IHTTPClientDataHandler?      dataHandler       = null,
+        IHttpClientExDataHandler?      dataHandler       = null,
         IProgress<float>?            progressHandler   = null
     );
     /// <summary>
@@ -95,13 +95,13 @@ public interface IHTTPClient
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns>The response if the request reached the server</returns>
-    public Task<HTTPClientResponse?> DoRequestAsync(
+    public Task<HttpClientExResponse?> DoRequestAsync(
         string                  method,
         string                  url,
         CancellationToken       cancellationToken,
-        HTTPClientPayload?      payload           = null,
+        HttpClientExPayload?      payload           = null,
         ERequestOptions         options           = ERequestOptions.None,
-        IHTTPClientDataHandler? dataHandler       = null,
+        IHttpClientExDataHandler? dataHandler       = null,
         IProgress<float>?       progressHandler   = null
     );
 }

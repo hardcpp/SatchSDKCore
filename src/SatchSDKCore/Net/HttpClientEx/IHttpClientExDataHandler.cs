@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace SSC.Net.HTTPClient;
+namespace SSC.Net.HttpClientEx;
 
 /// <summary>
-/// HTTPServer client data handler interface
+/// Advanced Http client data handler interface
 /// </summary>
-public interface IHTTPClientDataHandler
+public interface IHttpClientExDataHandler
 {
     public abstract int IdealBufferSize { get; }
 
