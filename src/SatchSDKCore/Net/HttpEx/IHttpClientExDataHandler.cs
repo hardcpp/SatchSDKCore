@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace SSC.Net.HttpClientEx;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
 /// Advanced Http client data handler interface

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 
-namespace SSC.Net.HttpClientEx;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
 /// Rate Limit Info

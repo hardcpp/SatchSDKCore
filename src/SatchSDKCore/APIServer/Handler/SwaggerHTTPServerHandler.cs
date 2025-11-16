@@ -1,11 +1,12 @@
+using SatchSDKCore.Net.HttpEx;
 using System;
 
 namespace SSC.APIServer.Handler;
 
 /// <summary>
-/// Swagger HTTPServer Server handler
+/// Swagger HttpServerEx Server handler
 /// </summary>
-public class SwaggerHTTPServerHandler : Net.HTTPServer.IHTTPServerRequestHandler
+public class SwaggerHTTPServerHandler : IHttpServerExRequestHandler
 {
     public readonly Blueprint.IBlueprint MainBlueprint;
 
@@ -31,7 +32,7 @@ public class SwaggerHTTPServerHandler : Net.HTTPServer.IHTTPServerRequestHandler
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    protected override bool TryHandleImplementation(Net.HTTPServer.HTTPServerRequestContext context)
+    protected override bool TryHandleImplementation(HttpServerExRequestContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 

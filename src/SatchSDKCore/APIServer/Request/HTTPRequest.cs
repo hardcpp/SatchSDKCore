@@ -1,16 +1,17 @@
-﻿using System;
+﻿using SatchSDKCore.Net.HttpEx;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 namespace SSC.APIServer.Request;
 
 /// <summary>
-/// HTTPServer Request class
+/// HttpServerEx Request class
 /// </summary>
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public sealed class HTTPRequest : IRequest
 {
-    public readonly Net.HTTPServer.HTTPServerRequestContext Context;
+    public readonly HttpServerExRequestContext Context;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -18,8 +19,8 @@ public sealed class HTTPRequest : IRequest
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="context">HTTPServer request context</param>
-    public HTTPRequest(Net.HTTPServer.HTTPServerRequestContext context)
+    /// <param name="context">HttpServerEx request context</param>
+    public HTTPRequest(HttpServerExRequestContext context)
         : base()
     {
         ArgumentNullException.ThrowIfNull(context);

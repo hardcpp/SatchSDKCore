@@ -1,14 +1,14 @@
 ﻿using System;
 
-namespace SSC.Net.HTTPServer;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
-/// HTTP Request handler base class
+/// Advanced Http server request handler base class
 /// </summary>
-public abstract class IHTTPServerRequestHandler
+public abstract class IHttpServerExRequestHandler
 {
-    private IHTTPServerRequestHook[] m_EarlyHooks = Array.Empty<IHTTPServerRequestHook>();
-    private IHTTPServerRequestHook[] m_LateHooks  = Array.Empty<IHTTPServerRequestHook>();
+    private IHttpServerExRequestHook[] m_EarlyHooks = Array.Empty<IHttpServerExRequestHook>();
+    private IHttpServerExRequestHook[] m_LateHooks  = Array.Empty<IHttpServerExRequestHook>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -17,7 +17,7 @@ public abstract class IHTTPServerRequestHandler
     /// Add a early request Hook
     /// </summary>
     /// <param name="earlyHook">Early hook to add</param>
-    public void AddEarlyRequestHook(IHTTPServerRequestHook earlyHook)
+    public void AddEarlyRequestHook(IHttpServerExRequestHook earlyHook)
     {
         ArgumentNullException.ThrowIfNull(earlyHook);
 
@@ -25,7 +25,7 @@ public abstract class IHTTPServerRequestHandler
         if (l_ExistingIdx != -1)
             return;
 
-        var l_NewEarlyHooks = new IHTTPServerRequestHook[m_EarlyHooks.Length + 1];
+        var l_NewEarlyHooks = new IHttpServerExRequestHook[m_EarlyHooks.Length + 1];
         Array.Copy(m_EarlyHooks, l_NewEarlyHooks, m_EarlyHooks.Length);
         l_NewEarlyHooks[^1] = earlyHook;
 
@@ -35,7 +35,7 @@ public abstract class IHTTPServerRequestHandler
     /// Remove a early request Hook
     /// </summary>
     /// <param name="earlyHook">Early hook to remove</param>
-    public void RemoveEarlyRequestHook(IHTTPServerRequestHook earlyHook)
+    public void RemoveEarlyRequestHook(IHttpServerExRequestHook earlyHook)
     {
         ArgumentNullException.ThrowIfNull(earlyHook);
 
@@ -44,9 +44,9 @@ public abstract class IHTTPServerRequestHandler
         if (l_ExistingIdx == -1)
             return;
 
-        var l_NewEarlyHooks = new IHTTPServerRequestHook[l_OldEarlyHooks.Length - 1];
+        var l_NewEarlyHooks = new IHttpServerExRequestHook[l_OldEarlyHooks.Length - 1];
         Array.Copy(l_OldEarlyHooks, 0, l_NewEarlyHooks, 0, l_ExistingIdx);
-        Array.Copy(l_OldEarlyHooks, l_ExistingIdx + 1, l_NewEarlyHooks, l_ExistingIdx, (l_OldEarlyHooks.Length - l_ExistingIdx) - 1);
+        Array.Copy(l_OldEarlyHooks, l_ExistingIdx + 1, l_NewEarlyHooks, l_ExistingIdx, l_OldEarlyHooks.Length - l_ExistingIdx - 1);
 
         m_EarlyHooks = l_NewEarlyHooks;
     }
@@ -58,7 +58,7 @@ public abstract class IHTTPServerRequestHandler
     /// Add a late request Hook
     /// </summary>
     /// <param name="lateHook">Late hook to add</param>
-    public void AddLateRequestHook(IHTTPServerRequestHook lateHook)
+    public void AddLateRequestHook(IHttpServerExRequestHook lateHook)
     {
         ArgumentNullException.ThrowIfNull(lateHook);
 
@@ -66,7 +66,7 @@ public abstract class IHTTPServerRequestHandler
         if (l_ExistingIdx != -1)
             return;
 
-        var l_NewLateHooks = new IHTTPServerRequestHook[m_LateHooks.Length + 1];
+        var l_NewLateHooks = new IHttpServerExRequestHook[m_LateHooks.Length + 1];
         Array.Copy(m_LateHooks, l_NewLateHooks, m_LateHooks.Length);
         l_NewLateHooks[^1] = lateHook;
 
@@ -76,7 +76,7 @@ public abstract class IHTTPServerRequestHandler
     /// Remove a late request Hook
     /// </summary>
     /// <param name="lateHook">Late hook to remove</param>
-    public void RemoveLateRequestHook(IHTTPServerRequestHook lateHook)
+    public void RemoveLateRequestHook(IHttpServerExRequestHook lateHook)
     {
         ArgumentNullException.ThrowIfNull(lateHook);
 
@@ -85,9 +85,9 @@ public abstract class IHTTPServerRequestHandler
         if (l_ExistingIdx == -1)
             return;
 
-        var l_NewLateHooks = new IHTTPServerRequestHook[l_OldLateHooks.Length - 1];
+        var l_NewLateHooks = new IHttpServerExRequestHook[l_OldLateHooks.Length - 1];
         Array.Copy(l_OldLateHooks, 0, l_NewLateHooks, 0, l_ExistingIdx);
-        Array.Copy(l_OldLateHooks, l_ExistingIdx + 1, l_NewLateHooks, l_ExistingIdx, (l_OldLateHooks.Length - l_ExistingIdx) - 1);
+        Array.Copy(l_OldLateHooks, l_ExistingIdx + 1, l_NewLateHooks, l_ExistingIdx, l_OldLateHooks.Length - l_ExistingIdx - 1);
 
         m_LateHooks = l_NewLateHooks;
     }
@@ -100,7 +100,7 @@ public abstract class IHTTPServerRequestHandler
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    public bool TryHandle(HTTPServerRequestContext context)
+    public bool TryHandle(HttpServerExRequestContext context)
     {
         var l_EarlyHooks = m_EarlyHooks;
         for (var l_I = 0; l_I < l_EarlyHooks.Length; l_I++)
@@ -129,5 +129,5 @@ public abstract class IHTTPServerRequestHandler
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    protected abstract bool TryHandleImplementation(HTTPServerRequestContext context);
+    protected abstract bool TryHandleImplementation(HttpServerExRequestContext context);
 }

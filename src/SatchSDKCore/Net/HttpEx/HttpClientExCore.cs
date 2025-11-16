@@ -8,9 +8,9 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-using static SSC.Net.HttpClientEx.IHttpClientEx;
+using static SSC.Net.HttpEx.IHttpClientEx;
 
-namespace SSC.Net.HttpClientEx;
+namespace SSC.Net.HttpEx;
 
 public class HttpClientExCore : IHttpClientEx
 {
@@ -257,7 +257,7 @@ public class HttpClientExCore : IHttpClientEx
     /// <summary>
     /// Prepare and start a request
     /// </summary>
-    /// <param name="method">HTTPServer method</param>
+    /// <param name="method">HttpServerEx method</param>
     /// <param name="url">URL to request</param>
     /// <param name="payload">Request payload</param>
     /// <param name="cancellationToken">Cancellation token</param>

@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 
-namespace SSC.Net.HttpClientEx;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
 /// Web Response class

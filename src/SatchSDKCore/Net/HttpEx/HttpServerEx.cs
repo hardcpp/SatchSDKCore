@@ -1,20 +1,21 @@
-﻿using System;
+﻿using SSC;
+using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 
-namespace SSC.Net.HTTPServer;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
-/// HTTP Server class
+/// Advanced Http Server class
 /// </summary>
-public class HTTPServer
+public class HttpServerEx
 {
-    private static HTTPServerResponse s_Server404NotFoundResponse
+    private static HttpServerExResponse s_Server404NotFoundResponse
         = new(HttpStatusCode.NotFound, new StringContent("404 Not found", Encoding.UTF8), Encoding.UTF8);
-    private static HTTPServerResponse s_Server500InternalServerErrorResponse
+    private static HttpServerExResponse s_Server500InternalServerErrorResponse
         = new(HttpStatusCode.InternalServerError, new StringContent("500 Internal server error", Encoding.UTF8), Encoding.UTF8);
 
     ////////////////////////////////////////////////////////////////////////////
@@ -26,9 +27,9 @@ public class HTTPServer
     private readonly ConcurrentQueue<HttpListenerContext> m_ContextQueue;
     private readonly ManualResetEvent                     m_ContextQueueEvent;
 
-    private IHTTPServerRequestHook[]    m_EarlyHooks = Array.Empty<IHTTPServerRequestHook>();
-    private IHTTPServerRequestHandler[] m_Handlers   = Array.Empty<IHTTPServerRequestHandler>();
-    private IHTTPServerRequestHook[]    m_LateHooks  = Array.Empty<IHTTPServerRequestHook>();
+    private IHttpServerExRequestHook[]    m_EarlyHooks = Array.Empty<IHttpServerExRequestHook>();
+    private IHttpServerExRequestHandler[] m_Handlers   = Array.Empty<IHttpServerExRequestHandler>();
+    private IHttpServerExRequestHook[]    m_LateHooks  = Array.Empty<IHttpServerExRequestHook>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -43,7 +44,7 @@ public class HTTPServer
     /// </summary>
     /// <param name="prefix">Listenning prefix</param>
     /// <param name="workerCount">Worker count</param>
-    public HTTPServer(string prefix, int workerCount = 4)
+    public HttpServerEx(string prefix, int workerCount = 4)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(workerCount, 1);
 
@@ -56,7 +57,7 @@ public class HTTPServer
         for (int l_I = 0; l_I < m_Workers.Length; l_I++)
         {
             m_Workers[l_I]      = new Thread(WorkerLoop);
-            m_Workers[l_I].Name = $"HTTPServer {this.GetHashCode()} Worker #{l_I + 1}";
+            m_Workers[l_I].Name = $"HTTPServer {GetHashCode()} Worker #{l_I + 1}";
         }
 
         m_ContextQueue      = new ConcurrentQueue<HttpListenerContext>();
@@ -70,7 +71,7 @@ public class HTTPServer
     /// Add a early request Hook
     /// </summary>
     /// <param name="earlyHook">Early hook to add</param>
-    public void AddEarlyRequestHook(IHTTPServerRequestHook earlyHook)
+    public void AddEarlyRequestHook(IHttpServerExRequestHook earlyHook)
     {
         ArgumentNullException.ThrowIfNull(earlyHook);
 
@@ -78,7 +79,7 @@ public class HTTPServer
         if (l_ExistingIdx != -1)
             return;
 
-        var l_NewEarlyHooks = new IHTTPServerRequestHook[m_EarlyHooks.Length + 1];
+        var l_NewEarlyHooks = new IHttpServerExRequestHook[m_EarlyHooks.Length + 1];
         Array.Copy(m_EarlyHooks, l_NewEarlyHooks, m_EarlyHooks.Length);
         l_NewEarlyHooks[^1] = earlyHook;
 
@@ -88,7 +89,7 @@ public class HTTPServer
     /// Remove a early request Hook
     /// </summary>
     /// <param name="earlyHook">Early hook to remove</param>
-    public void RemoveEarlyRequestHook(IHTTPServerRequestHook earlyHook)
+    public void RemoveEarlyRequestHook(IHttpServerExRequestHook earlyHook)
     {
         ArgumentNullException.ThrowIfNull(earlyHook);
 
@@ -97,9 +98,9 @@ public class HTTPServer
         if (l_ExistingIdx == -1)
             return;
 
-        var l_NewEarlyHooks = new IHTTPServerRequestHook[l_OldEarlyHooks.Length - 1];
+        var l_NewEarlyHooks = new IHttpServerExRequestHook[l_OldEarlyHooks.Length - 1];
         Array.Copy(l_OldEarlyHooks,                 0, l_NewEarlyHooks,             0,                                l_ExistingIdx);
-        Array.Copy(l_OldEarlyHooks, l_ExistingIdx + 1, l_NewEarlyHooks, l_ExistingIdx, (l_OldEarlyHooks.Length - l_ExistingIdx) - 1);
+        Array.Copy(l_OldEarlyHooks, l_ExistingIdx + 1, l_NewEarlyHooks, l_ExistingIdx, l_OldEarlyHooks.Length - l_ExistingIdx - 1);
 
         m_EarlyHooks = l_NewEarlyHooks;
     }
@@ -111,7 +112,7 @@ public class HTTPServer
     /// Add a request handler
     /// </summary>
     /// <param name="handler">Handler to add</param>
-    public void AddRequestHandler(IHTTPServerRequestHandler handler)
+    public void AddRequestHandler(IHttpServerExRequestHandler handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
 
@@ -119,7 +120,7 @@ public class HTTPServer
         if (l_ExistingIdx != -1)
             return;
 
-        var l_NewHandlers = new IHTTPServerRequestHandler[m_Handlers.Length + 1];
+        var l_NewHandlers = new IHttpServerExRequestHandler[m_Handlers.Length + 1];
         Array.Copy(m_Handlers, l_NewHandlers, m_Handlers.Length);
         l_NewHandlers[^1] = handler;
 
@@ -129,7 +130,7 @@ public class HTTPServer
     /// Remove a request handler
     /// </summary>
     /// <param name="handler">Handler to remove</param>
-    public void RemoveRequestHandler(IHTTPServerRequestHandler handler)
+    public void RemoveRequestHandler(IHttpServerExRequestHandler handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
 
@@ -138,9 +139,9 @@ public class HTTPServer
         if (l_ExistingIdx == -1)
             return;
 
-        var l_NewHandlers = new IHTTPServerRequestHandler[l_OldHandlers.Length - 1];
+        var l_NewHandlers = new IHttpServerExRequestHandler[l_OldHandlers.Length - 1];
         Array.Copy(l_OldHandlers,                 0, l_NewHandlers,             0,                              l_ExistingIdx);
-        Array.Copy(l_OldHandlers, l_ExistingIdx + 1, l_NewHandlers, l_ExistingIdx, (l_OldHandlers.Length - l_ExistingIdx) - 1);
+        Array.Copy(l_OldHandlers, l_ExistingIdx + 1, l_NewHandlers, l_ExistingIdx, l_OldHandlers.Length - l_ExistingIdx - 1);
 
         m_Handlers = l_NewHandlers;
     }
@@ -152,7 +153,7 @@ public class HTTPServer
     /// Add a late request Hook
     /// </summary>
     /// <param name="lateHook">Late hook to add</param>
-    public void AddLateRequestHook(IHTTPServerRequestHook lateHook)
+    public void AddLateRequestHook(IHttpServerExRequestHook lateHook)
     {
         ArgumentNullException.ThrowIfNull(lateHook);
 
@@ -160,7 +161,7 @@ public class HTTPServer
         if (l_ExistingIdx != -1)
             return;
 
-        var l_NewLateHooks = new IHTTPServerRequestHook[m_LateHooks.Length + 1];
+        var l_NewLateHooks = new IHttpServerExRequestHook[m_LateHooks.Length + 1];
         Array.Copy(m_LateHooks, l_NewLateHooks, m_LateHooks.Length);
         l_NewLateHooks[^1] = lateHook;
 
@@ -170,7 +171,7 @@ public class HTTPServer
     /// Remove a late request Hook
     /// </summary>
     /// <param name="lateHook">Late hook to remove</param>
-    public void RemoveLateRequestHook(IHTTPServerRequestHook lateHook)
+    public void RemoveLateRequestHook(IHttpServerExRequestHook lateHook)
     {
         ArgumentNullException.ThrowIfNull(lateHook);
 
@@ -179,9 +180,9 @@ public class HTTPServer
         if (l_ExistingIdx == -1)
             return;
 
-        var l_NewLateHooks = new IHTTPServerRequestHook[l_OldLateHooks.Length - 1];
+        var l_NewLateHooks = new IHttpServerExRequestHook[l_OldLateHooks.Length - 1];
         Array.Copy(l_OldLateHooks,                 0, l_NewLateHooks,             0,                               l_ExistingIdx);
-        Array.Copy(l_OldLateHooks, l_ExistingIdx + 1, l_NewLateHooks, l_ExistingIdx, (l_OldLateHooks.Length - l_ExistingIdx) - 1);
+        Array.Copy(l_OldLateHooks, l_ExistingIdx + 1, l_NewLateHooks, l_ExistingIdx, l_OldLateHooks.Length - l_ExistingIdx - 1);
 
         m_LateHooks = l_NewLateHooks;
     }
@@ -190,7 +191,7 @@ public class HTTPServer
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Start the HTTPServer server and threads
+    /// Start the HttpServerEx server and threads
     /// </summary>
     public void Start()
     {
@@ -211,7 +212,7 @@ public class HTTPServer
         m_ListenerThread.Join();
     }
     /// <summary>
-    /// Stop the HTTPServer server and wait for all the threads to stop
+    /// Stop the HttpServerEx server and wait for all the threads to stop
     /// </summary>
     public void Stop()
     {
@@ -280,10 +281,10 @@ public class HTTPServer
     /// <param name="listenerContext">Request context</param>
     private void HandleRequest(HttpListenerContext listenerContext)
     {
-        var l_ServerContext = null as HTTPServerRequestContext;
+        var l_ServerContext = null as HttpServerExRequestContext;
         try
         {
-            l_ServerContext = new HTTPServerRequestContext(listenerContext);
+            l_ServerContext = new HttpServerExRequestContext(listenerContext);
             Logging.Log(ELogSeverity.Verbose, $"Request received: {l_ServerContext.ListenerRequest.HttpMethod} {l_ServerContext.ListenerRequest.Url}");
 
             var l_EarlyHooks = m_EarlyHooks;
