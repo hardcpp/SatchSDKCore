@@ -8,25 +8,25 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SSC.Net.WS;
+namespace SSC.Net.WebSocketEx;
 
 /// <summary>
-/// WebSocket server class
+/// Advanced WebSocket server class
 /// </summary>
-public class WSServer<TSession,  TSessionID> : IHttpServerExRequestHandler
-    where TSession   : WSServerSession<TSession, TSessionID>
+public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHandler
+    where TSession   : WebSocketExServerSession<TSession, TSessionID>
     where TSessionID : notnull
 {
-    public delegate TSession d_MakeSession(WSServer<TSession, TSessionID> server, WebSocket webSocket);
+    public delegate TSession d_MakeSession(WebSocketExServer<TSession, TSessionID> server, WebSocket webSocket);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly d_MakeSession                              _sessionFactory;
-    private readonly List<TSession>                             _sessions = new(100);
-    private readonly Thread[]                                   _workers;
-    private readonly List<TSession>[]                           _workerSessions;
-    private readonly ConcurrentQueue<TSession>[]                _workerNewSessions;
+    private readonly d_MakeSession               _sessionFactory;
+    private readonly List<TSession>              _sessions = new(100);
+    private readonly Thread[]                    _workers;
+    private readonly List<TSession>[]            _workerSessions;
+    private readonly ConcurrentQueue<TSession>[] _workerNewSessions;
 
     private bool _isRunning = false;
 
@@ -54,7 +54,7 @@ public class WSServer<TSession,  TSessionID> : IHttpServerExRequestHandler
     /// <param name="maxReceiveQueueSize">Max size of the message queue for a session</param>
     /// <param name="maxFrameLength">Message frame length in bytes</param>
     /// <param name="maxMessageLength">Max message length in bytes</param>
-    public WSServer(
+    public WebSocketExServer(
         HttpServerEx    httpServer,
         string          absolutePath,
         d_MakeSession   makeSession,

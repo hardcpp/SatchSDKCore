@@ -10,12 +10,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SSC.Net.WS;
+namespace SSC.Net.WebSocketEx;
 
 /// <summary>
-/// Common class of WebSocket with utilities
+/// Common class of advanced WebSocket with utilities
 /// </summary>
-public abstract class WSCommon
+public abstract class WebSocketExBase
 {
     protected readonly SemaphoreSlim _sendSemaphore = new(1, 1);
 
@@ -54,7 +54,7 @@ public abstract class WSCommon
     /// <param name="maxFrameLength">Max length of a single frame</param>
     /// <param name="maxMessageLength">Max length of a single message</param>
     /// <param name="maxReceiveQueueSize">Max length of the message queue</param>
-    public WSCommon(
+    public WebSocketExBase(
         WebSocket?       webSocket,
         ArrayPool<byte>? allocator           = null,
         int              maxFrameLength      = 1024,
