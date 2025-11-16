@@ -1,15 +1,15 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
+using System.Text.Json;
 
 namespace SSC.Net.JSONRPCClient;
 
 /// <summary>
 /// JsonRPCResult
 /// </summary>
-public sealed class JSONRPCClientResult
+public sealed class JsonRpcClientResult
 {
-    public JObject      Result;
-    public JObject      Error;
+    public JsonElement Result;
+    public JsonElement Error;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -26,7 +26,7 @@ public sealed class JSONRPCClientResult
         p_JObject = null;
         try
         {
-            p_JObject = Result.ToObject<T>();
+            //p_JObject = Result.ToObject<T>();
         }
         catch (Exception)
         {

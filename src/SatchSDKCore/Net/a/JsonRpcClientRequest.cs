@@ -6,7 +6,7 @@ namespace SSC.Net.JSONRPCClient;
 /// <summary>
 /// JSONRPCClient request
 /// </summary>
-public class JSONRPCClientRequest
+public class JsonRpcClientRequest
 {
     [JsonPropertyName("jsonrpc")]
     public string JsonRpcVersion { get; init; } = "2.0";

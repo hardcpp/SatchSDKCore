@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 namespace SSC.Net.JSONRPCClient;
 
 /// <summary>
-/// HTTP implementation of the IJSONRPCClient
+/// HTTP implementation of the IJsonRpcClient
 /// </summary>
-public class JSONRPCClientHTTP : IJSONRPCClient
+public class JsonRpcClientHttp : IJsonRpcClient
 {
     private readonly IHTTPClient _httpClient;
     private readonly string?     _overrideURL;
@@ -27,7 +27,7 @@ public class JSONRPCClientHTTP : IJSONRPCClient
     /// Constructor
     /// </summary>
     /// <param name="httpClient">HTTP client to use</param>
-    public JSONRPCClientHTTP(IHTTPClient httpClient, string? overrideURL = null)
+    public JsonRpcClientHttp(IHTTPClient httpClient, string? overrideURL = null)
     {
         _httpClient  = httpClient;
         _overrideURL = overrideURL;
@@ -39,8 +39,8 @@ public class JSONRPCClientHTTP : IJSONRPCClient
     /// <inheritdoc/>
     [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SerializationDynamicCodeMessage)]
-    protected override JSONRPCClientResult? DoCall(
-        JSONRPCClientRequest request,
+    protected override JsonRpcClientResult? DoCall(
+        JsonRpcClientRequest request,
         ECallOptions options
     )
     {
@@ -57,9 +57,9 @@ public class JSONRPCClientHTTP : IJSONRPCClient
     [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SerializationDynamicCodeMessage)]
     protected override void DoCallInBackground(
-        JSONRPCClientRequest          request,
+        JsonRpcClientRequest          request,
         CancellationToken             cancellationToken,
-        Action<JSONRPCClientResult?>? callback,
+        Action<JsonRpcClientResult?>? callback,
         ECallOptions                  options
     )
     {
@@ -75,8 +75,8 @@ public class JSONRPCClientHTTP : IJSONRPCClient
     /// <inheritdoc/>
     [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SerializationDynamicCodeMessage)]
-    protected override async Task<JSONRPCClientResult?> DoCallAsync(
-        JSONRPCClientRequest request,
+    protected override async Task<JsonRpcClientResult?> DoCallAsync(
+        JsonRpcClientRequest request,
         CancellationToken    cancellationToken,
         ECallOptions         options
     )
@@ -101,7 +101,7 @@ public class JSONRPCClientHTTP : IJSONRPCClient
     /// <param name="p_Method">Called method</param>
     /// <param name="p_WebResponse">Web response</param>
     /// <returns></returns>
-    private static JSONRPCClientResult BuildJSONRPCClientResult(JSONRPCClientRequest request, HTTPClientResponse? httpResponse)
+    private static JsonRpcClientResult BuildJSONRPCClientResult(JsonRpcClientRequest request, HTTPClientResponse? httpResponse)
     {
         /*if (p_WebResponse == null)
             return new JsonRPCResult() { RawResponse = p_WebResponse, Result = null };
@@ -129,6 +129,11 @@ public class JSONRPCClientHTTP : IJSONRPCClient
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
+    /// <summary>
+    /// Transform call options flags to request options flags
+    /// </summary>
+    /// <param name="callOptions"></param>
+    /// <returns></returns>
     private IHTTPClient.ERequestOptions CallOptionsToRequestOptions(ECallOptions callOptions)
     {
         var requestOptions = IHTTPClient.ERequestOptions.None;
