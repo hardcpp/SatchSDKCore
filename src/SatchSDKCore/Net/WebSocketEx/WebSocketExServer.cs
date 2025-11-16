@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SSC.Net.HttpEx;
+using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -7,33 +8,32 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SSC.Net.WS;
-
+namespace SSC.Net.WebSocketEx;
 
 /// <summary>
-/// WebSocket server class
+/// Advanced WebSocket server class
 /// </summary>
-public class WSServer<TSession,  TSessionID> : HTTPServer.IHTTPServerRequestHandler
-    where TSession   : WSServerSession<TSession, TSessionID>
+public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHandler
+    where TSession   : WebSocketExServerSession<TSession, TSessionID>
     where TSessionID : notnull
 {
-    public delegate TSession d_MakeSession(WSServer<TSession, TSessionID> server, WebSocket webSocket);
+    public delegate TSession d_MakeSession(WebSocketExServer<TSession, TSessionID> server, WebSocket webSocket);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly d_MakeSession                              _sessionFactory;
-    private readonly List<TSession>                             _sessions = new(100);
-    private readonly Thread[]                                   _workers;
-    private readonly List<TSession>[]                           _workerSessions;
-    private readonly ConcurrentQueue<TSession>[]                _workerNewSessions;
+    private readonly d_MakeSession               _sessionFactory;
+    private readonly List<TSession>              _sessions = new(100);
+    private readonly Thread[]                    _workers;
+    private readonly List<TSession>[]            _workerSessions;
+    private readonly ConcurrentQueue<TSession>[] _workerNewSessions;
 
     private bool _isRunning = false;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public readonly HTTPServer.HTTPServer HTTPServer;
+    public readonly HttpServerEx    HTTPServer;
     public readonly string          AbsolutePath;
     public readonly int             MaxReceiveQueueSize;
     public readonly int             MaxFrameLength;
@@ -46,7 +46,7 @@ public class WSServer<TSession,  TSessionID> : HTTPServer.IHTTPServerRequestHand
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="httpServer">HTTPServer instance</param>
+    /// <param name="httpServer">HttpServerEx instance</param>
     /// <param name="absolutePath">URL absolutePath</param>
     /// <param name="makeSession">Session factory</param>
     /// <param name="workerCount">Worker count</param>
@@ -54,8 +54,8 @@ public class WSServer<TSession,  TSessionID> : HTTPServer.IHTTPServerRequestHand
     /// <param name="maxReceiveQueueSize">Max size of the message queue for a session</param>
     /// <param name="maxFrameLength">Message frame length in bytes</param>
     /// <param name="maxMessageLength">Max message length in bytes</param>
-    public WSServer(
-        HTTPServer.HTTPServer httpServer,
+    public WebSocketExServer(
+        HttpServerEx    httpServer,
         string          absolutePath,
         d_MakeSession   makeSession,
         int             workerCount          = 4,
@@ -103,7 +103,7 @@ public class WSServer<TSession,  TSessionID> : HTTPServer.IHTTPServerRequestHand
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Start the HTTPServer server and threads
+    /// Start the HttpServerEx server and threads
     /// </summary>
     public void Start()
     {
@@ -113,7 +113,7 @@ public class WSServer<TSession,  TSessionID> : HTTPServer.IHTTPServerRequestHand
             _workers[i].Start();
     }
     /// <summary>
-    /// Stop the HTTPServer server and wait for all the threads to stop
+    /// Stop the HttpServerEx server and wait for all the threads to stop
     /// </summary>
     public void Stop()
     {
@@ -241,7 +241,7 @@ public class WSServer<TSession,  TSessionID> : HTTPServer.IHTTPServerRequestHand
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    protected override bool TryHandleImplementation(HTTPServer.HTTPServerRequestContext context)
+    protected override bool TryHandleImplementation(HttpServerExRequestContext context)
     {
         if (!_isRunning)
             return false;

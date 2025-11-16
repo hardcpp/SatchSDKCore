@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SSC.Net.HttpEx;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -7,9 +8,9 @@ using System.Threading;
 namespace SSC.APIServer.Handler;
 
 /// <summary>
-/// REST HTTPServer Server handler
+/// REST HttpServerEx Server handler
 /// </summary>
-public class RESTHTTPServerHandler : Net.HTTPServer.IHTTPServerRequestHandler
+public class RESTHTTPServerHandler : IHttpServerExRequestHandler
 {
     public readonly Blueprint.RESTBlueprint MainBlueprint = new Blueprint.RESTBlueprint("Main");
 
@@ -27,7 +28,7 @@ public class RESTHTTPServerHandler : Net.HTTPServer.IHTTPServerRequestHandler
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    protected override bool TryHandleImplementation(Net.HTTPServer.HTTPServerRequestContext context)
+    protected override bool TryHandleImplementation(HttpServerExRequestContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 

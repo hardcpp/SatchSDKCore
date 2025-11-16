@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Net.WebSockets;
 
-namespace SSC.Net.WS;
+namespace SSC.Net.WebSocketEx;
 
 /// <summary>
-/// WSServer session
+/// Advanced WebSocket server session
 /// </summary>
-public abstract class WSServerSession<TSession, TSessionID> : WSCommon
-    where TSession   : WSServerSession<TSession, TSessionID>
+public abstract class WebSocketExServerSession<TSession, TSessionID> : WebSocketExBase
+    where TSession   : WebSocketExServerSession<TSession, TSessionID>
     where TSessionID : notnull
 {
-    public readonly WSServer<TSession, TSessionID> Server;
+    public readonly WebSocketExServer<TSession, TSessionID> Server;
     public readonly TSessionID                     SessionID;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -19,9 +19,9 @@ public abstract class WSServerSession<TSession, TSessionID> : WSCommon
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="server">WSServer instance</param>
+    /// <param name="server">WebSocketExServer instance</param>
     /// <param name="webSocket">WebSocket instance</param>
-    public WSServerSession(WSServer<TSession, TSessionID> server, WebSocket webSocket, TSessionID sessionID)
+    public WebSocketExServerSession(WebSocketExServer<TSession, TSessionID> server, WebSocket webSocket, TSessionID sessionID)
         : base(webSocket, server.Allocator, server.MaxFrameLength, server.MaxMessageLength, server.MaxReceiveQueueSize)
     {
         ArgumentNullException.ThrowIfNull(server);

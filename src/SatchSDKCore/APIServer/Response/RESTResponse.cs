@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using SSC.Net.HttpEx;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -17,7 +18,7 @@ public sealed class RESTResponse : IResponse
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public readonly Net.HTTPServer.HTTPServerResponse HTTPServerResponse;
+    public readonly HttpServerExResponse HTTPServerResponse;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -32,7 +33,7 @@ public sealed class RESTResponse : IResponse
     public RESTResponse(Request.IRequest request, HttpStatusCode code, HttpContent? content, Encoding? contentEncoding)
         : base(request)
     {
-        HTTPServerResponse = new Net.HTTPServer.HTTPServerResponse(code, content, contentEncoding);
+        HTTPServerResponse = new Net.HttpEx.HttpServerExResponse(code, content, contentEncoding);
     }
 
     ////////////////////////////////////////////////////////////////////////////

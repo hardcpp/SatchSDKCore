@@ -8,13 +8,13 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-using static SSC.Net.HTTPClient.IHTTPClient;
+using static SSC.Net.HttpEx.IHttpClientEx;
 
-namespace SSC.Net.HTTPClient;
+namespace SSC.Net.HttpEx;
 
-public class HTTPClientCore : IHTTPClient
+public class HttpClientExCore : IHttpClientEx
 {
-    public static readonly HTTPClientCore GlobalClient = new("", TimeSpan.FromSeconds(10));
+    public static readonly HttpClientExCore GlobalClient = new("", TimeSpan.FromSeconds(10));
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -51,7 +51,7 @@ public class HTTPClientCore : IHTTPClient
     /// </summary>
     /// <param name="baseURL">Base address</param>
     /// <param name="timeout">Maximum timeout</param>
-    public HTTPClientCore(string baseURL, TimeSpan timeout, EOptions options = EOptions.KeepAlive)
+    public HttpClientExCore(string baseURL, TimeSpan timeout, EOptions options = EOptions.KeepAlive)
     {
         Options = options;
 
@@ -60,7 +60,7 @@ public class HTTPClientCore : IHTTPClient
             AutomaticDecompression = DecompressionMethods.All
         };
 
-        _client = new HttpClient(_clientHandler)
+        _client = new System.Net.Http.HttpClient(_clientHandler)
         {
             Timeout               = timeout,
             DefaultRequestVersion = HttpVersion.Version10,
@@ -94,13 +94,13 @@ public class HTTPClientCore : IHTTPClient
     ////////////////////////////////////////////////////////////////////////////
 
     /// <inheritdoc/>
-    public HTTPClientResponse? DoRequest(
-        string                  method,
-        string                  url,
-        HTTPClientPayload?      payload         = null,
-        ERequestOptions         options         = ERequestOptions.None,
-        IHTTPClientDataHandler? dataHandler     = null,
-        IProgress<float>?       progressHandler = null
+    public HttpClientExResponse? DoRequest(
+        string                    method,
+        string                    url,
+        HttpClientExPayload?      payload         = null,
+        ERequestOptions           options         = ERequestOptions.None,
+        IHttpClientExDataHandler? dataHandler     = null,
+        IProgress<float>?         progressHandler = null
     )
     {
         var task = DoRequestImpl(method, url, null, CancellationToken.None, null, options, dataHandler, progressHandler);
@@ -110,24 +110,24 @@ public class HTTPClientCore : IHTTPClient
     }
     /// <inheritdoc/>
     public void DoRequestInBackground(
-        string                       method,
-        string                       url,
-        CancellationToken            cancellationToken,
-        Action<HTTPClientResponse?>? callback,
-        HTTPClientPayload?           payload           = null,
-        ERequestOptions              options           = ERequestOptions.None,
-        IHTTPClientDataHandler?      dataHandler       = null,
-        IProgress<float>?            progressHandler   = null
+        string                         method,
+        string                         url,
+        CancellationToken              cancellationToken,
+        Action<HttpClientExResponse?>? callback,
+        HttpClientExPayload?           payload           = null,
+        ERequestOptions                options           = ERequestOptions.None,
+        IHttpClientExDataHandler?      dataHandler       = null,
+        IProgress<float>?              progressHandler   = null
     ) => DoRequestImpl(method, url, payload, cancellationToken, callback, options, dataHandler, progressHandler).ConfigureAwait(false);
     /// <inheritdoc/>
-    public async Task<HTTPClientResponse?> DoRequestAsync(
-        string                  method,
-        string                  url,
-        CancellationToken       cancellationToken,
-        HTTPClientPayload?      payload           = null,
-        ERequestOptions         options           = ERequestOptions.None,
-        IHTTPClientDataHandler? dataHandler       = null,
-        IProgress<float>?       progressHandler   = null
+    public async Task<HttpClientExResponse?> DoRequestAsync(
+        string                    method,
+        string                    url,
+        CancellationToken         cancellationToken,
+        HttpClientExPayload?      payload           = null,
+        ERequestOptions           options           = ERequestOptions.None,
+        IHttpClientExDataHandler? dataHandler       = null,
+        IProgress<float>?         progressHandler   = null
     ) => await DoRequestImpl(method, url, payload, cancellationToken, null, options, dataHandler, progressHandler).ConfigureAwait(false);
 
     ////////////////////////////////////////////////////////////////////////////
@@ -166,22 +166,22 @@ public class HTTPClientCore : IHTTPClient
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns></returns>
-    private async Task<HTTPClientResponse?> DoRequestImpl(
-        string                       method,
-        string                       url,
-        HTTPClientPayload?           payload,
-        CancellationToken            cancellationToken,
-        Action<HTTPClientResponse?>? callback,
-        ERequestOptions              options,
-        IHTTPClientDataHandler?      dataHandler,
-        IProgress<float>?            progressHandler
+    private async Task<HttpClientExResponse?> DoRequestImpl(
+        string                         method,
+        string                         url,
+        HttpClientExPayload?           payload,
+        CancellationToken              cancellationToken,
+        Action<HttpClientExResponse?>? callback,
+        ERequestOptions                options,
+        IHttpClientExDataHandler?      dataHandler,
+        IProgress<float>?              progressHandler
     )
     {
 #if DEBUG
         Logging.Log(ELogSeverity.Debug, $"[CP_SDK.Network][WebClientCore] {method} " + url);
 #endif
 
-        HTTPClientResponse? lastResponse = null;
+        HttpClientExResponse? lastResponse = null;
         ENestedFlowControl  flowControl;
 
         for (int currentRetryI = 0; currentRetryI < MaxRetry; currentRetryI++)
@@ -202,7 +202,7 @@ public class HTTPClientCore : IHTTPClient
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                lastResponse = new HTTPClientResponse(baseHttpResponse);
+                lastResponse = new HttpClientExResponse(baseHttpResponse);
 
                 if (lastResponse.IsRateLimited)
                 {
@@ -257,17 +257,17 @@ public class HTTPClientCore : IHTTPClient
     /// <summary>
     /// Prepare and start a request
     /// </summary>
-    /// <param name="method">HTTPServer method</param>
+    /// <param name="method">HttpServerEx method</param>
     /// <param name="url">URL to request</param>
     /// <param name="payload">Request payload</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The prepared and started core http request resultResponse</returns>
     /// <exception cref="ArgumentException">If the method is not supported/implemented</exception>
     private async ValueTask<HttpResponseMessage> PrepareAndStartRequest(
-        string              method,
-        string              url,
-        HTTPClientPayload?  payload,
-        CancellationToken   cancellationToken
+        string               method,
+        string               url,
+        HttpClientExPayload? payload,
+        CancellationToken    cancellationToken
     )
     {
         ByteArrayContent? content = null;
@@ -293,13 +293,13 @@ public class HTTPClientCore : IHTTPClient
     /// <param name="options">Request options</param>
     /// <returns>ENestedFlowControl for the caller</returns>
     private async ValueTask<ENestedFlowControl> HandleRateLimit(
-        HttpResponseMessage baseHttpResponse,
-        HTTPClientResponse  resultResponse,
-        CancellationToken   cancellationToken,
-        ERequestOptions     options
+        HttpResponseMessage  baseHttpResponse,
+        HttpClientExResponse resultResponse,
+        CancellationToken    cancellationToken,
+        ERequestOptions      options
     )
     {
-        var rateLimitInfo = HTTPClientRateLimitInfo.Get(baseHttpResponse);
+        var rateLimitInfo = HttpClientExRateLimitInfo.Get(baseHttpResponse);
         if (rateLimitInfo == null)
         {
             // TODO log unable to get rate limit info
@@ -334,12 +334,12 @@ public class HTTPClientCore : IHTTPClient
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     private async ValueTask HandleResponse(
-        HttpResponseMessage     baseHttpResponse,
-        HTTPClientResponse      resultResponse,
-        CancellationToken       cancellationToken,
-        ERequestOptions         options,
-        IHTTPClientDataHandler? dataHandler,
-        IProgress<float>?       progressHandler
+        HttpResponseMessage       baseHttpResponse,
+        HttpClientExResponse      resultResponse,
+        CancellationToken         cancellationToken,
+        ERequestOptions           options,
+        IHttpClientExDataHandler? dataHandler,
+        IProgress<float>?         progressHandler
     )
     {
         var memoryStream   = new MemoryStream();

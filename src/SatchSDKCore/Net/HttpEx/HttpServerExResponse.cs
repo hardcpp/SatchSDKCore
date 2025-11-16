@@ -3,12 +3,12 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 
-namespace SSC.Net.HTTPServer;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
-/// HTTP Server response
+/// Advanced Http Server response
 /// </summary>
-public class HTTPServerResponse
+public class HttpServerExResponse
 {
     public readonly HttpStatusCode Code;
     public readonly HttpContent?   Content;
@@ -24,7 +24,7 @@ public class HTTPServerResponse
     /// <param name="code">Response code</param>
     /// <param name="content">Content</param>
     /// <param name="contentEncoding">Optional encoding</param>
-    public HTTPServerResponse(HttpStatusCode code, HttpContent? content, Encoding? contentEncoding)
+    public HttpServerExResponse(HttpStatusCode code, HttpContent? content, Encoding? contentEncoding)
     {
         Code            = code;
         Content         = content;

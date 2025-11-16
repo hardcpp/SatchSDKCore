@@ -4,12 +4,12 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SSC.Net.HTTPClient;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
-/// Web Client interface
+/// Advance Http Client interface
 /// </summary>
-public interface IHTTPClient
+public interface IHttpClientEx
 {
     /// <summary>
     /// Global client options
@@ -49,25 +49,25 @@ public interface IHTTPClient
     /// Do a sync request
     /// </summary>
     /// <param name="url">Target URL</param>
-    /// <param name="method">HTTPServer method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
+    /// <param name="method">HttpServerEx method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
     /// <param name="payload">Request payload</param>
     /// <param name="options">Request options</param>
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns>The response if the request reached the server</returns>
-    public HTTPClientResponse? DoRequest(
-        string                  method,
-        string                  url,
-        HTTPClientPayload?      payload         = null,
-        ERequestOptions         options         = ERequestOptions.None,
-        IHTTPClientDataHandler? dataHandler     = null,
-        IProgress<float>?       progressHandler = null
+    public HttpClientExResponse? DoRequest(
+        string                    method,
+        string                    url,
+        HttpClientExPayload?      payload         = null,
+        ERequestOptions           options         = ERequestOptions.None,
+        IHttpClientExDataHandler? dataHandler     = null,
+        IProgress<float>?         progressHandler = null
     );
     /// <summary>
     /// Do a non-blocking request in the background with a callback
     /// </summary>
     /// <param name="url">Target URL</param>
-    /// <param name="method">HTTPServer method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
+    /// <param name="method">HttpServerEx method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="callback">Callback</param>
     /// <param name="payload">Request payload</param>
@@ -75,33 +75,33 @@ public interface IHTTPClient
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     public void DoRequestInBackground(
-        string                       method,
-        string                       url,
-        CancellationToken            cancellationToken,
-        Action<HTTPClientResponse?>? callback,
-        HTTPClientPayload?           payload           = null,
-        ERequestOptions              options           = ERequestOptions.None,
-        IHTTPClientDataHandler?      dataHandler       = null,
-        IProgress<float>?            progressHandler   = null
+        string                         method,
+        string                         url,
+        CancellationToken              cancellationToken,
+        Action<HttpClientExResponse?>? callback,
+        HttpClientExPayload?           payload           = null,
+        ERequestOptions                options           = ERequestOptions.None,
+        IHttpClientExDataHandler?      dataHandler       = null,
+        IProgress<float>?              progressHandler   = null
     );
     /// <summary>
     /// Do an async request
     /// </summary>
     /// <param name="url">Target URL</param>
-    /// <param name="method">HTTPServer method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
+    /// <param name="method">HttpServerEx method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="payload">Request payload</param>
     /// <param name="options">Request options</param>
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns>The response if the request reached the server</returns>
-    public Task<HTTPClientResponse?> DoRequestAsync(
-        string                  method,
-        string                  url,
-        CancellationToken       cancellationToken,
-        HTTPClientPayload?      payload           = null,
-        ERequestOptions         options           = ERequestOptions.None,
-        IHTTPClientDataHandler? dataHandler       = null,
-        IProgress<float>?       progressHandler   = null
+    public Task<HttpClientExResponse?> DoRequestAsync(
+        string                    method,
+        string                    url,
+        CancellationToken         cancellationToken,
+        HttpClientExPayload?      payload           = null,
+        ERequestOptions           options           = ERequestOptions.None,
+        IHttpClientExDataHandler? dataHandler       = null,
+        IProgress<float>?         progressHandler   = null
     );
 }

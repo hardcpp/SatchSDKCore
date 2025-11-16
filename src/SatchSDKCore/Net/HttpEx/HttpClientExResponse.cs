@@ -6,38 +6,38 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 
-namespace SSC.Net.HTTPClient;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
 /// Web Response class
 /// </summary>
-public sealed class HTTPClientResponse
+public sealed class HttpClientExResponse
 {
     private static readonly byte[] s_UTF8Preamble = Encoding.UTF8.GetPreamble();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private byte[]?                 _bodyBytes       = null;
-    private IHTTPClientDataHandler? _bodyDataHandler = null;
-    private string?                 _bodyString      = null;
+    private byte[]?                   _bodyBytes       = null;
+    private IHttpClientExDataHandler? _bodyDataHandler = null;
+    private string?                   _bodyString      = null;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     public readonly HttpStatusCode           StatusCode;
     public readonly string?                  ReasonPhrase;
-    public          HTTPClientRateLimitInfo? RateLimitInfo       { get; private set; }
+    public          HttpClientExRateLimitInfo? RateLimitInfo       { get; private set; }
     public readonly bool                     IsSuccessStatusCode;
     public readonly bool                     ShouldRetry;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public bool                     IsRateLimited => !IsSuccessStatusCode && StatusCode == (HttpStatusCode)429;
-    public byte[]?                  BodyBytes     => _bodyBytes;
-    public IHTTPClientDataHandler?  BodyHandler   => _bodyDataHandler;
-    public string?                  BodyString    {
+    public bool                      IsRateLimited => !IsSuccessStatusCode && StatusCode == (HttpStatusCode)429;
+    public byte[]?                   BodyBytes     => _bodyBytes;
+    public IHttpClientExDataHandler? BodyHandler   => _bodyDataHandler;
+    public string?                   BodyString    {
         get
         {
             if (_bodyString != null)
@@ -72,7 +72,7 @@ public sealed class HTTPClientResponse
     /// <param name="statusCode">Result status code</param>
     /// <param name="reasonPhrase">Code reason if any</param>
     /// <param name="isSuccessStatusCode">If the status code considered success?</param>
-    public HTTPClientResponse(
+    public HttpClientExResponse(
         HttpStatusCode statusCode,
         string?        reasonPhrase,
         bool           isSuccessStatusCode
@@ -87,7 +87,7 @@ public sealed class HTTPClientResponse
     /// Constructor
     /// </summary>
     /// <param name="coreHttpResponse">Reply status</param>
-    public HTTPClientResponse(HttpResponseMessage coreHttpResponse)
+    public HttpClientExResponse(HttpResponseMessage coreHttpResponse)
     {
         StatusCode          = coreHttpResponse.StatusCode;
         ReasonPhrase        = coreHttpResponse.ReasonPhrase;
@@ -119,7 +119,7 @@ public sealed class HTTPClientResponse
     /// </summary>
     /// <param name="bodyDataHandler">New body data handler</param>
     /// <exception cref="InvalidOperationException">If the content have already been set</exception>
-    public void DangerousSetBodyDataHandler(IHTTPClientDataHandler bodyDataHandler)
+    public void DangerousSetBodyDataHandler(IHttpClientExDataHandler bodyDataHandler)
     {
         ArgumentNullException.ThrowIfNull(bodyDataHandler);
 
@@ -134,7 +134,7 @@ public sealed class HTTPClientResponse
     /// Set rate limit info
     /// </summary>
     /// <param name="rateLimitInfo">New rate limit info</param>
-    public void DangerousSetRateLimit(HTTPClientRateLimitInfo rateLimitInfo)
+    public void DangerousSetRateLimit(HttpClientExRateLimitInfo rateLimitInfo)
     {
         RateLimitInfo = rateLimitInfo;
     }

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 
-namespace SSC.Net.HTTPClient;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
 /// Rate Limit Info
 /// </summary>
-public sealed class HTTPClientRateLimitInfo
+public sealed class HttpClientExRateLimitInfo
 {
     /// <summary>
     /// Total allowed requests for a given time window
@@ -27,19 +27,19 @@ public sealed class HTTPClientRateLimitInfo
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Get HTTPClientRateLimitInfo from HttpResponseMessage
+    /// Get HttpClientExRateLimitInfo from HttpResponseMessage
     /// </summary>
     /// <param name="coreHttpResponseMessage">Response</param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    public static HTTPClientRateLimitInfo Get(HttpResponseMessage coreHttpResponseMessage)
+    public static HttpClientExRateLimitInfo Get(HttpResponseMessage coreHttpResponseMessage)
     {
         if (coreHttpResponseMessage == null)
             throw new ArgumentNullException(nameof(coreHttpResponseMessage));
 
         var headers = GetFlattenedHeaders(coreHttpResponseMessage);
 
-        return new HTTPClientRateLimitInfo()
+        return new HttpClientExRateLimitInfo()
         {
             Limit       = GetLimit(headers),
             Remaining   = GetRemaining(headers),

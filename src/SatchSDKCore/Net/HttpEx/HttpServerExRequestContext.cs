@@ -1,21 +1,21 @@
 ﻿using System.Net;
 
-namespace SSC.Net.HTTPServer;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
-/// HTTP Server request context
+/// Advanced Http Server request context
 /// </summary>
-public class HTTPServerRequestContext
+public class HttpServerExRequestContext
 {
     public readonly HttpListenerContext ListenerContext;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public HttpListenerRequest  ListenerRequest  => ListenerContext.Request;
-    public HttpListenerResponse ListenerResponse => ListenerContext.Response;
-    public HTTPServerResponse?  ServerResponse;
-    public bool                 ConnectionUpgraded { get; internal set; } = false;
+    public HttpListenerRequest   ListenerRequest  => ListenerContext.Request;
+    public HttpListenerResponse  ListenerResponse => ListenerContext.Response;
+    public HttpServerExResponse? ServerResponse;
+    public bool                  ConnectionUpgraded { get; internal set; } = false;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -24,7 +24,7 @@ public class HTTPServerRequestContext
     /// Constructor
     /// </summary>
     /// <param name="listenerContext">Original context</param>
-    public HTTPServerRequestContext(HttpListenerContext listenerContext)
+    public HttpServerExRequestContext(HttpListenerContext listenerContext)
     {
         ListenerContext = listenerContext;
     }

@@ -6,14 +6,14 @@ using System.Globalization;
 using System.Text;
 using System;
 
-namespace SSC.Net.HTTPClient;
+namespace SSC.Net.HttpEx;
 
 /// <summary>
-/// HTTPClientPayload
+/// Advanced Http client payload
 /// </summary>
-public class HTTPClientPayload
+public class HttpClientExPayload
 {
-    public static HTTPClientPayload Empty = new HTTPClientPayload(Array.Empty<byte>(), "");
+    public static HttpClientExPayload Empty = new HttpClientExPayload(Array.Empty<byte>(), "");
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -35,7 +35,7 @@ public class HTTPClientPayload
     /// </summary>
     /// <param name="bytes">Bytes</param>
     /// <param name="type">Content</param>
-    private HTTPClientPayload(byte[] bytes, string type)
+    private HttpClientExPayload(byte[] bytes, string type)
     {
         Bytes = bytes;
         Type  = type;
@@ -49,7 +49,7 @@ public class HTTPClientPayload
     /// </summary>
     /// <param name="formFields">Form fields</param>
     /// <returns></returns>
-    public static HTTPClientPayload FromForm(IReadOnlyDictionary<string, string> formFields)
+    public static HttpClientExPayload FromForm(IReadOnlyDictionary<string, string> formFields)
     {
         var content = new StringBuilder(1024);
         foreach ((var key, var value) in formFields)
@@ -60,7 +60,7 @@ public class HTTPClientPayload
             content.Append(string.Format(CultureInfo.InvariantCulture, "{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value)));
         }
 
-        return new HTTPClientPayload(Encoding.UTF8.GetBytes(content.ToString()), "application/x-www-form-urlencoded");
+        return new HttpClientExPayload(Encoding.UTF8.GetBytes(content.ToString()), "application/x-www-form-urlencoded");
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -71,22 +71,22 @@ public class HTTPClientPayload
     /// </summary>
     /// <param name="content">Json content</param>
     /// <returns></returns>
-    public static HTTPClientPayload FromJsonString(string content)
-        => new HTTPClientPayload(Encoding.UTF8.GetBytes(content), $"application/json; charset=utf-8");
+    public static HttpClientExPayload FromJsonString(string content)
+        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content), $"application/json; charset=utf-8");
     /// <summary>
     /// Constructor from Json
     /// </summary>
     /// <param name="content">Json content</param>
     /// <param name="indent">Should indent?</param>
     /// <returns></returns>
-    public static HTTPClientPayload FromJson(JObject content, bool indent = false)
-        => new HTTPClientPayload(Encoding.UTF8.GetBytes(content.ToString(indent ? Formatting.Indented : Formatting.None)), $"application/json; charset=utf-8");
+    public static HttpClientExPayload FromJson(JObject content, bool indent = false)
+        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content.ToString(indent ? Formatting.Indented : Formatting.None)), $"application/json; charset=utf-8");
     /// <summary>
     /// Constructor from Json
     /// </summary>
     /// <param name="content">Json content</param>
     /// <param name="indend">Should indent?</param>
     /// <returns></returns>
-    public static HTTPClientPayload FromJson(object content, bool indend = false)
-        => new HTTPClientPayload(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content, indend ? Formatting.Indented : Formatting.None)), $"application/json; charset=utf-8");
+    public static HttpClientExPayload FromJson(object content, bool indend = false)
+        => new HttpClientExPayload(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content, indend ? Formatting.Indented : Formatting.None)), $"application/json; charset=utf-8");
 }
