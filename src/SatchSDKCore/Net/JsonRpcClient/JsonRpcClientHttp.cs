@@ -1,4 +1,4 @@
-﻿using SSC.Net.HTTPClient;
+﻿using SSC.Net.HttpEx;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
@@ -11,14 +11,14 @@ namespace SSC.Net.JSONRPCClient;
 /// </summary>
 public class JsonRpcClientHttp : IJsonRpcClient
 {
-    private readonly IHTTPClient _httpClient;
-    private readonly string?     _overrideURL;
+    private readonly IHttpClientEx _httpClient;
+    private readonly string?       _overrideURL;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public IHTTPClient HTTPClient  => _httpClient;
-    public string?     OverrideURL => _overrideURL;
+    public IHttpClientEx HTTPClient  => _httpClient;
+    public string?       OverrideURL => _overrideURL;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -27,7 +27,7 @@ public class JsonRpcClientHttp : IJsonRpcClient
     /// Constructor
     /// </summary>
     /// <param name="httpClient">HTTP client to use</param>
-    public JsonRpcClientHttp(IHTTPClient httpClient, string? overrideURL = null)
+    public JsonRpcClientHttp(IHttpClientEx httpClient, string? overrideURL = null)
     {
         _httpClient  = httpClient;
         _overrideURL = overrideURL;
@@ -47,7 +47,7 @@ public class JsonRpcClientHttp : IJsonRpcClient
         var httpResult = _httpClient.DoRequest(
             "POST",
             _overrideURL ?? string.Empty,
-            HTTPClientPayload.FromJson(request, indend: false),
+            HttpClientExPayload.FromJson(request, indend: false),
             CallOptionsToRequestOptions(options)
         );
 
@@ -68,7 +68,7 @@ public class JsonRpcClientHttp : IJsonRpcClient
             _overrideURL ?? string.Empty,
             cancellationToken,
             (httpResult) => { callback?.Invoke(BuildJSONRPCClientResult(request, httpResult)); },
-            HTTPClientPayload.FromJson(request, indend: false),
+            HttpClientExPayload.FromJson(request, indend: false),
             CallOptionsToRequestOptions(options)
         );
     }
@@ -85,7 +85,7 @@ public class JsonRpcClientHttp : IJsonRpcClient
             "POST",
             _overrideURL ?? string.Empty,
             cancellationToken,
-            HTTPClientPayload.FromJson(request, indend: false),
+            HttpClientExPayload.FromJson(request, indend: false),
             CallOptionsToRequestOptions(options)
         ).ConfigureAwait(false);
 
@@ -101,7 +101,7 @@ public class JsonRpcClientHttp : IJsonRpcClient
     /// <param name="p_Method">Called method</param>
     /// <param name="p_WebResponse">Web response</param>
     /// <returns></returns>
-    private static JsonRpcClientResult BuildJSONRPCClientResult(JsonRpcClientRequest request, HTTPClientResponse? httpResponse)
+    private static JsonRpcClientResult BuildJSONRPCClientResult(JsonRpcClientRequest request, HttpClientExResponse? httpResponse)
     {
         /*if (p_WebResponse == null)
             return new JsonRPCResult() { RawResponse = p_WebResponse, Result = null };
@@ -134,11 +134,11 @@ public class JsonRpcClientHttp : IJsonRpcClient
     /// </summary>
     /// <param name="callOptions"></param>
     /// <returns></returns>
-    private IHTTPClient.ERequestOptions CallOptionsToRequestOptions(ECallOptions callOptions)
+    private IHttpClientEx.ERequestOptions CallOptionsToRequestOptions(ECallOptions callOptions)
     {
-        var requestOptions = IHTTPClient.ERequestOptions.None;
+        var requestOptions = IHttpClientEx.ERequestOptions.None;
         if (callOptions.HasFlag(ECallOptions.IgnoreRetryPolicy))
-            requestOptions |= IHTTPClient.ERequestOptions.IgnoreRetryPolicy;
+            requestOptions |= IHttpClientEx.ERequestOptions.IgnoreRetryPolicy;
 
         return requestOptions;
     }
