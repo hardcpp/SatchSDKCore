@@ -1,4 +1,4 @@
-﻿using SatchSDKCore.Net.HttpEx;
+﻿using SSC.Net.HttpEx;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;

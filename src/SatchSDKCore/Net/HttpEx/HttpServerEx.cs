@@ -21,20 +21,20 @@ public class HttpServerEx
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly HttpListener                         m_Listener;
-    private readonly Thread                               m_ListenerThread;
-    private readonly Thread[]                             m_Workers;
-    private readonly ConcurrentQueue<HttpListenerContext> m_ContextQueue;
-    private readonly ManualResetEvent                     m_ContextQueueEvent;
+    private readonly HttpListener                         _listener;
+    private readonly Thread                               _listenerThread;
+    private readonly Thread[]                             _workers;
+    private readonly ConcurrentQueue<HttpListenerContext> _contextQueue;
+    private readonly ManualResetEvent                     _contextQueueEvent;
 
-    private IHttpServerExRequestHook[]    m_EarlyHooks = Array.Empty<IHttpServerExRequestHook>();
-    private IHttpServerExRequestHandler[] m_Handlers   = Array.Empty<IHttpServerExRequestHandler>();
-    private IHttpServerExRequestHook[]    m_LateHooks  = Array.Empty<IHttpServerExRequestHook>();
+    private IHttpServerExRequestHook[]    _earlyHooks = Array.Empty<IHttpServerExRequestHook>();
+    private IHttpServerExRequestHandler[] _handlers   = Array.Empty<IHttpServerExRequestHandler>();
+    private IHttpServerExRequestHook[]    _lateHooks  = Array.Empty<IHttpServerExRequestHook>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public HttpListener listener => m_Listener;
+    public HttpListener listener => _listener;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -48,20 +48,20 @@ public class HttpServerEx
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(workerCount, 1);
 
-        m_Listener = new HttpListener();
-        m_Listener.Prefixes.Add(prefix);
+        _listener = new HttpListener();
+        _listener.Prefixes.Add(prefix);
 
-        m_ListenerThread = new Thread(ListenerLoop);
+        _listenerThread = new Thread(ListenerLoop);
 
-        m_Workers = new Thread[workerCount];
-        for (int l_I = 0; l_I < m_Workers.Length; l_I++)
+        _workers = new Thread[workerCount];
+        for (int l_I = 0; l_I < _workers.Length; l_I++)
         {
-            m_Workers[l_I]      = new Thread(WorkerLoop);
-            m_Workers[l_I].Name = $"HTTPServer {GetHashCode()} Worker #{l_I + 1}";
+            _workers[l_I]      = new Thread(WorkerLoop);
+            _workers[l_I].Name = $"HTTPServer {GetHashCode()} Worker #{l_I + 1}";
         }
 
-        m_ContextQueue      = new ConcurrentQueue<HttpListenerContext>();
-        m_ContextQueueEvent = new ManualResetEvent(false);
+        _contextQueue      = new ConcurrentQueue<HttpListenerContext>();
+        _contextQueueEvent = new ManualResetEvent(false);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -75,15 +75,15 @@ public class HttpServerEx
     {
         ArgumentNullException.ThrowIfNull(earlyHook);
 
-        var l_ExistingIdx = Array.IndexOf(m_EarlyHooks, earlyHook);
-        if (l_ExistingIdx != -1)
+        var existingIdx = Array.IndexOf(_earlyHooks, earlyHook);
+        if (existingIdx != -1)
             return;
 
-        var l_NewEarlyHooks = new IHttpServerExRequestHook[m_EarlyHooks.Length + 1];
-        Array.Copy(m_EarlyHooks, l_NewEarlyHooks, m_EarlyHooks.Length);
-        l_NewEarlyHooks[^1] = earlyHook;
+        var newEarlyHooks = new IHttpServerExRequestHook[_earlyHooks.Length + 1];
+        Array.Copy(_earlyHooks, newEarlyHooks, _earlyHooks.Length);
+        newEarlyHooks[^1] = earlyHook;
 
-        m_EarlyHooks = l_NewEarlyHooks;
+        _earlyHooks = newEarlyHooks;
     }
     /// <summary>
     /// Remove a early request Hook
@@ -93,16 +93,16 @@ public class HttpServerEx
     {
         ArgumentNullException.ThrowIfNull(earlyHook);
 
-        var l_OldEarlyHooks = m_EarlyHooks;
-        var l_ExistingIdx = Array.IndexOf(l_OldEarlyHooks, earlyHook);
-        if (l_ExistingIdx == -1)
+        var oldEarlyHooks = _earlyHooks;
+        var existingIdx = Array.IndexOf(oldEarlyHooks, earlyHook);
+        if (existingIdx == -1)
             return;
 
-        var l_NewEarlyHooks = new IHttpServerExRequestHook[l_OldEarlyHooks.Length - 1];
-        Array.Copy(l_OldEarlyHooks,                 0, l_NewEarlyHooks,             0,                                l_ExistingIdx);
-        Array.Copy(l_OldEarlyHooks, l_ExistingIdx + 1, l_NewEarlyHooks, l_ExistingIdx, l_OldEarlyHooks.Length - l_ExistingIdx - 1);
+        var newEarlyHooks = new IHttpServerExRequestHook[oldEarlyHooks.Length - 1];
+        Array.Copy(oldEarlyHooks,               0, newEarlyHooks,           0,                            existingIdx);
+        Array.Copy(oldEarlyHooks, existingIdx + 1, newEarlyHooks, existingIdx, oldEarlyHooks.Length - existingIdx - 1);
 
-        m_EarlyHooks = l_NewEarlyHooks;
+        _earlyHooks = newEarlyHooks;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -116,15 +116,15 @@ public class HttpServerEx
     {
         ArgumentNullException.ThrowIfNull(handler);
 
-        var l_ExistingIdx = Array.IndexOf(m_Handlers, handler);
-        if (l_ExistingIdx != -1)
+        var existingIdx = Array.IndexOf(_handlers, handler);
+        if (existingIdx != -1)
             return;
 
-        var l_NewHandlers = new IHttpServerExRequestHandler[m_Handlers.Length + 1];
-        Array.Copy(m_Handlers, l_NewHandlers, m_Handlers.Length);
-        l_NewHandlers[^1] = handler;
+        var newHandlers = new IHttpServerExRequestHandler[_handlers.Length + 1];
+        Array.Copy(_handlers, newHandlers, _handlers.Length);
+        newHandlers[^1] = handler;
 
-        m_Handlers = l_NewHandlers;
+        _handlers = newHandlers;
     }
     /// <summary>
     /// Remove a request handler
@@ -134,16 +134,16 @@ public class HttpServerEx
     {
         ArgumentNullException.ThrowIfNull(handler);
 
-        var l_OldHandlers = m_Handlers;
-        var l_ExistingIdx = Array.IndexOf(l_OldHandlers, handler);
-        if (l_ExistingIdx == -1)
+        var oldHandlers = _handlers;
+        var existingIdx = Array.IndexOf(oldHandlers, handler);
+        if (existingIdx == -1)
             return;
 
-        var l_NewHandlers = new IHttpServerExRequestHandler[l_OldHandlers.Length - 1];
-        Array.Copy(l_OldHandlers,                 0, l_NewHandlers,             0,                              l_ExistingIdx);
-        Array.Copy(l_OldHandlers, l_ExistingIdx + 1, l_NewHandlers, l_ExistingIdx, l_OldHandlers.Length - l_ExistingIdx - 1);
+        var newHandlers = new IHttpServerExRequestHandler[oldHandlers.Length - 1];
+        Array.Copy(oldHandlers,               0, newHandlers,           0,                          existingIdx);
+        Array.Copy(oldHandlers, existingIdx + 1, newHandlers, existingIdx, oldHandlers.Length - existingIdx - 1);
 
-        m_Handlers = l_NewHandlers;
+        _handlers = newHandlers;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -157,15 +157,15 @@ public class HttpServerEx
     {
         ArgumentNullException.ThrowIfNull(lateHook);
 
-        var l_ExistingIdx = Array.IndexOf(m_LateHooks, lateHook);
-        if (l_ExistingIdx != -1)
+        var existingIdx = Array.IndexOf(_lateHooks, lateHook);
+        if (existingIdx != -1)
             return;
 
-        var l_NewLateHooks = new IHttpServerExRequestHook[m_LateHooks.Length + 1];
-        Array.Copy(m_LateHooks, l_NewLateHooks, m_LateHooks.Length);
-        l_NewLateHooks[^1] = lateHook;
+        var newLateHooks = new IHttpServerExRequestHook[_lateHooks.Length + 1];
+        Array.Copy(_lateHooks, newLateHooks, _lateHooks.Length);
+        newLateHooks[^1] = lateHook;
 
-        m_LateHooks = l_NewLateHooks;
+        _lateHooks = newLateHooks;
     }
     /// <summary>
     /// Remove a late request Hook
@@ -175,16 +175,16 @@ public class HttpServerEx
     {
         ArgumentNullException.ThrowIfNull(lateHook);
 
-        var l_OldLateHooks = m_LateHooks;
-        var l_ExistingIdx = Array.IndexOf(l_OldLateHooks, lateHook);
-        if (l_ExistingIdx == -1)
+        var oldLateHooks = _lateHooks;
+        var existingIdx = Array.IndexOf(oldLateHooks, lateHook);
+        if (existingIdx == -1)
             return;
 
-        var l_NewLateHooks = new IHttpServerExRequestHook[l_OldLateHooks.Length - 1];
-        Array.Copy(l_OldLateHooks,                 0, l_NewLateHooks,             0,                               l_ExistingIdx);
-        Array.Copy(l_OldLateHooks, l_ExistingIdx + 1, l_NewLateHooks, l_ExistingIdx, l_OldLateHooks.Length - l_ExistingIdx - 1);
+        var newLateHooks = new IHttpServerExRequestHook[oldLateHooks.Length - 1];
+        Array.Copy(oldLateHooks,               0, newLateHooks,           0,                           existingIdx);
+        Array.Copy(oldLateHooks, existingIdx + 1, newLateHooks, existingIdx, oldLateHooks.Length - existingIdx - 1);
 
-        m_LateHooks = l_NewLateHooks;
+        _lateHooks = newLateHooks;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -195,36 +195,36 @@ public class HttpServerEx
     /// </summary>
     public void Start()
     {
-        m_Listener.Start();
-        m_ListenerThread.Start();
+        _listener.Start();
+        _listenerThread.Start();
 
-        for (int l_I = 0; l_I < m_Workers.Length; l_I++)
-            m_Workers[l_I].Start();
+        for (int i = 0; i < _workers.Length; i++)
+            _workers[i].Start();
     }
     /// <summary>
     /// Wait for the server
     /// </summary>
     public void Wait()
     {
-        if (!m_Listener.IsListening)
+        if (!_listener.IsListening)
             return;
 
-        m_ListenerThread.Join();
+        _listenerThread.Join();
     }
     /// <summary>
     /// Stop the HttpServerEx server and wait for all the threads to stop
     /// </summary>
     public void Stop()
     {
-        if (!m_Listener.IsListening)
+        if (!_listener.IsListening)
             return;
 
-        m_Listener.Stop();
-        m_Listener.Close();
+        _listener.Stop();
+        _listener.Close();
 
-        m_ListenerThread.Join();
-        for (int l_I = 0; l_I < m_Workers.Length; l_I++)
-            m_Workers[l_I].Join();
+        _listenerThread.Join();
+        for (int i = 0; i < _workers.Length; i++)
+            _workers[i].Join();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -235,11 +235,11 @@ public class HttpServerEx
     /// </summary>
     private void ListenerLoop()
     {
-        var l_Callback = new AsyncCallback(OnRequestReceived);
-        while (m_Listener.IsListening)
+        var callback = new AsyncCallback(OnRequestReceived);
+        while (_listener.IsListening)
         {
-            var l_Context = m_Listener.BeginGetContext(l_Callback, null);
-            l_Context.AsyncWaitHandle.WaitOne();
+            var context = _listener.BeginGetContext(callback, null);
+            context.AsyncWaitHandle.WaitOne();
         }
     }
     /// <summary>
@@ -247,16 +247,16 @@ public class HttpServerEx
     /// </summary>
     private void WorkerLoop()
     {
-        while (m_Listener.IsListening)
+        while (_listener.IsListening)
         {
-            if (!m_ContextQueueEvent.WaitOne(TimeSpan.FromMilliseconds(250)))
+            if (!_contextQueueEvent.WaitOne(TimeSpan.FromMilliseconds(250)))
                 continue;
 
-            if (m_ContextQueue.TryDequeue(out HttpListenerContext? context) && context != null)
+            if (_contextQueue.TryDequeue(out HttpListenerContext? context) && context != null)
                 HandleRequest(context);
 
-            if (m_ContextQueue.IsEmpty)
-                m_ContextQueueEvent.Reset();
+            if (_contextQueue.IsEmpty)
+                _contextQueueEvent.Reset();
         }
     }
 
@@ -269,11 +269,11 @@ public class HttpServerEx
     /// <param name="result">Async callback data</param>
     private void OnRequestReceived(IAsyncResult result)
     {
-        if (!m_Listener.IsListening)
+        if (!_listener.IsListening)
             return;
 
-        m_ContextQueue.Enqueue(m_Listener.EndGetContext(result));
-        m_ContextQueueEvent.Set();
+        _contextQueue.Enqueue(_listener.EndGetContext(result));
+        _contextQueueEvent.Set();
     }
     /// <summary>
     /// Handle a single request, passing it to the first willing IHTTPRequestHandler
@@ -281,49 +281,49 @@ public class HttpServerEx
     /// <param name="listenerContext">Request context</param>
     private void HandleRequest(HttpListenerContext listenerContext)
     {
-        var l_ServerContext = null as HttpServerExRequestContext;
+        var serverContext = null as HttpServerExRequestContext;
         try
         {
-            l_ServerContext = new HttpServerExRequestContext(listenerContext);
-            Logging.Log(ELogSeverity.Verbose, $"Request received: {l_ServerContext.ListenerRequest.HttpMethod} {l_ServerContext.ListenerRequest.Url}");
+            serverContext = new HttpServerExRequestContext(listenerContext);
+            Logging.Log(ELogSeverity.Verbose, $"Request received: {serverContext.ListenerRequest.HttpMethod} {serverContext.ListenerRequest.Url}");
 
-            var l_EarlyHooks = m_EarlyHooks;
-            for (var l_I = 0; l_I < l_EarlyHooks.Length; l_I++)
+            var earlyHooks = _earlyHooks;
+            for (var i = 0; i < earlyHooks.Length; i++)
             {
-                if (!l_EarlyHooks[l_I].TryIntercept(l_ServerContext))
+                if (!earlyHooks[i].TryIntercept(serverContext))
                     continue;
 
                 return;
             }
 
-            var l_Handlers   = m_Handlers;
-            var l_WasHandled = false;
-            for (var l_I = 0; l_I < l_Handlers.Length; l_I++)
+            var handlers   = _handlers;
+            var wasHandled = false;
+            for (var i = 0; i < handlers.Length; i++)
             {
-                if (!l_Handlers[l_I].TryHandle(l_ServerContext))
+                if (!handlers[i].TryHandle(serverContext))
                     continue;
 
-                l_WasHandled = true;
+                wasHandled = true;
                 break;
             }
 
-            var l_LateHooks = m_LateHooks;
-            for (var l_I = 0; l_I < l_LateHooks.Length; l_I++)
+            var lateHooks = _lateHooks;
+            for (var l_I = 0; l_I < lateHooks.Length; l_I++)
             {
-                if (!l_LateHooks[l_I].TryIntercept(l_ServerContext))
+                if (!lateHooks[l_I].TryIntercept(serverContext))
                     continue;
 
                 return;
             }
 
-            if (!l_ServerContext.ConnectionUpgraded)
+            if (!serverContext.ConnectionUpgraded)
             {
                 try
                 {
-                    if (!l_WasHandled || l_ServerContext.ServerResponse == null)
-                        l_ServerContext.ServerResponse = s_Server404NotFoundResponse;
+                    if (!wasHandled || serverContext.ServerResponse == null)
+                        serverContext.ServerResponse = s_Server404NotFoundResponse;
 
-                    if (!l_ServerContext.ServerResponse.TryWrite(listenerContext.Response, out var l_Error))
+                    if (!serverContext.ServerResponse.TryWrite(listenerContext.Response, out var l_Error))
                         Logging.Log(ELogSeverity.Error, $"Failed to write response for request '{listenerContext.Request!.Url!.AbsolutePath}': {l_Error}");
 
                     listenerContext.Response.Close();
@@ -331,9 +331,9 @@ public class HttpServerEx
                 catch { }
             }
         }
-        catch (Exception l_Exception)
+        catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, l_Exception);
+            Logging.Log(ELogSeverity.Error, exception);
 
             try
             {
@@ -345,7 +345,7 @@ public class HttpServerEx
         {
             try
             {
-                if (l_ServerContext == null || !l_ServerContext.ConnectionUpgraded)
+                if (serverContext == null || !serverContext.ConnectionUpgraded)
                     listenerContext.Response.Close();
             }
             catch { }

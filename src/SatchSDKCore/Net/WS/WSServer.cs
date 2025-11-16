@@ -1,4 +1,4 @@
-﻿using SatchSDKCore.Net.HttpEx;
+﻿using SSC.Net.HttpEx;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace SSC.Net.WS;
-
 
 /// <summary>
 /// WebSocket server class
@@ -34,7 +33,7 @@ public class WSServer<TSession,  TSessionID> : IHttpServerExRequestHandler
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public readonly SatchSDKCore.Net.HttpEx.HttpServerEx HTTPServer;
+    public readonly HttpServerEx    HTTPServer;
     public readonly string          AbsolutePath;
     public readonly int             MaxReceiveQueueSize;
     public readonly int             MaxFrameLength;
@@ -56,7 +55,7 @@ public class WSServer<TSession,  TSessionID> : IHttpServerExRequestHandler
     /// <param name="maxFrameLength">Message frame length in bytes</param>
     /// <param name="maxMessageLength">Max message length in bytes</param>
     public WSServer(
-        SatchSDKCore.Net.HttpEx.HttpServerEx httpServer,
+        HttpServerEx    httpServer,
         string          absolutePath,
         d_MakeSession   makeSession,
         int             workerCount          = 4,

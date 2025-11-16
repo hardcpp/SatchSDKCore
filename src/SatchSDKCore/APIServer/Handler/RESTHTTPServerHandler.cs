@@ -1,4 +1,4 @@
-﻿using SatchSDKCore.Net.HttpEx;
+﻿using SSC.Net.HttpEx;
 using System;
 using System.Collections.Generic;
 using System.Net;

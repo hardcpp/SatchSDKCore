@@ -19,7 +19,7 @@ public class HttpClientExCore : IHttpClientEx
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly System.Net.Http.HttpClient        _client;
+    private readonly HttpClient        _client;
     private readonly HttpClientHandler _clientHandler;
 
     private CookieContainer? _cookieContainer;
