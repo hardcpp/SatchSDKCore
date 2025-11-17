@@ -1,15 +1,18 @@
 ﻿using SSC.Net.HttpEx;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using static SSC.Net.JsonRpc.IJsonRpcClient;
 
-namespace SSC.Net.JSONRPCClient;
+namespace SSC.Net.JsonRpc;
 
 /// <summary>
 /// HTTP implementation of the IJsonRpcClient
 /// </summary>
-public class JsonRpcClientHttp : IJsonRpcClient
+public class JsonRpcClientHttp : JsonRpcClientBase
 {
     private readonly IHttpClientEx _httpClient;
     private readonly string?       _overrideURL;
@@ -27,6 +30,7 @@ public class JsonRpcClientHttp : IJsonRpcClient
     /// Constructor
     /// </summary>
     /// <param name="httpClient">HTTP client to use</param>
+    /// <param name="overrideURL">URL override?</param>
     public JsonRpcClientHttp(IHttpClientEx httpClient, string? overrideURL = null)
     {
         _httpClient  = httpClient;
@@ -37,8 +41,8 @@ public class JsonRpcClientHttp : IJsonRpcClient
     ////////////////////////////////////////////////////////////////////////////
 
     /// <inheritdoc/>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected override JsonRpcClientResult? DoCall(
         JsonRpcClientRequest request,
         ECallOptions options
@@ -47,15 +51,15 @@ public class JsonRpcClientHttp : IJsonRpcClient
         var httpResult = _httpClient.DoRequest(
             "POST",
             _overrideURL ?? string.Empty,
-            HttpClientExPayload.FromJson(request, indend: false),
+            HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
             CallOptionsToRequestOptions(options)
         );
 
         return BuildJSONRPCClientResult(request, httpResult);
     }
     /// <inheritdoc/>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected override void DoCallInBackground(
         JsonRpcClientRequest          request,
         CancellationToken             cancellationToken,
@@ -68,13 +72,13 @@ public class JsonRpcClientHttp : IJsonRpcClient
             _overrideURL ?? string.Empty,
             cancellationToken,
             (httpResult) => { callback?.Invoke(BuildJSONRPCClientResult(request, httpResult)); },
-            HttpClientExPayload.FromJson(request, indend: false),
+            HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
             CallOptionsToRequestOptions(options)
         );
     }
     /// <inheritdoc/>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected override async Task<JsonRpcClientResult?> DoCallAsync(
         JsonRpcClientRequest request,
         CancellationToken    cancellationToken,
@@ -85,7 +89,7 @@ public class JsonRpcClientHttp : IJsonRpcClient
             "POST",
             _overrideURL ?? string.Empty,
             cancellationToken,
-            HttpClientExPayload.FromJson(request, indend: false),
+            HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
             CallOptionsToRequestOptions(options)
         ).ConfigureAwait(false);
 
@@ -96,32 +100,31 @@ public class JsonRpcClientHttp : IJsonRpcClient
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Handle a web response
+    /// Handle a http client ex response
     /// </summary>
-    /// <param name="p_Method">Called method</param>
-    /// <param name="p_WebResponse">Web response</param>
+    /// <param name="request">Request informations</param>
+    /// <param name="httpResponse">Http client ex response</param>
     /// <returns></returns>
-    private static JsonRpcClientResult BuildJSONRPCClientResult(JsonRpcClientRequest request, HttpClientExResponse? httpResponse)
+    private static JsonRpcClientResult? BuildJSONRPCClientResult(JsonRpcClientRequest request, HttpClientExResponse? httpResponse)
     {
-        /*if (p_WebResponse == null)
-            return new JsonRPCResult() { RawResponse = p_WebResponse, Result = null };
+        if (httpResponse == null || string.IsNullOrEmpty(httpResponse.BodyString))
+            return null;
 
         try
         {
-            var l_JsonResult = JObject.Parse(p_WebResponse.BodyString);
+            var l_JsonResult = JsonObject.Parse(httpResponse.BodyString) as JsonObject;
 
-            return new JsonRPCResult()
+            return new JsonRpcClientResult()
             {
-                RawResponse = p_WebResponse,
-                Result = (l_JsonResult.GetValue("result") ?? null) as JObject,
-                Error = (l_JsonResult.GetValue("error") ?? null) as JObject
+                Result = (l_JsonResult?["result"] ?? null) as JsonObject,
+                Error  = (l_JsonResult?["error"]  ?? null) as JsonObject
             };
         }
-        catch (Exception l_Exception)
+        catch (Exception exception)
         {
-            Logger.Log(ELogLevel.Error, $"[CP_API_SDK.Network][JsonRPCClient.HandleResponse] Request {p_Method} failed parsing response:");
-            Logger.Log(ELogLevel.Error, l_Exception);
-        }*/
+            Logging.Log(ELogSeverity.Error, $"[Net.JsonRPC][JsonRPCClient.JsonRpcClientHttp] Request {request.Method} failed parsing response:");
+            Logging.Log(ELogSeverity.Error, exception);
+        }
 
         return null;
     }

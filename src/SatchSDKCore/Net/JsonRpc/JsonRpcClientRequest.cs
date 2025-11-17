@@ -1,10 +1,11 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace SSC.Net.JSONRPCClient;
+namespace SSC.Net.JsonRpc;
 
 /// <summary>
-/// JSONRPCClient request
+/// JsonRpc request
 /// </summary>
 public class JsonRpcClientRequest
 {
@@ -15,7 +16,7 @@ public class JsonRpcClientRequest
     public required string Method { get; init; }
 
     [JsonPropertyName("params")]
-    public JsonElement? Params { get; init; }
+    public JsonNode? Params { get; init; }
 
     [JsonPropertyName("id")]
     public int Id { get; init; } = 1;

@@ -4,35 +4,15 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using static SSC.Net.JsonRpc.IJsonRpcClient;
 
-namespace SSC.Net.JSONRPCClient;
+namespace SSC.Net.JsonRpc;
 
 /// <summary>
-/// JsonRpc client interface
+/// Abstract base implementation of the IJsonRpcClient
 /// </summary>
-public abstract class IJsonRpcClient
+public abstract class JsonRpcClientBase : IJsonRpcClient
 {
-    internal const string SerializationUnreferencedCodeMessage
-        = "JSON serialization and deserialization might require types that cannot be statically analyzed. Use the overload that takes a JsonTypeInfo or JsonSerializerContext, or make sure all of the required types are preserved.";
-    internal const string SerializationDynamicCodeMessage
-        = "JSON serialization and deserialization might require types that cannot be statically analyzed. Use the overload that takes a JsonTypeInfo or JsonSerializerContext.";
-
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-
-    /// <summary>
-    /// Options for calls
-    /// </summary>
-    [Flags]
-    public enum ECallOptions
-    {
-        None              = 0,
-        IgnoreRetryPolicy = 1 << 0,
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-
     /// <summary>
     /// Do a sync call
     /// </summary>
@@ -40,8 +20,8 @@ public abstract class IJsonRpcClient
     /// <param name="parameters">Method parameters</param>
     /// <param name="options">Call options</param>
     /// <returns>The response if the call reached the server</returns>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public JsonRpcClientResult? Call(
         string              method,
         IEnumerable<object> parameters,
@@ -51,7 +31,7 @@ public abstract class IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.SerializeToElement(parameters)
+            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         return DoCall(request, options);
@@ -63,8 +43,8 @@ public abstract class IJsonRpcClient
     /// <param name="parameters">Method parameters</param>
     /// <param name="options">Call options</param>
     /// <returns>The response if the call reached the server</returns>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public JsonRpcClientResult? Call(
         string                              method,
         IReadOnlyDictionary<string, object> parameters,
@@ -74,7 +54,7 @@ public abstract class IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.SerializeToElement(parameters)
+            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         return DoCall(request, options);
@@ -87,8 +67,8 @@ public abstract class IJsonRpcClient
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="callback">Callback</param>
     /// <param name="options">Call options</param>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public void CallInBackground(
         string                        method,
         IEnumerable<object>           parameters,
@@ -100,7 +80,7 @@ public abstract class IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.SerializeToElement(parameters)
+            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         DoCallInBackground(request, cancellationToken, callback, options);
@@ -113,8 +93,8 @@ public abstract class IJsonRpcClient
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="callback">Callback</param>
     /// <param name="options">Call options</param>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public void CallInBackground(
         string                              method,
         IReadOnlyDictionary<string, object> parameters,
@@ -126,7 +106,7 @@ public abstract class IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.SerializeToElement(parameters)
+            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         DoCallInBackground(request, cancellationToken, callback, options);
@@ -139,8 +119,8 @@ public abstract class IJsonRpcClient
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="options">Call options</param>
     /// <returns>The response if the call reached the server</returns>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public Task<JsonRpcClientResult?> CallAsync(
         string              method,
         IEnumerable<object> parameters,
@@ -151,7 +131,7 @@ public abstract class IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.SerializeToElement(parameters)
+            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         return DoCallAsync(request, cancellationToken, options);
@@ -165,8 +145,8 @@ public abstract class IJsonRpcClient
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="options">Call options</param>
     /// <returns>The response if the call reached the server</returns>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public Task<JsonRpcClientResult?> CallAsync(
         string                              method,
         IReadOnlyDictionary<string, object> parameters,
@@ -177,7 +157,7 @@ public abstract class IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.SerializeToElement(parameters)
+            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         return DoCallAsync(request, cancellationToken, options);
@@ -186,15 +166,14 @@ public abstract class IJsonRpcClient
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-
     /// <summary>
     /// Do a sync call
     /// </summary>
     /// <param name="request">Call request</param>
     /// <param name="options">Call options</param>
     /// <returns>The response if the call reached the server</returns>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected abstract JsonRpcClientResult? DoCall(
         JsonRpcClientRequest request,
         ECallOptions         options
@@ -206,8 +185,8 @@ public abstract class IJsonRpcClient
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="callback">Callback</param>
     /// <param name="options">Call options</param>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected abstract void DoCallInBackground(
         JsonRpcClientRequest          request,
         CancellationToken             cancellationToken,
@@ -221,8 +200,8 @@ public abstract class IJsonRpcClient
     /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="options">Call options</param>
     /// <returns>The response if the call reached the server</returns>
-    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
-    [RequiresDynamicCode(SerializationDynamicCodeMessage)]
+    [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected abstract Task<JsonRpcClientResult?> DoCallAsync(
         JsonRpcClientRequest request,
         CancellationToken    cancellationToken,
