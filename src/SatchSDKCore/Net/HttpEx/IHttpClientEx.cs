@@ -55,7 +55,7 @@ public interface IHttpClientEx
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns>The response if the request reached the server</returns>
-    public HttpClientExResponse? DoRequest(
+    public HttpClientExResponse DoRequest(
         string                    method,
         string                    url,
         HttpClientExPayload?      payload         = null,
@@ -69,7 +69,7 @@ public interface IHttpClientEx
     /// <param name="url">Target URL</param>
     /// <param name="method">HttpServerEx method GET/POST/PATCH/PUT/DELETE/OPTION...</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <param name="callback">Callback</param>
+    /// <param name="callback">Callback, Response is null if the implementation fail to request</param>
     /// <param name="payload">Request payload</param>
     /// <param name="options">Request options</param>
     /// <param name="dataHandler">Optional data handler</param>
@@ -95,7 +95,7 @@ public interface IHttpClientEx
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns>The response if the request reached the server</returns>
-    public Task<HttpClientExResponse?> DoRequestAsync(
+    public Task<HttpClientExResponse> DoRequestAsync(
         string                    method,
         string                    url,
         CancellationToken         cancellationToken,

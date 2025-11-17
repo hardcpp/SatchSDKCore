@@ -1,4 +1,5 @@
 ﻿using SSC;
+using SSC.Misc.Hookable;
 using System;
 using System.Collections.Concurrent;
 using System.Net;
@@ -9,9 +10,9 @@ using System.Threading;
 namespace SSC.Net.HttpEx;
 
 /// <summary>
-/// Advanced Http Server class
+/// Advanced Http Server implementation using dotnet core implementation
 /// </summary>
-public class HttpServerEx
+public class HttpServerExCore : IHttpServerEx
 {
     private static HttpServerExResponse s_Server404NotFoundResponse
         = new(HttpStatusCode.NotFound, new StringContent("404 Not found", Encoding.UTF8), Encoding.UTF8);
@@ -27,14 +28,14 @@ public class HttpServerEx
     private readonly ConcurrentQueue<HttpListenerContext> _contextQueue;
     private readonly ManualResetEvent                     _contextQueueEvent;
 
-    private IHttpServerExRequestHook[]    _earlyHooks = Array.Empty<IHttpServerExRequestHook>();
     private IHttpServerExRequestHandler[] _handlers   = Array.Empty<IHttpServerExRequestHandler>();
-    private IHttpServerExRequestHook[]    _lateHooks  = Array.Empty<IHttpServerExRequestHook>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     public HttpListener listener => _listener;
+
+    public IHookable<HttpServerExRequestContext> Hooks { get; } = new Hookable<HttpServerExRequestContext>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -44,7 +45,7 @@ public class HttpServerEx
     /// </summary>
     /// <param name="prefix">Listenning prefix</param>
     /// <param name="workerCount">Worker count</param>
-    public HttpServerEx(string prefix, int workerCount = 4)
+    public HttpServerExCore(string prefix, int workerCount = 4)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(workerCount, 1);
 
@@ -67,51 +68,7 @@ public class HttpServerEx
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>
-    /// Add a early request Hook
-    /// </summary>
-    /// <param name="earlyHook">Early hook to add</param>
-    public void AddEarlyRequestHook(IHttpServerExRequestHook earlyHook)
-    {
-        ArgumentNullException.ThrowIfNull(earlyHook);
-
-        var existingIdx = Array.IndexOf(_earlyHooks, earlyHook);
-        if (existingIdx != -1)
-            return;
-
-        var newEarlyHooks = new IHttpServerExRequestHook[_earlyHooks.Length + 1];
-        Array.Copy(_earlyHooks, newEarlyHooks, _earlyHooks.Length);
-        newEarlyHooks[^1] = earlyHook;
-
-        _earlyHooks = newEarlyHooks;
-    }
-    /// <summary>
-    /// Remove a early request Hook
-    /// </summary>
-    /// <param name="earlyHook">Early hook to remove</param>
-    public void RemoveEarlyRequestHook(IHttpServerExRequestHook earlyHook)
-    {
-        ArgumentNullException.ThrowIfNull(earlyHook);
-
-        var oldEarlyHooks = _earlyHooks;
-        var existingIdx = Array.IndexOf(oldEarlyHooks, earlyHook);
-        if (existingIdx == -1)
-            return;
-
-        var newEarlyHooks = new IHttpServerExRequestHook[oldEarlyHooks.Length - 1];
-        Array.Copy(oldEarlyHooks,               0, newEarlyHooks,           0,                            existingIdx);
-        Array.Copy(oldEarlyHooks, existingIdx + 1, newEarlyHooks, existingIdx, oldEarlyHooks.Length - existingIdx - 1);
-
-        _earlyHooks = newEarlyHooks;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-
-    /// <summary>
-    /// Add a request handler
-    /// </summary>
-    /// <param name="handler">Handler to add</param>
+    /// <inheritdoc/>
     public void AddRequestHandler(IHttpServerExRequestHandler handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
@@ -126,10 +83,7 @@ public class HttpServerEx
 
         _handlers = newHandlers;
     }
-    /// <summary>
-    /// Remove a request handler
-    /// </summary>
-    /// <param name="handler">Handler to remove</param>
+    /// <inheritdoc/>
     public void RemoveRequestHandler(IHttpServerExRequestHandler handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
@@ -149,50 +103,7 @@ public class HttpServerEx
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>
-    /// Add a late request Hook
-    /// </summary>
-    /// <param name="lateHook">Late hook to add</param>
-    public void AddLateRequestHook(IHttpServerExRequestHook lateHook)
-    {
-        ArgumentNullException.ThrowIfNull(lateHook);
-
-        var existingIdx = Array.IndexOf(_lateHooks, lateHook);
-        if (existingIdx != -1)
-            return;
-
-        var newLateHooks = new IHttpServerExRequestHook[_lateHooks.Length + 1];
-        Array.Copy(_lateHooks, newLateHooks, _lateHooks.Length);
-        newLateHooks[^1] = lateHook;
-
-        _lateHooks = newLateHooks;
-    }
-    /// <summary>
-    /// Remove a late request Hook
-    /// </summary>
-    /// <param name="lateHook">Late hook to remove</param>
-    public void RemoveLateRequestHook(IHttpServerExRequestHook lateHook)
-    {
-        ArgumentNullException.ThrowIfNull(lateHook);
-
-        var oldLateHooks = _lateHooks;
-        var existingIdx = Array.IndexOf(oldLateHooks, lateHook);
-        if (existingIdx == -1)
-            return;
-
-        var newLateHooks = new IHttpServerExRequestHook[oldLateHooks.Length - 1];
-        Array.Copy(oldLateHooks,               0, newLateHooks,           0,                           existingIdx);
-        Array.Copy(oldLateHooks, existingIdx + 1, newLateHooks, existingIdx, oldLateHooks.Length - existingIdx - 1);
-
-        _lateHooks = newLateHooks;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-
-    /// <summary>
-    /// Start the HttpServerEx server and threads
-    /// </summary>
+    /// <inheritdoc/>
     public void Start()
     {
         _listener.Start();
@@ -201,9 +112,7 @@ public class HttpServerEx
         for (int i = 0; i < _workers.Length; i++)
             _workers[i].Start();
     }
-    /// <summary>
-    /// Wait for the server
-    /// </summary>
+    /// <inheritdoc/>
     public void Wait()
     {
         if (!_listener.IsListening)
@@ -211,9 +120,7 @@ public class HttpServerEx
 
         _listenerThread.Join();
     }
-    /// <summary>
-    /// Stop the HttpServerEx server and wait for all the threads to stop
-    /// </summary>
+    /// <inheritdoc/>
     public void Stop()
     {
         if (!_listener.IsListening)
@@ -287,14 +194,8 @@ public class HttpServerEx
             serverContext = new HttpServerExRequestContext(listenerContext);
             Logging.Log(ELogSeverity.Verbose, $"Request received: {serverContext.ListenerRequest.HttpMethod} {serverContext.ListenerRequest.Url}");
 
-            var earlyHooks = _earlyHooks;
-            for (var i = 0; i < earlyHooks.Length; i++)
-            {
-                if (!earlyHooks[i].TryIntercept(serverContext))
-                    continue;
-
+            if (Hooks.InterceptEarly(serverContext))
                 return;
-            }
 
             var handlers   = _handlers;
             var wasHandled = false;
@@ -307,14 +208,8 @@ public class HttpServerEx
                 break;
             }
 
-            var lateHooks = _lateHooks;
-            for (var l_I = 0; l_I < lateHooks.Length; l_I++)
-            {
-                if (!lateHooks[l_I].TryIntercept(serverContext))
-                    continue;
-
+            if (Hooks.InterceptLate(serverContext))
                 return;
-            }
 
             if (!serverContext.ConnectionUpgraded)
             {
@@ -326,6 +221,7 @@ public class HttpServerEx
                     if (!serverContext.ServerResponse.TryWrite(listenerContext.Response, out var l_Error))
                         Logging.Log(ELogSeverity.Error, $"Failed to write response for request '{listenerContext.Request!.Url!.AbsolutePath}': {l_Error}");
 
+                    listenerContext.Response.OutputStream.Flush();
                     listenerContext.Response.Close();
                 }
                 catch { }
@@ -346,7 +242,10 @@ public class HttpServerEx
             try
             {
                 if (serverContext == null || !serverContext.ConnectionUpgraded)
+                {
+                    listenerContext.Response.OutputStream.Flush();
                     listenerContext.Response.Close();
+                }
             }
             catch { }
         }
