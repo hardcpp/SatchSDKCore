@@ -1,6 +1,7 @@
 ﻿using SSC.Net.HttpEx;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Net;
 
 namespace SSC.APIServer.Request;
@@ -49,4 +50,23 @@ public sealed class HTTPRequest : IRequest
     /// <returns>True if the header was found</returns>
     public bool TryGetHeaderValue(string headerName, out string? outValue)
         => Context.TryGetHeaderValue(headerName, out outValue);
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// <summary>
+    /// Get Post content as string
+    /// </summary>
+    /// <returns></returns>
+    public string GetBody()
+    {
+        var requestBody = null as string;
+        using (var streamReader = new StreamReader(Context.ListenerRequest.InputStream, Context.ListenerRequest.ContentEncoding))
+        {
+            requestBody = streamReader.ReadToEnd();
+            streamReader.Close();
+        }
+
+        return requestBody;
+    }
 }

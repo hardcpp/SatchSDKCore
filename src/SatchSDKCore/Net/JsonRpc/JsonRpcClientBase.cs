@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using static SSC.Net.JsonRpc.IJsonRpcClient;
@@ -31,7 +32,7 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
+            Params = JsonSerializer.SerializeToElement(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         return DoCall(request, options);
@@ -54,7 +55,7 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
+            Params = JsonSerializer.SerializeToElement(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         return DoCall(request, options);
@@ -80,7 +81,7 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
+            Params = JsonSerializer.SerializeToElement(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         DoCallInBackground(request, cancellationToken, callback, options);
@@ -106,7 +107,7 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
+            Params = JsonSerializer.SerializeToElement(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         DoCallInBackground(request, cancellationToken, callback, options);
@@ -131,7 +132,7 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
+            Params = JsonSerializer.SerializeToElement(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         return DoCallAsync(request, cancellationToken, options);
@@ -157,7 +158,7 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
         var request = new JsonRpcClientRequest
         {
             Method = method,
-            Params = JsonSerializer.Serialize(parameters, SDKConfig.JsonSerializerOptions)
+            Params = JsonSerializer.SerializeToElement(parameters, SDKConfig.JsonSerializerOptions)
         };
 
         return DoCallAsync(request, cancellationToken, options);

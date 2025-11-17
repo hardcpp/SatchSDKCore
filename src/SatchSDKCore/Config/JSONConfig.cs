@@ -11,9 +11,9 @@ namespace SSC.Config
     /// JSON config file
     /// </summary>
     /// <typeparam name="t_Type">Type</typeparam>
-    public abstract class JSONConfig
+    public abstract class JsonConfig
         <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] t_Type>
-        where t_Type : JSONConfig<t_Type>, new()
+        where t_Type : JsonConfig<t_Type>, new()
     {
         private static t_Type? m_Instance = null;
         private static string  m_Name     = typeof(t_Type).Name;
@@ -53,7 +53,7 @@ namespace SSC.Config
         /// <summary>
         /// Constructor
         /// </summary>
-        public JSONConfig(string relativePath)
+        public JsonConfig(string relativePath)
         {
             m_DirectoryPath = Path.GetFullPath(relativePath);
             m_FilePath      = Path.Combine(m_DirectoryPath, $"{m_Name}.json");

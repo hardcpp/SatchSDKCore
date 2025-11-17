@@ -81,7 +81,7 @@ public abstract class IRoute : Attribute
             if (Parameters.Length == 0 || Parameters[0].ParameterType != typeof(CancellationToken))
                 throw new Exception($"Route {method.Name} has wrong parameter Type, Arg 0 should be of CancellationToken");
 
-            if (Parameters.Length >= 2 && Parameters[1].ParameterType.IsAssignableFrom(typeof(RouteContext.IRouteContext)))
+            if (Parameters.Length >= 2 && typeof(RouteContext.IRouteContext).IsAssignableFrom(Parameters[1].ParameterType))
                 HasContextParameter = true;
 
             UserParametersOffset = HasContextParameter ? 2 : 1;
@@ -93,7 +93,7 @@ public abstract class IRoute : Attribute
         }
         else
         {
-            if (Parameters.Length > 0 && Parameters[0].ParameterType.IsAssignableFrom(typeof(RouteContext.IRouteContext)))
+            if (Parameters.Length > 0 && typeof(RouteContext.IRouteContext).IsAssignableFrom(Parameters[0].ParameterType))
                 HasContextParameter = true;
 
             UserParametersOffset = HasContextParameter ? 1 : 0;

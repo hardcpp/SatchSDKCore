@@ -16,7 +16,7 @@ public class JsonRpcClientRequest
     public required string Method { get; init; }
 
     [JsonPropertyName("params")]
-    public JsonNode? Params { get; init; }
+    public JsonElement? Params { get; init; }
 
     [JsonPropertyName("id")]
     public int Id { get; init; } = 1;
