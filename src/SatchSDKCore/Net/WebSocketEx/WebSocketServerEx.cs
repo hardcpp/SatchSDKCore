@@ -1,4 +1,5 @@
-﻿using SSC.Net.HttpEx;
+﻿using SSC.Misc.Hookable;
+using SSC.Net.HttpEx;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -13,11 +14,11 @@ namespace SSC.Net.WebSocketEx;
 /// <summary>
 /// Advanced WebSocket server class
 /// </summary>
-public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHandler
-    where TSession   : WebSocketExServerSession<TSession, TSessionID>
+public class WebSocketServerEx<TSession,  TSessionID> : IWebSocketServerEx<TSession, TSessionID>, IHttpServerExRequestHandler, IDisposable
+    where TSession   : WebSocketServerExSession<TSession, TSessionID>
     where TSessionID : notnull
 {
-    public delegate TSession d_MakeSession(WebSocketExServer<TSession, TSessionID> server, WebSocket webSocket);
+    public delegate TSession d_MakeSession(WebSocketServerEx<TSession, TSessionID> server, WebSocket webSocket);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -33,12 +34,14 @@ public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHand
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public readonly IHttpServerEx   HttpServer;
-    public readonly string          AbsolutePath;
-    public readonly int             MaxReceiveQueueSize;
-    public readonly int             MaxFrameLength;
-    public readonly int             MaxMessageLength;
-    public readonly ArrayPool<byte> Allocator;
+    public IHttpServerEx   HttpServer          { get; init; }
+    public string          AbsolutePath        { get; init; }
+    public int             MaxReceiveQueueSize { get; init; }
+    public int             MaxFrameLength      { get; init; }
+    public int             MaxMessageLength    { get; init; }
+    public ArrayPool<byte> Allocator           { get; init; }
+
+    public IHookable<HttpServerExRequestContext> Hooks { get; } = new Hookable<HttpServerExRequestContext>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -54,7 +57,7 @@ public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHand
     /// <param name="maxReceiveQueueSize">Max size of the message queue for a session</param>
     /// <param name="maxFrameLength">Message frame length in bytes</param>
     /// <param name="maxMessageLength">Max message length in bytes</param>
-    public WebSocketExServer(
+    public WebSocketServerEx(
         IHttpServerEx   httpServer,
         string          absolutePath,
         d_MakeSession   makeSession,
@@ -74,7 +77,6 @@ public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHand
             throw new UriFormatException("Absolute path need to start with '/'");
 
         HttpServer = httpServer;
-        HttpServer.AddRequestHandler(this);
 
         AbsolutePath        = absolutePath;
         MaxReceiveQueueSize = maxReceiveQueueSize;
@@ -98,26 +100,37 @@ public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHand
             _workerNewSessions[i] = new ConcurrentQueue<TSession>();
         }
     }
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        Stop();
+    }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>
-    /// Start the HttpServerEx server and threads
-    /// </summary>
+    /// <inheritdoc/>
     public void Start()
     {
+        if (_isRunning)
+            return;
+
         _isRunning = true;
+
+        HttpServer.AddRequestHandler(this);
 
         for (int i = 0; i < _workers.Length; i++)
             _workers[i].Start();
     }
-    /// <summary>
-    /// Stop the HttpServerEx server and wait for all the threads to stop
-    /// </summary>
+    /// <inheritdoc/>
     public void Stop()
     {
+        if (!_isRunning)
+            return;
+
         _isRunning = false;
+
+        HttpServer.RemoveRequestHandler(this);
 
         for (int i = 0; i < _workers.Length; i++)
             _workers[i].Join();
@@ -147,12 +160,7 @@ public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHand
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>
-    /// Find a session by predicate
-    /// </summary>
-    /// <param name="predicate">Predicate to match the session</param>
-    /// <param name="default">Default session to return if none matched</param>
-    /// <returns>Matched session or default</returns>
+    /// <inheritdoc/>
     public TSession? FindSession(Func<TSession, bool> predicate, TSession? @default = null)
     {
         lock (_sessions)
@@ -241,7 +249,7 @@ public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHand
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    protected override bool TryHandleImplementation(HttpServerExRequestContext context)
+    public bool TryHandle(HttpServerExRequestContext context)
     {
         if (!_isRunning)
             return false;

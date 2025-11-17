@@ -1,3 +1,4 @@
+using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;
 using System;
 
@@ -9,6 +10,11 @@ namespace SSC.APIServer.Handler;
 public class SwaggerHTTPServerHandler : IHttpServerExRequestHandler
 {
     public readonly Blueprint.IBlueprint MainBlueprint;
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    public IHookable<HttpServerExRequestContext> Hooks { get; } = new Hookable<HttpServerExRequestContext>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -32,7 +38,7 @@ public class SwaggerHTTPServerHandler : IHttpServerExRequestHandler
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    protected override bool TryHandleImplementation(HttpServerExRequestContext context)
+    public bool TryHandle(HttpServerExRequestContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 

@@ -16,7 +16,7 @@ namespace SSC.Net.HttpEx;
 /// <summary>
 /// Advanced Http Client implementation using dotnet core implementation
 /// </summary>
-public class HttpClientExCore : IHttpClientEx
+public class HttpClientExCore : IHttpClientEx, IDisposable
 {
     public static readonly HttpClientExCore GlobalClient = new("", TimeSpan.FromSeconds(10));
 
@@ -92,6 +92,11 @@ public class HttpClientExCore : IHttpClientEx
 
         _client.DefaultRequestHeaders.ConnectionClose = !Options.HasFlag(EOptions.KeepAlive);
         _client.DefaultRequestHeaders.Add("User-Agent", $"SatchSDKCore/{version}");
+    }
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        _client.Dispose();
     }
 
     ////////////////////////////////////////////////////////////////////////////

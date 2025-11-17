@@ -1,4 +1,5 @@
-﻿using SSC.Net.HttpEx;
+﻿using SSC.Misc.Hookable;
+using SSC.Net.HttpEx;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -23,12 +24,17 @@ public class RESTHTTPServerHandler : IHttpServerExRequestHandler
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
+    public IHookable<HttpServerExRequestContext> Hooks { get; } = new Hookable<HttpServerExRequestContext>();
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
     /// <summary>
     /// Try handle the request
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    protected override bool TryHandleImplementation(HttpServerExRequestContext context)
+    public bool TryHandle(HttpServerExRequestContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
