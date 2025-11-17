@@ -15,13 +15,13 @@ namespace SSC.Net.JsonRpc;
 public class JsonRpcClientHttp : JsonRpcClientBase
 {
     private readonly IHttpClientEx _httpClient;
-    private readonly string?       _overrideURL;
+    private readonly string?       _overrideUrl;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public IHttpClientEx HTTPClient  => _httpClient;
-    public string?       OverrideURL => _overrideURL;
+    public IHttpClientEx HttpClient  => _httpClient;
+    public string?       OverrideUrl => _overrideUrl;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -29,12 +29,12 @@ public class JsonRpcClientHttp : JsonRpcClientBase
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="httpClient">HTTP client to use</param>
-    /// <param name="overrideURL">URL override?</param>
-    public JsonRpcClientHttp(IHttpClientEx httpClient, string? overrideURL = null)
+    /// <param name="httpClient">Http client to use</param>
+    /// <param name="overrideUrl">Url override?</param>
+    public JsonRpcClientHttp(IHttpClientEx httpClient, string? overrideUrl = null)
     {
         _httpClient  = httpClient;
-        _overrideURL = overrideURL;
+        _overrideUrl = overrideUrl;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -45,12 +45,12 @@ public class JsonRpcClientHttp : JsonRpcClientBase
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected override JsonRpcClientResult? DoCall(
         JsonRpcClientRequest request,
-        ECallOptions options
+        ECallOptions         options
     )
     {
         var httpResult = _httpClient.DoRequest(
             "POST",
-            _overrideURL ?? string.Empty,
+            _overrideUrl ?? string.Empty,
             HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
             CallOptionsToRequestOptions(options)
         );
@@ -69,7 +69,7 @@ public class JsonRpcClientHttp : JsonRpcClientBase
     {
         _httpClient.DoRequestInBackground(
             "POST",
-            _overrideURL ?? string.Empty,
+            _overrideUrl ?? string.Empty,
             cancellationToken,
             (httpResult) => { callback?.Invoke(BuildJSONRPCClientResult(request, httpResult)); },
             HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
@@ -87,7 +87,7 @@ public class JsonRpcClientHttp : JsonRpcClientBase
     {
         var httpResult = await _httpClient.DoRequestAsync(
             "POST",
-            _overrideURL ?? string.Empty,
+            _overrideUrl ?? string.Empty,
             cancellationToken,
             HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
             CallOptionsToRequestOptions(options)
