@@ -1,11 +1,12 @@
 ﻿using SSC.Misc.Hookable;
+using System;
 
 namespace SSC.Net.HttpEx;
 
 /// <summary>
 /// Advanced Http Server interface
 /// </summary>
-public interface IHttpServerEx
+public interface IHttpServerEx : IDisposable
 {
     public IHookable<HttpServerExRequestContext> Hooks { get; }
 

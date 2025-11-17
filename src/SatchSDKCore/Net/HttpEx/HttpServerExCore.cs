@@ -64,6 +64,9 @@ public class HttpServerExCore : IHttpServerEx
         _contextQueue      = new ConcurrentQueue<HttpListenerContext>();
         _contextQueueEvent = new ManualResetEvent(false);
     }
+    /// <inheritdoc/>
+    public void Dispose()
+        => Stop();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -201,11 +204,22 @@ public class HttpServerExCore : IHttpServerEx
             var wasHandled = false;
             for (var i = 0; i < handlers.Length; i++)
             {
-                if (!handlers[i].TryHandle(serverContext))
-                    continue;
+                var currentHandler = handlers[i];
+                if (currentHandler.Hooks.InterceptEarly(serverContext))
+                {
+                    wasHandled = true;
+                    break;
+                }
 
-                wasHandled = true;
-                break;
+                var handleResult = currentHandler.TryHandle(serverContext);
+
+                // Make sure to run late hooks before final result
+                if (currentHandler.Hooks.InterceptLate(serverContext)
+                    || handleResult)
+                {
+                    wasHandled = true;
+                    break;
+                }
             }
 
             if (Hooks.InterceptLate(serverContext))
@@ -218,8 +232,8 @@ public class HttpServerExCore : IHttpServerEx
                     if (!wasHandled || serverContext.ServerResponse == null)
                         serverContext.ServerResponse = s_Server404NotFoundResponse;
 
-                    if (!serverContext.ServerResponse.TryWrite(listenerContext.Response, out var l_Error))
-                        Logging.Log(ELogSeverity.Error, $"Failed to write response for request '{listenerContext.Request!.Url!.AbsolutePath}': {l_Error}");
+                    if (!serverContext.ServerResponse.TryWrite(listenerContext.Response, out var writeError))
+                        Logging.Log(ELogSeverity.Error, $"Failed to write response for request '{listenerContext.Request!.Url!.AbsolutePath}': {writeError}");
 
                     listenerContext.Response.OutputStream.Flush();
                     listenerContext.Response.Close();

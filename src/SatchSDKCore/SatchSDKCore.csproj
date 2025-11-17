@@ -14,6 +14,7 @@
         <SignAssembly>False</SignAssembly>
         <PackageOutputPath>$(OutputPath)</PackageOutputPath>
         <BaseOutputPath>../../bin</BaseOutputPath>
+        <RootNamespace>SSC</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

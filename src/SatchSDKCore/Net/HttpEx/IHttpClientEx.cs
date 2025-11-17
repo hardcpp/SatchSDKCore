@@ -9,7 +9,7 @@ namespace SSC.Net.HttpEx;
 /// <summary>
 /// Advance Http Client interface
 /// </summary>
-public interface IHttpClientEx
+public interface IHttpClientEx : IDisposable
 {
     /// <summary>
     /// Global client options

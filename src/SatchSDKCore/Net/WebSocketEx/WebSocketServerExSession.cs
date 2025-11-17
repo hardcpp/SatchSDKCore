@@ -6,12 +6,12 @@ namespace SSC.Net.WebSocketEx;
 /// <summary>
 /// Advanced WebSocket server session
 /// </summary>
-public abstract class WebSocketExServerSession<TSession, TSessionID> : WebSocketExBase
-    where TSession   : WebSocketExServerSession<TSession, TSessionID>
+public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocketExBase
+    where TSession   : WebSocketServerExSession<TSession, TSessionID>
     where TSessionID : notnull
 {
-    public readonly WebSocketExServer<TSession, TSessionID> Server;
-    public readonly TSessionID                     SessionID;
+    public readonly IWebSocketServerEx<TSession, TSessionID> Server;
+    public readonly TSessionID                               SessionID;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -19,10 +19,13 @@ public abstract class WebSocketExServerSession<TSession, TSessionID> : WebSocket
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="server">WebSocketExServer instance</param>
+    /// <param name="server">WebSocketServerEx instance</param>
     /// <param name="webSocket">WebSocket instance</param>
-    public WebSocketExServerSession(WebSocketExServer<TSession, TSessionID> server, WebSocket webSocket, TSessionID sessionID)
-        : base(webSocket, server.Allocator, server.MaxFrameLength, server.MaxMessageLength, server.MaxReceiveQueueSize)
+    public WebSocketServerExSession(
+        IWebSocketServerEx<TSession, TSessionID> server,
+        WebSocket                                webSocket,
+        TSessionID                               sessionID
+    ) : base(webSocket, server.Allocator, server.MaxFrameLength, server.MaxMessageLength, server.MaxReceiveQueueSize)
     {
         ArgumentNullException.ThrowIfNull(server);
         ArgumentNullException.ThrowIfNull(webSocket);
