@@ -33,7 +33,7 @@ public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHand
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public readonly HttpServerEx    HTTPServer;
+    public readonly IHttpServerEx   HttpServer;
     public readonly string          AbsolutePath;
     public readonly int             MaxReceiveQueueSize;
     public readonly int             MaxFrameLength;
@@ -55,7 +55,7 @@ public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHand
     /// <param name="maxFrameLength">Message frame length in bytes</param>
     /// <param name="maxMessageLength">Max message length in bytes</param>
     public WebSocketExServer(
-        HttpServerEx    httpServer,
+        IHttpServerEx   httpServer,
         string          absolutePath,
         d_MakeSession   makeSession,
         int             workerCount          = 4,
@@ -73,8 +73,8 @@ public class WebSocketExServer<TSession,  TSessionID> : IHttpServerExRequestHand
         if (!absolutePath.StartsWith("/"))
             throw new UriFormatException("Absolute path need to start with '/'");
 
-        HTTPServer = httpServer;
-        HTTPServer.AddRequestHandler(this);
+        HttpServer = httpServer;
+        HttpServer.AddRequestHandler(this);
 
         AbsolutePath        = absolutePath;
         MaxReceiveQueueSize = maxReceiveQueueSize;

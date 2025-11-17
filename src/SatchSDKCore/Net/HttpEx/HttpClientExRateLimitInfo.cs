@@ -93,8 +93,8 @@ public sealed class HttpClientExRateLimitInfo
                 || keyLower == "x-rate-limit-total" || keyLower == "x-ratelimit-total"
                 || keyLower == "rate-limit-total"   || keyLower == "ratelimit-total")
             {
-                if (int.TryParse(kvp.Value, out var l_Value))
-                    return l_Value;
+                if (int.TryParse(kvp.Value, out var value))
+                    return value;
                 else
                     return -1;
             }
@@ -115,8 +115,8 @@ public sealed class HttpClientExRateLimitInfo
             if (   keyLower == "x-rate-limit-remaining" || keyLower == "x-ratelimit-remaining"
                 || keyLower == "rate-limit-remaining"   || keyLower == "ratelimit-remaining")
             {
-                if (int.TryParse(kvp.Value, out var l_Value))
-                    return l_Value;
+                if (int.TryParse(kvp.Value, out var value))
+                    return value;
                 else
                     return -1;
             }
@@ -137,13 +137,13 @@ public sealed class HttpClientExRateLimitInfo
             if (   keyLower == "x-rate-limit-reset" || keyLower == "x-ratelimit-reset"
                 || keyLower == "rate-limit-reset"   || keyLower == "ratelimit-reset")
             {
-                if (!long.TryParse(kvp.Value, out var l_Value))
+                if (!long.TryParse(kvp.Value, out var value))
                     return DateTime.Now.AddSeconds(2);
 
-                if (l_Value < 1000000000)
-                    return Misc.Time.FromUnixTime(Misc.Time.UnixTimeNow() + l_Value);
+                if (value < 1000000000)
+                    return Misc.Time.FromUnixTime(Misc.Time.UnixTimeNow() + value);
 
-                return Misc.Time.FromUnixTime(l_Value);
+                return Misc.Time.FromUnixTime(value);
             }
         }
 

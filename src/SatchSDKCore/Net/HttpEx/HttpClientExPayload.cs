@@ -1,10 +1,10 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Web;
 using System.Globalization;
 using System.Text;
 using System;
+using System.Text.Json.Nodes;
+using System.Text.Json;
 
 namespace SSC.Net.HttpEx;
 
@@ -13,18 +13,18 @@ namespace SSC.Net.HttpEx;
 /// </summary>
 public class HttpClientExPayload
 {
+    private static JsonSerializerOptions s_RegularSerialize  = new() { WriteIndented = false };
+    private static JsonSerializerOptions s_IndentedSerialize = new() { WriteIndented = true  };
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
     public static HttpClientExPayload Empty = new HttpClientExPayload(Array.Empty<byte>(), "");
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>
-    /// Content
-    /// </summary>
     public byte[] Bytes;
-    /// <summary>
-    /// Content type
-    /// </summary>
     public string Type;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ public class HttpClientExPayload
         foreach ((var key, var value) in formFields)
         {
             if (content.Length != 0)
-                content.Append("&");
+                content.Append('&');
 
             content.Append(string.Format(CultureInfo.InvariantCulture, "{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value)));
         }
@@ -79,14 +79,6 @@ public class HttpClientExPayload
     /// <param name="content">Json content</param>
     /// <param name="indent">Should indent?</param>
     /// <returns></returns>
-    public static HttpClientExPayload FromJson(JObject content, bool indent = false)
-        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content.ToString(indent ? Formatting.Indented : Formatting.None)), $"application/json; charset=utf-8");
-    /// <summary>
-    /// Constructor from Json
-    /// </summary>
-    /// <param name="content">Json content</param>
-    /// <param name="indend">Should indent?</param>
-    /// <returns></returns>
-    public static HttpClientExPayload FromJson(object content, bool indend = false)
-        => new HttpClientExPayload(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content, indend ? Formatting.Indented : Formatting.None)), $"application/json; charset=utf-8");
+    public static HttpClientExPayload FromJson(JsonNode content)
+        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content.ToJsonString(SDKConfig.JsonSerializerOptions)), $"application/json; charset=utf-8");
 }
