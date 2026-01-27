@@ -7,12 +7,12 @@
 public interface IHookable<T>
 {
     /// <summary>
-    /// Add a early request Hook
+    /// Add a early Hook
     /// </summary>
     /// <param name="earlyHook">Early hook to add</param>
     public void AddEarlyRequestHook(IHook<T> earlyHook);
     /// <summary>
-    /// Remove a early request Hook
+    /// Remove a early Hook
     /// </summary>
     /// <param name="earlyHook">Early hook to remove</param>
     public void RemoveEarlyRequestHook(IHook<T> earlyHook);
@@ -21,12 +21,12 @@ public interface IHookable<T>
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Add a late request Hook
+    /// Add a late Hook
     /// </summary>
     /// <param name="lateHook">Late hook to add</param>
     public void AddLateRequestHook(IHook<T> lateHook);
     /// <summary>
-    /// Remove a late request Hook
+    /// Remove a late Hook
     /// </summary>
     /// <param name="lateHook">Late hook to remove</param>
     public void RemoveLateRequestHook(IHook<T> lateHook);
