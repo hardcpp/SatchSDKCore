@@ -69,13 +69,29 @@ public abstract class IRoute : Attribute
         ParametersFixedName = new string[Parameters.Length];
         ParametersHint      = new string[Parameters.Length];
 
-        if (!Method.ReturnType.IsAssignableTo(typeof(Response.IResponse)))
-            throw new Exception($"Route {method.Name} has wrong return Type, should be of IResponse");
+        // Check if the method is async first
+        IsAsync = method.ReturnType.GetMethod(nameof(Task.GetAwaiter)) != null;
+
+        // Validate return type based on whether it's async or not
+        if (IsAsync)
+        {
+            // For async methods, check if it's Task<IResponse>
+            if (!method.ReturnType.IsGenericType ||
+                method.ReturnType.GetGenericTypeDefinition() != typeof(Task<>) ||
+                !method.ReturnType.GetGenericArguments()[0].IsAssignableTo(typeof(Response.IResponse)))
+            {
+                throw new Exception($"Route {method.Name} has wrong return Type, should be of Task<IResponse>");
+            }
+        }
+        else
+        {
+            // For sync methods, check if it's IResponse
+            if (!Method.ReturnType.IsAssignableTo(typeof(Response.IResponse)))
+                throw new Exception($"Route {method.Name} has wrong return Type, should be of IResponse");
+        }
 
         var l_Hooks = Method.GetCustomAttributes<RouteHook.IRouteHook>(true);
         Hooks = l_Hooks.Any() ? l_Hooks.ToArray() : Array.Empty<RouteHook.IRouteHook>();
-
-        IsAsync = method.ReturnType.GetMethod(nameof(Task.GetAwaiter)) != null;
         if (IsAsync)
         {
             if (Parameters.Length == 0 || Parameters[0].ParameterType != typeof(CancellationToken))
@@ -104,11 +120,12 @@ public abstract class IRoute : Attribute
 
         for (var l_I = 0; l_I < Parameters.Length; ++l_I)
         {
-            var l_Parameter  = Parameters[l_I]!;
-            var l_IsOptional = l_Parameter.ParameterType.IsGenericType && l_Parameter.ParameterType.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
+            var l_Parameter       = Parameters[l_I]!;
+            var l_IsNullable      = l_Parameter.ParameterType.IsGenericType && l_Parameter.ParameterType.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
+            var l_HasDefaultValue = l_Parameter.HasDefaultValue;
 
-            ParametersType[l_I]      = l_IsOptional ? l_Parameter.ParameterType.GenericTypeArguments[0] : l_Parameter.ParameterType;
-            ParametersOptional[l_I]  = l_IsOptional;
+            ParametersType[l_I]      = l_IsNullable ? l_Parameter.ParameterType.GenericTypeArguments[0] : l_Parameter.ParameterType;
+            ParametersOptional[l_I]  = l_IsNullable || l_HasDefaultValue;
             ParametersFixedName[l_I] = l_Parameter.Name!.StartsWith("p_") ? l_Parameter.Name[2..] : l_Parameter.Name;
 
             if (l_I < UserParametersOffset)

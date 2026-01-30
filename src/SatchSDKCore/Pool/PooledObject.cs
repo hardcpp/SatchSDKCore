@@ -58,6 +58,8 @@ public class PooledObject<t_Type>
         if (m_Disposed)
             return;
 
+        m_Disposed = true;
+        GC.SuppressFinalize(this);
         m_Pool.Release(m_Value);
     }
 }

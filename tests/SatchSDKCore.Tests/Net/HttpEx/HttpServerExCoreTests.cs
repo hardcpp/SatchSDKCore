@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;

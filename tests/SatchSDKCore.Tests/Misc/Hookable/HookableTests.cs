@@ -1,4 +1,3 @@
-using System;
 using SSC.Misc.Hookable;
 
 namespace SatchSDKCore.Tests.Misc;

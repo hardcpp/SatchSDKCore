@@ -52,7 +52,10 @@ public class STObjectPool<t_Type>
         m_CollectionCheck = collectionCheck;
 
         while (defaultCapacity-- > 0)
+        {
             m_Stack.Push(m_CreateFunc());
+            CountAll++;
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////

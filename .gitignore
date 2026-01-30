@@ -53,3 +53,7 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 .vs/
+
+# Coverage
+/coverage
+/coverage-report

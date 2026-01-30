@@ -1,4 +1,3 @@
-using System;
 using SSC.Misc;
 
 namespace SatchSDKCore.Tests.Misc;
