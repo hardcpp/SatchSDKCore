@@ -89,20 +89,19 @@ internal class AES
             Array.Copy(data, IV_SIZE, cipherData, 0, cipherData.Length);
 
             using (var aes = Aes.Create())
-                using (MemoryStream memoryStream = new MemoryStream())
+            {
                 aes.Key = key;
                 aes.IV = iv;
                 aes.Mode = CipherMode.CBC;
 
                 using (MemoryStream memoryStream = new MemoryStream())
-                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Write))
+                {
                     using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(cipherData, 0, cipherData.Length);
                     }
-                    }
+
                     return memoryStream.ToArray();
-                }
                 }
             }
         }
