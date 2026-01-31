@@ -47,9 +47,11 @@ jobs:
                   languages: ${{ matrix.language }}
                   queries: security-and-quality
 
-            # Autobuild attempts to build any compiled languages
-            - name: Autobuild
-              uses: github/codeql-action/autobuild@v3
+            - name: Restore dependencies
+              run: dotnet restore
+
+            - name: Build main project
+              run: dotnet build src/SatchSDKCore/SatchSDKCore.csproj --configuration Release --no-restore
 
             - name: Perform CodeQL Analysis
               uses: github/codeql-action/analyze@v3
