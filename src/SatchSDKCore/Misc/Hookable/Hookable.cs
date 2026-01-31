@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace SSC.Misc.Hookable;
@@ -10,7 +10,7 @@ namespace SSC.Misc.Hookable;
 public class Hookable<T> : IHookable<T>
 {
     private IHook<T>[] _earlyHooks = Array.Empty<IHook<T>>();
-    private IHook<T>[] _lateHooks  = Array.Empty<IHook<T>>();
+    private IHook<T>[] _lateHooks = Array.Empty<IHook<T>>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -41,7 +41,7 @@ public class Hookable<T> : IHookable<T>
             return;
 
         var newEarlyHooks = new IHook<T>[oldEarlyHooks.Length - 1];
-        Array.Copy(oldEarlyHooks,               0, newEarlyHooks,           0,                            existingIdx);
+        Array.Copy(oldEarlyHooks, 0, newEarlyHooks, 0, existingIdx);
         Array.Copy(oldEarlyHooks, existingIdx + 1, newEarlyHooks, existingIdx, oldEarlyHooks.Length - existingIdx - 1);
 
         _earlyHooks = newEarlyHooks;
@@ -76,7 +76,7 @@ public class Hookable<T> : IHookable<T>
             return;
 
         var newLateHooks = new IHook<T>[oldLateHooks.Length - 1];
-        Array.Copy(oldLateHooks,               0, newLateHooks,           0,                           existingIdx);
+        Array.Copy(oldLateHooks, 0, newLateHooks, 0, existingIdx);
         Array.Copy(oldLateHooks, existingIdx + 1, newLateHooks, existingIdx, oldLateHooks.Length - existingIdx - 1);
 
         _lateHooks = newLateHooks;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.WebSockets;
 
 namespace SSC.Net.WebSocketEx;
@@ -7,11 +7,11 @@ namespace SSC.Net.WebSocketEx;
 /// Advanced WebSocket server session
 /// </summary>
 public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocketExBase
-    where TSession   : WebSocketServerExSession<TSession, TSessionID>
+    where TSession : WebSocketServerExSession<TSession, TSessionID>
     where TSessionID : notnull
 {
     public readonly IWebSocketServerEx<TSession, TSessionID> Server;
-    public readonly TSessionID                               SessionID;
+    public readonly TSessionID SessionID;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -23,14 +23,14 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
     /// <param name="webSocket">WebSocket instance</param>
     public WebSocketServerExSession(
         IWebSocketServerEx<TSession, TSessionID> server,
-        WebSocket                                webSocket,
-        TSessionID                               sessionID
+        WebSocket webSocket,
+        TSessionID sessionID
     ) : base(webSocket, server.Allocator, server.MaxFrameLength, server.MaxMessageLength, server.MaxReceiveQueueSize)
     {
         ArgumentNullException.ThrowIfNull(server);
         ArgumentNullException.ThrowIfNull(webSocket);
 
-        Server    = server;
+        Server = server;
         SessionID = sessionID;
     }
 
@@ -70,7 +70,7 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
         {
             Logging.Log(
                 ELogSeverity.Error,
-                $"[Network.WebSocket][WebSocketSession.InternalOnSessionOpen] Error while starting the session:"
+                "[Network.WebSocket][WebSocketSession.InternalOnSessionOpen] Error while starting the session:"
             );
             Logging.Log(ELogSeverity.Error, exception);
         }
@@ -113,7 +113,7 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
         {
             Logging.Log(
                 ELogSeverity.Error,
-                $"[Network.WebSocket][WebSocketSession.InternalOnSessionUpdate] Error while updating the session:"
+                "[Network.WebSocket][WebSocketSession.InternalOnSessionUpdate] Error while updating the session:"
             );
             Logging.Log(ELogSeverity.Error, exception);
         }
@@ -131,7 +131,7 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
         {
             Logging.Log(
                 ELogSeverity.Error,
-                $"[Network.WebSocket][WebSocketSession.InternalOnSessionRemove] Error while terminating the session:"
+                "[Network.WebSocket][WebSocketSession.InternalOnSessionRemove] Error while terminating the session:"
             );
             Logging.Log(ELogSeverity.Error, exception);
         }

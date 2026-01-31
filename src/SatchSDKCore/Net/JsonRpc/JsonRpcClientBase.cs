@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using static SSC.Net.JsonRpc.IJsonRpcClient;
@@ -24,9 +23,9 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public JsonRpcClientResult? Call(
-        string              method,
+        string method,
         IEnumerable<object> parameters,
-        ECallOptions        options     = ECallOptions.None
+        ECallOptions options = ECallOptions.None
     )
     {
         var request = new JsonRpcClientRequest
@@ -47,9 +46,9 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public JsonRpcClientResult? Call(
-        string                              method,
+        string method,
         IReadOnlyDictionary<string, object> parameters,
-        ECallOptions                        options     = ECallOptions.None
+        ECallOptions options = ECallOptions.None
     )
     {
         var request = new JsonRpcClientRequest
@@ -71,11 +70,11 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public void CallInBackground(
-        string                        method,
-        IEnumerable<object>           parameters,
-        CancellationToken             cancellationToken,
+        string method,
+        IEnumerable<object> parameters,
+        CancellationToken cancellationToken,
         Action<JsonRpcClientResult?>? callback,
-        ECallOptions                  options           = ECallOptions.None
+        ECallOptions options = ECallOptions.None
     )
     {
         var request = new JsonRpcClientRequest
@@ -97,11 +96,11 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public void CallInBackground(
-        string                              method,
+        string method,
         IReadOnlyDictionary<string, object> parameters,
-        CancellationToken                   cancellationToken,
-        Action<JsonRpcClientResult?>?       callback,
-        ECallOptions                        options           = ECallOptions.None
+        CancellationToken cancellationToken,
+        Action<JsonRpcClientResult?>? callback,
+        ECallOptions options = ECallOptions.None
     )
     {
         var request = new JsonRpcClientRequest
@@ -123,10 +122,10 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public Task<JsonRpcClientResult?> CallAsync(
-        string              method,
+        string method,
         IEnumerable<object> parameters,
-        CancellationToken   cancellationToken,
-        ECallOptions        options           = ECallOptions.None
+        CancellationToken cancellationToken,
+        ECallOptions options = ECallOptions.None
     )
     {
         var request = new JsonRpcClientRequest
@@ -149,10 +148,10 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     public Task<JsonRpcClientResult?> CallAsync(
-        string                              method,
+        string method,
         IReadOnlyDictionary<string, object> parameters,
-        CancellationToken                   cancellationToken,
-        ECallOptions                        options           = ECallOptions.None
+        CancellationToken cancellationToken,
+        ECallOptions options = ECallOptions.None
     )
     {
         var request = new JsonRpcClientRequest
@@ -177,7 +176,7 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected abstract JsonRpcClientResult? DoCall(
         JsonRpcClientRequest request,
-        ECallOptions         options
+        ECallOptions options
     );
     /// <summary>
     /// Do a non-blocking call in the background with a callback
@@ -189,10 +188,10 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected abstract void DoCallInBackground(
-        JsonRpcClientRequest          request,
-        CancellationToken             cancellationToken,
+        JsonRpcClientRequest request,
+        CancellationToken cancellationToken,
         Action<JsonRpcClientResult?>? callback,
-        ECallOptions                  options
+        ECallOptions options
     );
     /// <summary>
     /// Do an async call
@@ -205,7 +204,7 @@ public abstract class JsonRpcClientBase : IJsonRpcClient
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected abstract Task<JsonRpcClientResult?> DoCallAsync(
         JsonRpcClientRequest request,
-        CancellationToken    cancellationToken,
-        ECallOptions         options
+        CancellationToken cancellationToken,
+        ECallOptions options
     );
 }

@@ -1,10 +1,10 @@
-﻿using SSC.Net.HttpEx;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using SSC.Net.HttpEx;
 using static SSC.Net.JsonRpc.IJsonRpcClient;
 
 namespace SSC.Net.JsonRpc;
@@ -15,13 +15,13 @@ namespace SSC.Net.JsonRpc;
 public class JsonRpcClientHttp : JsonRpcClientBase
 {
     private readonly IHttpClientEx _httpClient;
-    private readonly string?       _overrideUrl;
+    private readonly string? _overrideUrl;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public IHttpClientEx HttpClient  => _httpClient;
-    public string?       OverrideUrl => _overrideUrl;
+    public IHttpClientEx HttpClient => _httpClient;
+    public string? OverrideUrl => _overrideUrl;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -33,7 +33,7 @@ public class JsonRpcClientHttp : JsonRpcClientBase
     /// <param name="overrideUrl">Url override?</param>
     public JsonRpcClientHttp(IHttpClientEx httpClient, string? overrideUrl = null)
     {
-        _httpClient  = httpClient;
+        _httpClient = httpClient;
         _overrideUrl = overrideUrl;
     }
 
@@ -45,7 +45,7 @@ public class JsonRpcClientHttp : JsonRpcClientBase
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected override JsonRpcClientResult? DoCall(
         JsonRpcClientRequest request,
-        ECallOptions         options
+        ECallOptions options
     )
     {
         var httpResult = _httpClient.DoRequest(
@@ -61,17 +61,17 @@ public class JsonRpcClientHttp : JsonRpcClientBase
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected override void DoCallInBackground(
-        JsonRpcClientRequest          request,
-        CancellationToken             cancellationToken,
+        JsonRpcClientRequest request,
+        CancellationToken cancellationToken,
         Action<JsonRpcClientResult?>? callback,
-        ECallOptions                  options
+        ECallOptions options
     )
     {
         _httpClient.DoRequestInBackground(
             "POST",
             _overrideUrl ?? string.Empty,
             cancellationToken,
-            (httpResult) => { callback?.Invoke(BuildJSONRPCClientResult(request, httpResult)); },
+            httpResult => { callback?.Invoke(BuildJSONRPCClientResult(request, httpResult)); },
             HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
             CallOptionsToRequestOptions(options)
         );
@@ -81,8 +81,8 @@ public class JsonRpcClientHttp : JsonRpcClientBase
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected override async Task<JsonRpcClientResult?> DoCallAsync(
         JsonRpcClientRequest request,
-        CancellationToken    cancellationToken,
-        ECallOptions         options
+        CancellationToken cancellationToken,
+        ECallOptions options
     )
     {
         var httpResult = await _httpClient.DoRequestAsync(
@@ -112,12 +112,12 @@ public class JsonRpcClientHttp : JsonRpcClientBase
 
         try
         {
-            var l_JsonResult = JsonObject.Parse(httpResponse.BodyString) as JsonObject;
+            var jsonResult = JsonObject.Parse(httpResponse.BodyString) as JsonObject;
 
-            return new JsonRpcClientResult()
+            return new JsonRpcClientResult
             {
-                Result = (l_JsonResult?["result"] ?? null) as JsonObject,
-                Error  = (l_JsonResult?["error"]  ?? null) as JsonObject
+                Result = (jsonResult?["result"] ?? null) as JsonObject,
+                Error = (jsonResult?["error"] ?? null) as JsonObject
             };
         }
         catch (Exception exception)

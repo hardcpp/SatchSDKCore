@@ -1,13 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>14</LangVersion>
         <Nullable>enable</Nullable>
         <ServerGarbageCollection>true</ServerGarbageCollection>
         <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
-        <PublishAot>true</PublishAot>
-        <OptimizationPreference>Speed</OptimizationPreference>
-        <IlcInstructionSet>native</IlcInstructionSet>
         <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PlatformTarget>anycpu</PlatformTarget>
@@ -18,7 +16,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     </ItemGroup>
 
 </Project>

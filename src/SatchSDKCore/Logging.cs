@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace SSC;
 
@@ -19,7 +19,7 @@ public enum ELogSeverity
 /// </summary>
 public static class Logging
 {
-    public static event Action<ELogSeverity, string>?    OnLogMessage;
+    public static event Action<ELogSeverity, string>? OnLogMessage;
     public static event Action<ELogSeverity, Exception>? OnLogException;
 
     ////////////////////////////////////////////////////////////////////////////

@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Web;
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using System;
-using System.Text.Json.Nodes;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Web;
 
 namespace SSC.Net.HttpEx;
 
@@ -13,8 +13,8 @@ namespace SSC.Net.HttpEx;
 /// </summary>
 public class HttpClientExPayload
 {
-    private static JsonSerializerOptions s_RegularSerialize  = new() { WriteIndented = false };
-    private static JsonSerializerOptions s_IndentedSerialize = new() { WriteIndented = true  };
+    private static readonly JsonSerializerOptions s_RegularSerialize = new() { WriteIndented = false };
+    private static readonly JsonSerializerOptions s_IndentedSerialize = new() { WriteIndented = true };
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ public class HttpClientExPayload
     private HttpClientExPayload(byte[] bytes, string type)
     {
         Bytes = bytes;
-        Type  = type;
+        Type = type;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ public class HttpClientExPayload
     /// <param name="content">Json content</param>
     /// <returns></returns>
     public static HttpClientExPayload FromJsonString(string content)
-        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content), $"application/json; charset=utf-8");
+        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content), "application/json; charset=utf-8");
     /// <summary>
     /// Constructor from Json
     /// </summary>
@@ -80,5 +80,5 @@ public class HttpClientExPayload
     /// <param name="indent">Should indent?</param>
     /// <returns></returns>
     public static HttpClientExPayload FromJson(JsonNode content)
-        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content.ToJsonString(SDKConfig.JsonSerializerOptions)), $"application/json; charset=utf-8");
+        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content.ToJsonString(SDKConfig.JsonSerializerOptions)), "application/json; charset=utf-8");
 }
