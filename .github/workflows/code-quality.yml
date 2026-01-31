@@ -43,7 +43,7 @@ jobs:
               run: dotnet build --no-restore --configuration Release
 
             - name: Run .NET Analyzers
-              run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=false /warnaserror-
+              run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=false
 
     format-check:
         name: Format Check

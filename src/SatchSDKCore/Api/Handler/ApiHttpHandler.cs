@@ -75,14 +75,14 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
     /// <exception cref="Exception">If no corresponding ApiHttpMethod was found</exception>
     private static Route.ApiHttpMethod GetHttpMethodFromHttpMethod(HttpListenerRequest originalRequest)
         => originalRequest.HttpMethod switch
-            {
-                "GET" => Route.ApiHttpMethod.Get,
-                "DELETE" => Route.ApiHttpMethod.Delete,
-                "POST" => Route.ApiHttpMethod.Post,
-                "PUT" => Route.ApiHttpMethod.Put,
-                "PATCH" => Route.ApiHttpMethod.Patch,
-                _ => throw new Exception($"Unhandled HTTP method {originalRequest.HttpMethod}")
-            };
+        {
+            "GET" => Route.ApiHttpMethod.Get,
+            "DELETE" => Route.ApiHttpMethod.Delete,
+            "POST" => Route.ApiHttpMethod.Post,
+            "PUT" => Route.ApiHttpMethod.Put,
+            "PATCH" => Route.ApiHttpMethod.Patch,
+            _ => throw new Exception($"Unhandled HTTP method {originalRequest.HttpMethod}")
+        };
     /// <summary>
     /// Get splitted segment from an absolute Url
     /// </summary>
@@ -114,3 +114,4 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
         return result;
     }
 }
+
