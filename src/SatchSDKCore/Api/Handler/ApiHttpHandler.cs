@@ -74,28 +74,15 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
     /// <returns>Equivalent ApiHttpMethod</returns>
     /// <exception cref="Exception">If no corresponding ApiHttpMethod was found</exception>
     private static Route.ApiHttpMethod GetHttpMethodFromHttpMethod(HttpListenerRequest originalRequest)
-    {
-        switch (originalRequest.HttpMethod)
-        {
-            case "GET":
-                return Route.ApiHttpMethod.Get;
-
-            case "DELETE":
-                return Route.ApiHttpMethod.Delete;
-
-            case "POST":
-                return Route.ApiHttpMethod.Post;
-
-            case "PUT":
-                return Route.ApiHttpMethod.Put;
-
-            case "PATCH":
-                return Route.ApiHttpMethod.Patch;
-
-            default:
-                throw new Exception($"Unhandled HTTP method {originalRequest.HttpMethod}");
-        }
-    }
+        => originalRequest.HttpMethod switch
+            {
+                "GET" => Route.ApiHttpMethod.Get,
+                "DELETE" => Route.ApiHttpMethod.Delete,
+                "POST" => Route.ApiHttpMethod.Post,
+                "PUT" => Route.ApiHttpMethod.Put,
+                "PATCH" => Route.ApiHttpMethod.Patch,
+                _ => throw new Exception($"Unhandled HTTP method {originalRequest.HttpMethod}")
+            };
     /// <summary>
     /// Get splitted segment from an absolute Url
     /// </summary>
