@@ -162,7 +162,7 @@ public class ApiHttpBlueprint : ApiBlueprint
         Route.ApiHttpMethod httpMethod,
         ReadOnlySpan<string> segments,
         Dictionary<string, string> argumentsCollector,
-        out Route.ApiHttpRoute? httpRoute)
+        [NotNullWhen(true)] out Route.ApiHttpRoute? httpRoute)
     {
         httpRoute = null;
 
