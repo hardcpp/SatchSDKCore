@@ -1,24 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ServerGarbageCollection>true</ServerGarbageCollection>
-    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
-    <PublishAot>true</PublishAot>
-    <OptimizationPreference>Speed</OptimizationPreference>
-    <IlcInstructionSet>native</IlcInstructionSet>
-    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>anycpu</PlatformTarget>
-    <SignAssembly>False</SignAssembly>
-    <PackageOutputPath>$(OutputPath)</PackageOutputPath>
-    <BaseOutputPath>../../bin</BaseOutputPath>
-    <RootNamespace>SSC</RootNamespace>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ServerGarbageCollection>true</ServerGarbageCollection>
+        <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+        <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <PlatformTarget>anycpu</PlatformTarget>
+        <SignAssembly>False</SignAssembly>
+        <PackageOutputPath>$(OutputPath)</PackageOutputPath>
+        <BaseOutputPath>../../bin</BaseOutputPath>
+        <RootNamespace>SSC</RootNamespace>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    </ItemGroup>
 
 </Project>

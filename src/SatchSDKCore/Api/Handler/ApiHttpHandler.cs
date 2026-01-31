@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
+using SSC.Api.Response;
 using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;
 

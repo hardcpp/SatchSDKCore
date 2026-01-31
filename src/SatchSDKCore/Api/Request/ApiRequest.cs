@@ -9,12 +9,6 @@ namespace SSC.Api.Request;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public abstract class ApiRequest
 {
-    public ApiHttpRequest? AsHttpRequest
-        => this is ApiHttpRequest casted ? casted : null;
-
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-
     /// <summary>
     /// Constructor
     /// </summary>

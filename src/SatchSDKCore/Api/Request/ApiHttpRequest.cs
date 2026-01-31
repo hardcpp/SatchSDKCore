@@ -69,3 +69,12 @@ public sealed class ApiHttpRequest : ApiRequest
         return requestBody;
     }
 }
+
+public static class ApiHttpRequestExtensions
+{
+    extension(ApiRequest self)
+    {
+        public ApiHttpRequest? AsHttpRequest
+            => self as ApiHttpRequest;
+    }
+}

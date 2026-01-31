@@ -49,3 +49,13 @@ public sealed class ApiHttpResponse : ApiResponse
     public static ApiHttpResponse Result(RouteContext.ApiRouteContext routeContext, HttpStatusCode code, string content, string contentType = "text/plain")
         => new(routeContext.Request, code, new StringContent(content, Encoding.UTF8, contentType), Encoding.UTF8);
 }
+
+
+public static class ApiHttpResponseExtensions
+{
+    extension(ApiResponse self)
+    {
+        public ApiHttpResponse? AsHttpResponse
+            => self as ApiHttpResponse;
+    }
+}
