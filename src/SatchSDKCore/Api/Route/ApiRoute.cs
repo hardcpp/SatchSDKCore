@@ -265,6 +265,15 @@ public abstract class ApiRoute : Attribute
         }
         catch (Exception exception)
         {
+            // Rethrow critical exceptions that should not be handled as regular route failures.
+            if (exception is OutOfMemoryException ||
+                exception is StackOverflowException ||
+                exception is ThreadAbortException ||
+                exception is ThreadInterruptedException)
+            {
+                throw;
+            }
+
             Logging.Log(ELogSeverity.Error, $"[ApiRoute.TryInvokeInternal] Route {Method!.GetType().FullName} failed with exception:");
             Logging.Log(ELogSeverity.Error, exception);
 
