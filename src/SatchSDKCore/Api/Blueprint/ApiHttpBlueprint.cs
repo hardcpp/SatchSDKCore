@@ -85,8 +85,8 @@ public class ApiHttpBlueprint : ApiBlueprint
     {
         ArgumentNullException.ThrowIfNull(route);
 
-        var httpRoute = route as Route.ApiHttpRoute;
-        var rule = ComposeRule(Prefix, httpRoute!.HttpEndpoint);
+        var httpRoute = (Route.ApiHttpRoute)route;
+        var rule = ComposeRule(Prefix, httpRoute.HttpEndpoint);
 
         if (!TryGetHttpRuleTreeNodeFor(rule, createMissings: true, out var targetRuleTreeNode))
             throw new Exception($"Failed to register HTTP rule {httpRoute.HttpMethod}:{rule}");
