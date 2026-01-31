@@ -12,7 +12,7 @@ namespace SSC.Api.Blueprint;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public class ApiHttpBlueprint : ApiBlueprint
 {
-    public static int HTTP_METHOD_COUNT = Enum.GetValues<Route.ApiHttpMethod>().Length;
+    public static readonly int HTTP_METHOD_COUNT = Enum.GetValues<Route.ApiHttpMethod>().Length;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
