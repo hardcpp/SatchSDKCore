@@ -1,0 +1,109 @@
+name: Security Scanning
+
+on:
+    push:
+        branches:
+            - stable
+            - dev
+    pull_request:
+        branches: ["**"]
+    schedule:
+        # Run weekly on Monday at 9:00 UTC
+        - cron: "0 9 * * 1"
+
+env:
+    DOTNET_VERSION: "9.0.x"
+
+permissions:
+    contents: read
+
+jobs:
+    codeql-analysis:
+        name: CodeQL Analysis
+        runs-on: ubuntu-latest
+        permissions:
+            actions: read
+            contents: read
+            security-events: write
+
+        strategy:
+            fail-fast: false
+            matrix:
+                language: ["csharp"]
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
+
+            # Initializes the CodeQL tools for scanning
+            - name: Initialize CodeQL
+              uses: github/codeql-action/init@v3
+              with:
+                  languages: ${{ matrix.language }}
+                  queries: security-and-quality
+
+            # Autobuild attempts to build any compiled languages
+            - name: Autobuild
+              uses: github/codeql-action/autobuild@v3
+
+            - name: Perform CodeQL Analysis
+              uses: github/codeql-action/analyze@v3
+              with:
+                  category: "/language:${{matrix.language}}"
+
+    dependency-review:
+        name: Dependency Review
+        runs-on: ubuntu-latest
+        if: github.event_name == 'pull_request'
+        permissions:
+            contents: read
+            pull-requests: write
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Dependency Review
+              uses: actions/dependency-review-action@v4
+              with:
+                  fail-on-severity: moderate
+                  comment-summary-in-pr: true
+
+    nuget-audit:
+        name: NuGet Security Audit
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            security-events: write
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
+
+            - name: Restore dependencies
+              run: dotnet restore
+
+            - name: Run NuGet audit
+              run: |
+                  dotnet list package --vulnerable --include-transitive 2>&1 | tee nuget-audit.log
+                  if grep -q "has the following vulnerable packages" nuget-audit.log; then
+                    echo "::error::Vulnerable packages detected"
+                    exit 1
+                  fi
+
+            - name: Upload audit results
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: nuget-audit-results
+                  path: nuget-audit.log

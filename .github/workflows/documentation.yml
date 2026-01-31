@@ -1,0 +1,248 @@
+name: Documentation
+
+on:
+    push:
+        branches:
+            - stable
+            - dev
+    pull_request:
+        branches:
+            - stable
+            - dev
+    workflow_dispatch:
+
+env:
+    DOTNET_VERSION: "9.0.x"
+
+permissions:
+    contents: write
+    pages: write
+    id-token: write
+
+jobs:
+    generate-docs:
+        name: Generate API Documentation
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
+
+            - name: Cache NuGet packages
+              uses: actions/cache@v4
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
+
+            - name: Restore dependencies
+              run: dotnet restore
+
+            - name: Build project
+              run: dotnet build --configuration Release --no-restore
+
+            - name: Install DocFX
+              run: dotnet tool install -g docfx
+
+            - name: Check for DocFX configuration
+              id: check_docfx
+              run: |
+                  if [ -f "docfx.json" ]; then
+                    echo "exists=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "exists=false" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Create DocFX configuration
+              if: steps.check_docfx.outputs.exists == 'false'
+              run: |
+                  mkdir -p docs
+                  cat > docfx.json << 'EOF'
+                  {
+                    "metadata": [
+                      {
+                        "src": [
+                          {
+                            "files": [ "src/**/*.csproj" ],
+                            "exclude": [ "**/bin/**", "**/obj/**" ]
+                          }
+                        ],
+                        "dest": "api",
+                        "disableGitFeatures": false,
+                        "disableDefaultFilter": false
+                      }
+                    ],
+                    "build": {
+                      "content": [
+                        {
+                          "files": [ "api/**.yml", "api/index.md" ]
+                        },
+                        {
+                          "files": [ "*.md" ]
+                        }
+                      ],
+                      "resource": [
+                        {
+                          "files": [ "images/**" ]
+                        }
+                      ],
+                      "overwrite": [
+                        {
+                          "files": [ "apidoc/**.md" ],
+                          "exclude": [ "obj/**", "_site/**" ]
+                        }
+                      ],
+                      "dest": "_site",
+                      "globalMetadataFiles": [],
+                      "fileMetadataFiles": [],
+                      "template": [ "default" ],
+                      "postProcessors": [],
+                      "markdownEngineName": "markdig",
+                      "noLangKeyword": false,
+                      "keepFileLink": false,
+                      "cleanupCacheHistory": false,
+                      "disableGitFeatures": false
+                    }
+                  }
+                  EOF
+
+            - name: Generate API metadata
+              run: docfx metadata docfx.json
+
+            - name: Build documentation
+              run: docfx build docfx.json
+
+            - name: Upload documentation artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: documentation
+                  path: _site/
+
+            - name: Create documentation summary
+              run: |
+                  echo "# 📚 Documentation Generated" > doc-summary.md
+                  echo "" >> doc-summary.md
+                  echo "Documentation has been successfully generated for SatchSDKCore." >> doc-summary.md
+                  echo "" >> doc-summary.md
+                  echo "## Contents" >> doc-summary.md
+                  echo "- API Reference Documentation" >> doc-summary.md
+                  echo "- Code Examples" >> doc-summary.md
+                  echo "- Project Overview" >> doc-summary.md
+                  echo "" >> doc-summary.md
+                  if [ -d "_site" ]; then
+                    echo "### Generated Files" >> doc-summary.md
+                    find _site -type f -name "*.html" | head -20 | sed 's/^/- /' >> doc-summary.md
+                  fi
+
+            - name: Upload documentation summary
+              uses: actions/upload-artifact@v4
+              with:
+                  name: documentation-summary
+                  path: doc-summary.md
+
+    deploy-docs:
+        name: Deploy to GitHub Pages
+        runs-on: ubuntu-latest
+        needs: generate-docs
+        if: github.ref == 'refs/heads/stable' && github.event_name == 'push'
+
+        steps:
+            - name: Download documentation
+              uses: actions/download-artifact@v4
+              with:
+                  name: documentation
+                  path: _site
+
+            - name: Setup Pages
+              uses: actions/configure-pages@v4
+
+            - name: Upload to GitHub Pages
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: _site
+
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4
+
+    validate-docs:
+        name: Validate Documentation
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Check for broken links in README
+              uses: gaurav-nelson/github-action-markdown-link-check@v1
+              with:
+                  use-quiet-mode: "yes"
+                  config-file: ".github/markdown-link-check-config.json"
+                  folder-path: "."
+                  file-path: "./README.md"
+              continue-on-error: true
+
+            - name: Check documentation completeness
+              run: |
+                  echo "# Documentation Completeness Check" > doc-check.md
+                  echo "" >> doc-check.md
+
+                  # Check for README
+                  if [ -f "README.md" ]; then
+                    echo "✅ README.md exists" >> doc-check.md
+                  else
+                    echo "❌ README.md missing" >> doc-check.md
+                  fi
+
+                  # Check for LICENSE
+                  if [ -f "LICENSE" ]; then
+                    echo "✅ LICENSE exists" >> doc-check.md
+                  else
+                    echo "❌ LICENSE missing" >> doc-check.md
+                  fi
+
+                  # Check for CONTRIBUTING.md
+                  if [ -f "CONTRIBUTING.md" ]; then
+                    echo "✅ CONTRIBUTING.md exists" >> doc-check.md
+                  else
+                    echo "⚠️  CONTRIBUTING.md recommended but not found" >> doc-check.md
+                  fi
+
+                  # Check for CHANGELOG.md
+                  if [ -f "CHANGELOG.md" ]; then
+                    echo "✅ CHANGELOG.md exists" >> doc-check.md
+                  else
+                    echo "⚠️  CHANGELOG.md recommended but not found" >> doc-check.md
+                  fi
+
+                  echo "" >> doc-check.md
+                  echo "## XML Documentation Coverage" >> doc-check.md
+
+                  # Count files with XML documentation
+                  total_cs_files=$(find src -name "*.cs" | wc -l)
+                  files_with_xml=$(grep -r "///" src --include="*.cs" | cut -d: -f1 | sort -u | wc -l)
+
+                  echo "- Total C# files: $total_cs_files" >> doc-check.md
+                  echo "- Files with XML comments: $files_with_xml" >> doc-check.md
+
+                  if [ $total_cs_files -gt 0 ]; then
+                    coverage=$((files_with_xml * 100 / total_cs_files))
+                    echo "- Coverage: ${coverage}%" >> doc-check.md
+                  fi
+
+            - name: Upload documentation check
+              uses: actions/upload-artifact@v4
+              with:
+                  name: documentation-check
+                  path: doc-check.md
+
+            - name: Write to Job Summary
+              run: cat doc-check.md >> $GITHUB_STEP_SUMMARY
