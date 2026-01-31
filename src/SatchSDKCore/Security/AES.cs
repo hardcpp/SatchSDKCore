@@ -87,20 +87,21 @@ internal class AES
             Array.Copy(data, 0, iv, 0, IV_SIZE);
             Array.Copy(data, IV_SIZE, cipherData, 0, cipherData.Length);
 
-            var aes = Aes.Create();
-            aes.Key = key;
-            aes.IV = iv;
-            aes.Mode = CipherMode.CBC;
-
-            using (MemoryStream memoryStream = new MemoryStream())
+            using (var aes = Aes.Create())
             {
-                using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Write))
-                {
-                    cryptoStream.Write(cipherData, 0, cipherData.Length);
-                }
+                aes.Key = key;
+                aes.IV = iv;
+                aes.Mode = CipherMode.CBC;
 
-                aes.Dispose();
-                return memoryStream.ToArray();
+                using (MemoryStream memoryStream = new MemoryStream())
+                {
+                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(cipherData, 0, cipherData.Length);
+                    }
+
+                    return memoryStream.ToArray();
+                }
             }
         }
         catch (Exception exception)
