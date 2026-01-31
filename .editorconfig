@@ -209,15 +209,15 @@ dotnet_naming_rule.parameters_should_have_p_prefix.style = camel_case_style
 
 dotnet_naming_symbols.parameters.applicable_kinds = parameter
 
-# Type parameters start with t_
+# Type parameters start with T
 dotnet_naming_rule.type_parameters_should_have_t_prefix.severity = warning
 dotnet_naming_rule.type_parameters_should_have_t_prefix.symbols = type_parameters
-dotnet_naming_rule.type_parameters_should_have_t_prefix.style = t_prefix_style
+dotnet_naming_rule.type_parameters_should_have_t_prefix.style = T_prefix_style
 
 dotnet_naming_symbols.type_parameters.applicable_kinds = type_parameter
 
-dotnet_naming_style.t_prefix_style.required_prefix = t_
-dotnet_naming_style.t_prefix_style.capitalization = pascal_case
+dotnet_naming_style.T_prefix_style.required_prefix = T
+dotnet_naming_style.T_prefix_style.capitalization = pascal_case
 
 # Interfaces start with I
 dotnet_naming_rule.interfaces_should_start_with_i.severity = warning
