@@ -72,9 +72,11 @@ public sealed class ApiHttpRequest : ApiRequest
 
 public static class ApiHttpRequestExtensions
 {
-    extension(ApiRequest self)
-    {
-        public ApiHttpRequest? AsHttpRequest
-            => self as ApiHttpRequest;
-    }
+    /// <summary>
+    /// Cast ApiRequest to ApiHttpRequest
+    /// </summary>
+    /// <param name="self">The ApiRequest instance</param>
+    /// <returns>ApiHttpRequest if the cast is successful, otherwise null</returns>
+    public static ApiHttpRequest? AsHttpRequest(this ApiRequest self)
+        => self as ApiHttpRequest;
 }

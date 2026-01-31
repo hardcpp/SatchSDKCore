@@ -55,7 +55,7 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
         route!.TryInvoke(httpContext, arguments, out var error, out var response);
 
         if (response != null)
-            context.ServerResponse = response.AsHttpResponse?.HttpServerExResponse ?? null;
+            context.ServerResponse = response.AsHttpResponse()?.HttpServerExResponse ?? null;
         else if (!string.IsNullOrEmpty(error))
         {
             Logging.Log(ELogSeverity.Error, $"Failed to execute route '{route.HttpEndpoint}': {error}");

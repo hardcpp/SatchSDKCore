@@ -161,9 +161,14 @@ public class HttpServerExCore : IHttpServerEx
             if (!_contextQueueEvent.WaitOne(TimeSpan.FromMilliseconds(250)))
                 continue;
 
-            if (_contextQueue.TryDequeue(out HttpListenerContext? context) && context != null)
-                HandleRequest(context);
+            // Process all available items in the queue before resetting the event
+            while (_contextQueue.TryDequeue(out HttpListenerContext? context))
+            {
+                if (context != null)
+                    HandleRequest(context);
+            }
 
+            // Reset only if queue is truly empty after draining it
             if (_contextQueue.IsEmpty)
                 _contextQueueEvent.Reset();
         }

@@ -53,9 +53,11 @@ public sealed class ApiHttpResponse : ApiResponse
 
 public static class ApiHttpResponseExtensions
 {
-    extension(ApiResponse self)
-    {
-        public ApiHttpResponse? AsHttpResponse
-            => self as ApiHttpResponse;
-    }
+    /// <summary>
+    /// Cast ApiResponse to ApiHttpResponse
+    /// </summary>
+    /// <param name="self">The ApiResponse instance</param>
+    /// <returns>ApiHttpResponse if the cast is successful, otherwise null</returns>
+    public static ApiHttpResponse? AsHttpResponse(this ApiResponse self)
+        => self as ApiHttpResponse;
 }
