@@ -1,5 +1,3 @@
-﻿using SSC.Misc.Hookable;
-using SSC.Net.HttpEx;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -8,14 +6,16 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
+using SSC.Misc.Hookable;
+using SSC.Net.HttpEx;
 
 namespace SSC.Net.WebSocketEx;
 
 /// <summary>
 /// Advanced WebSocket server class
 /// </summary>
-public class WebSocketServerEx<TSession,  TSessionID> : IWebSocketServerEx<TSession, TSessionID>, IHttpServerExRequestHandler, IDisposable
-    where TSession   : WebSocketServerExSession<TSession, TSessionID>
+public class WebSocketServerEx<TSession, TSessionID> : IWebSocketServerEx<TSession, TSessionID>, IHttpServerExRequestHandler, IDisposable
+    where TSession : WebSocketServerExSession<TSession, TSessionID>
     where TSessionID : notnull
 {
     public delegate TSession d_MakeSession(WebSocketServerEx<TSession, TSessionID> server, WebSocket webSocket);
@@ -23,10 +23,10 @@ public class WebSocketServerEx<TSession,  TSessionID> : IWebSocketServerEx<TSess
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly d_MakeSession               _sessionFactory;
-    private readonly List<TSession>              _sessions = new(100);
-    private readonly Thread[]                    _workers;
-    private readonly List<TSession>[]            _workerSessions;
+    private readonly d_MakeSession _sessionFactory;
+    private readonly List<TSession> _sessions = new(100);
+    private readonly Thread[] _workers;
+    private readonly List<TSession>[] _workerSessions;
     private readonly ConcurrentQueue<TSession>[] _workerNewSessions;
 
     private bool _isRunning = false;
@@ -34,12 +34,12 @@ public class WebSocketServerEx<TSession,  TSessionID> : IWebSocketServerEx<TSess
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public IHttpServerEx   HttpServer          { get; init; }
-    public string          AbsolutePath        { get; init; }
-    public int             MaxReceiveQueueSize { get; init; }
-    public int             MaxFrameLength      { get; init; }
-    public int             MaxMessageLength    { get; init; }
-    public ArrayPool<byte> Allocator           { get; init; }
+    public IHttpServerEx HttpServer { get; init; }
+    public string AbsolutePath { get; init; }
+    public int MaxReceiveQueueSize { get; init; }
+    public int MaxFrameLength { get; init; }
+    public int MaxMessageLength { get; init; }
+    public ArrayPool<byte> Allocator { get; init; }
 
     public IHookable<HttpServerExRequestContext> Hooks { get; } = new Hookable<HttpServerExRequestContext>();
 
@@ -58,14 +58,14 @@ public class WebSocketServerEx<TSession,  TSessionID> : IWebSocketServerEx<TSess
     /// <param name="maxFrameLength">Message frame length in bytes</param>
     /// <param name="maxMessageLength">Max message length in bytes</param>
     public WebSocketServerEx(
-        IHttpServerEx   httpServer,
-        string          absolutePath,
-        d_MakeSession   makeSession,
-        int             workerCount          = 4,
-        int             minConcurentSessions = 500,
-        int             maxReceiveQueueSize  = 50,
-        int             maxFrameLength       = 1024,
-        int             maxMessageLength     = 5 * 1024 * 1024)
+        IHttpServerEx httpServer,
+        string absolutePath,
+        d_MakeSession makeSession,
+        int workerCount = 4,
+        int minConcurentSessions = 500,
+        int maxReceiveQueueSize = 50,
+        int maxFrameLength = 1024,
+        int maxMessageLength = 5 * 1024 * 1024)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(workerCount, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(maxMessageLength, maxFrameLength);
@@ -78,25 +78,25 @@ public class WebSocketServerEx<TSession,  TSessionID> : IWebSocketServerEx<TSess
 
         HttpServer = httpServer;
 
-        AbsolutePath        = absolutePath;
+        AbsolutePath = absolutePath;
         MaxReceiveQueueSize = maxReceiveQueueSize;
-        MaxFrameLength      = maxFrameLength;
-        MaxMessageLength    = maxMessageLength;
-        Allocator           = ArrayPool<byte>.Create(maxMessageLength, minConcurentSessions * maxReceiveQueueSize);
+        MaxFrameLength = maxFrameLength;
+        MaxMessageLength = maxMessageLength;
+        Allocator = ArrayPool<byte>.Create(maxMessageLength, minConcurentSessions * maxReceiveQueueSize);
 
         _sessionFactory = makeSession;
 
-        _workers           = new Thread[workerCount];
-        _workerSessions    = new List<TSession>[workerCount];
+        _workers = new Thread[workerCount];
+        _workerSessions = new List<TSession>[workerCount];
         _workerNewSessions = new ConcurrentQueue<TSession>[workerCount];
         for (int i = 0; i < _workers.Length; i++)
         {
             var workerID = i;
 
-            _workers[i]      = new Thread(() => WorkerLoop(workerID));
-            _workers[i].Name = $"WebSocketServer {this.GetHashCode()} Worker #{i + 1}";
+            _workers[i] = new Thread(() => WorkerLoop(workerID));
+            _workers[i].Name = $"WebSocketServer {GetHashCode()} Worker #{i + 1}";
 
-            _workerSessions[i]    = new List<TSession>(100);
+            _workerSessions[i] = new List<TSession>(100);
             _workerNewSessions[i] = new ConcurrentQueue<TSession>();
         }
     }
@@ -181,7 +181,7 @@ public class WebSocketServerEx<TSession,  TSessionID> : IWebSocketServerEx<TSess
     /// </summary>
     private void WorkerLoop(int workerID)
     {
-        var sessions    = _workerSessions[workerID];
+        var sessions = _workerSessions[workerID];
         var newSessions = _workerNewSessions[workerID];
 
         while (_isRunning)
@@ -274,7 +274,7 @@ public class WebSocketServerEx<TSession,  TSessionID> : IWebSocketServerEx<TSess
         }
 
         var webSocketContext = acceptTask.Result;
-        var webSocket        = webSocketContext.WebSocket;
+        var webSocket = webSocketContext.WebSocket;
         if (webSocket.State != WebSocketState.Open)
             return false;
 
@@ -282,8 +282,8 @@ public class WebSocketServerEx<TSession,  TSessionID> : IWebSocketServerEx<TSess
 
         var webSocketServerSession = _sessionFactory.Invoke(this, webSocket);
         webSocketServerSession.NegociatingHeaders = webSocketContext.Headers;
-        webSocketServerSession.LocalEndPoint      = context.ListenerRequest.LocalEndPoint;
-        webSocketServerSession.RemoteEndPoint     = context.ListenerRequest.RemoteEndPoint;
+        webSocketServerSession.LocalEndPoint = context.ListenerRequest.LocalEndPoint;
+        webSocketServerSession.RemoteEndPoint = context.ListenerRequest.RemoteEndPoint;
 
         var leastBusyWorker = Array.IndexOf(_workerSessions, _workerSessions.OrderBy((x) => x.Count).FirstOrDefault());
         _workerNewSessions[leastBusyWorker].Enqueue(webSocketServerSession);

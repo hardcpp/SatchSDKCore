@@ -1,8 +1,8 @@
-﻿using SSC.Net.HttpEx;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net;
+using SSC.Net.HttpEx;
 
 namespace SSC.APIServer.Request;
 

@@ -1,4 +1,4 @@
-﻿namespace SSC.Misc.Hookable;
+namespace SSC.Misc.Hookable;
 
 /// <summary>
 /// Hookable interface
@@ -10,12 +10,12 @@ public interface IHookable<T>
     /// Add a early Hook
     /// </summary>
     /// <param name="earlyHook">Early hook to add</param>
-    public void AddEarlyRequestHook(IHook<T> earlyHook);
+    void AddEarlyRequestHook(IHook<T> earlyHook);
     /// <summary>
     /// Remove a early Hook
     /// </summary>
     /// <param name="earlyHook">Early hook to remove</param>
-    public void RemoveEarlyRequestHook(IHook<T> earlyHook);
+    void RemoveEarlyRequestHook(IHook<T> earlyHook);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -24,12 +24,12 @@ public interface IHookable<T>
     /// Add a late Hook
     /// </summary>
     /// <param name="lateHook">Late hook to add</param>
-    public void AddLateRequestHook(IHook<T> lateHook);
+    void AddLateRequestHook(IHook<T> lateHook);
     /// <summary>
     /// Remove a late Hook
     /// </summary>
     /// <param name="lateHook">Late hook to remove</param>
-    public void RemoveLateRequestHook(IHook<T> lateHook);
+    void RemoveLateRequestHook(IHook<T> lateHook);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -39,11 +39,11 @@ public interface IHookable<T>
     /// </summary>
     /// <param name="context">Current context</param>
     /// <returns>True if should interupt context</returns>
-    public bool InterceptEarly(T context);
+    bool InterceptEarly(T context);
     /// <summary>
     /// Try to run late hooks against the context
     /// </summary>
     /// <param name="context">Current context</param>
     /// <returns>True if should interupt context</returns>
-    public bool InterceptLate(T context);
+    bool InterceptLate(T context);
 }

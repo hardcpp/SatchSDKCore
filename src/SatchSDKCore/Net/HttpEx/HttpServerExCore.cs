@@ -1,11 +1,11 @@
-﻿using SSC;
-using SSC.Misc.Hookable;
 using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
+using SSC;
+using SSC.Misc.Hookable;
 
 namespace SSC.Net.HttpEx;
 
@@ -14,21 +14,21 @@ namespace SSC.Net.HttpEx;
 /// </summary>
 public class HttpServerExCore : IHttpServerEx
 {
-    private static HttpServerExResponse s_Server404NotFoundResponse
+    private static readonly HttpServerExResponse s_Server404NotFoundResponse
         = new(HttpStatusCode.NotFound, new StringContent("404 Not found", Encoding.UTF8), Encoding.UTF8);
-    private static HttpServerExResponse s_Server500InternalServerErrorResponse
+    private static readonly HttpServerExResponse s_Server500InternalServerErrorResponse
         = new(HttpStatusCode.InternalServerError, new StringContent("500 Internal server error", Encoding.UTF8), Encoding.UTF8);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly HttpListener                         _listener;
-    private readonly Thread                               _listenerThread;
-    private readonly Thread[]                             _workers;
+    private readonly HttpListener _listener;
+    private readonly Thread _listenerThread;
+    private readonly Thread[] _workers;
     private readonly ConcurrentQueue<HttpListenerContext> _contextQueue;
-    private readonly ManualResetEvent                     _contextQueueEvent;
+    private readonly ManualResetEvent _contextQueueEvent;
 
-    private IHttpServerExRequestHandler[] _handlers   = Array.Empty<IHttpServerExRequestHandler>();
+    private IHttpServerExRequestHandler[] _handlers = Array.Empty<IHttpServerExRequestHandler>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -55,13 +55,13 @@ public class HttpServerExCore : IHttpServerEx
         _listenerThread = new Thread(ListenerLoop);
 
         _workers = new Thread[workerCount];
-        for (int l_I = 0; l_I < _workers.Length; l_I++)
+        for (int i = 0; i < _workers.Length; i++)
         {
-            _workers[l_I]      = new Thread(WorkerLoop);
-            _workers[l_I].Name = $"HTTPServer {GetHashCode()} Worker #{l_I + 1}";
+            _workers[i] = new Thread(WorkerLoop);
+            _workers[i].Name = $"HTTPServer {GetHashCode()} Worker #{i + 1}";
         }
 
-        _contextQueue      = new ConcurrentQueue<HttpListenerContext>();
+        _contextQueue = new ConcurrentQueue<HttpListenerContext>();
         _contextQueueEvent = new ManualResetEvent(false);
     }
     /// <inheritdoc/>
@@ -97,7 +97,7 @@ public class HttpServerExCore : IHttpServerEx
             return;
 
         var newHandlers = new IHttpServerExRequestHandler[oldHandlers.Length - 1];
-        Array.Copy(oldHandlers,               0, newHandlers,           0,                          existingIdx);
+        Array.Copy(oldHandlers, 0, newHandlers, 0, existingIdx);
         Array.Copy(oldHandlers, existingIdx + 1, newHandlers, existingIdx, oldHandlers.Length - existingIdx - 1);
 
         _handlers = newHandlers;
@@ -200,7 +200,7 @@ public class HttpServerExCore : IHttpServerEx
             if (Hooks.InterceptEarly(serverContext))
                 return;
 
-            var handlers   = _handlers;
+            var handlers = _handlers;
             var wasHandled = false;
             for (var i = 0; i < handlers.Length; i++)
             {

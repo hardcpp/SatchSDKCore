@@ -1,5 +1,5 @@
-﻿using SSC.Misc.Hookable;
 using System;
+using SSC.Misc.Hookable;
 
 namespace SSC.Net.HttpEx;
 
@@ -8,7 +8,7 @@ namespace SSC.Net.HttpEx;
 /// </summary>
 public interface IHttpServerExRequestHandler
 {
-    public IHookable<HttpServerExRequestContext> Hooks { get; }
+    IHookable<HttpServerExRequestContext> Hooks { get; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -18,5 +18,5 @@ public interface IHttpServerExRequestHandler
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    public bool TryHandle(HttpServerExRequestContext context);
+    bool TryHandle(HttpServerExRequestContext context);
 }

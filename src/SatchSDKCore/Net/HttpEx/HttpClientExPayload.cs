@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Web;
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using System;
-using System.Text.Json.Nodes;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Web;
 
 namespace SSC.Net.HttpEx;
 
@@ -13,8 +13,8 @@ namespace SSC.Net.HttpEx;
 /// </summary>
 public class HttpClientExPayload
 {
-    private static JsonSerializerOptions s_RegularSerialize  = new() { WriteIndented = false };
-    private static JsonSerializerOptions s_IndentedSerialize = new() { WriteIndented = true  };
+    private static readonly JsonSerializerOptions s_RegularSerialize = new() { WriteIndented = false };
+    private static readonly JsonSerializerOptions s_IndentedSerialize = new() { WriteIndented = true };
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ public class HttpClientExPayload
     private HttpClientExPayload(byte[] bytes, string type)
     {
         Bytes = bytes;
-        Type  = type;
+        Type = type;
     }
 
     ////////////////////////////////////////////////////////////////////////////

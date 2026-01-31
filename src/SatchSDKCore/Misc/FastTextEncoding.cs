@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -17,20 +17,20 @@ public static class FastTextEncoding
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetByteCount(ReadOnlySpan<char> str, Encoding encoding)
     {
-        if (encoding is UTF8Encoding l_UTF8Encoding)
+        if (encoding is UTF8Encoding utf8Encoding)
         {
             unsafe
             {
-                fixed (char* l_Chars = &MemoryMarshal.GetReference(str))
-                    return l_UTF8Encoding!.GetByteCount(l_Chars, str.Length);
+                fixed (char* chars = &MemoryMarshal.GetReference(str))
+                    return utf8Encoding!.GetByteCount(chars, str.Length);
             }
         }
-        else if (encoding is UTF32Encoding l_UTF32Encoding)
+        else if (encoding is UTF32Encoding utf32Encoding)
         {
             unsafe
             {
-                fixed (char* l_Chars = &MemoryMarshal.GetReference(str))
-                    return l_UTF32Encoding!.GetByteCount(l_Chars, str.Length);
+                fixed (char* chars = &MemoryMarshal.GetReference(str))
+                    return utf32Encoding!.GetByteCount(chars, str.Length);
             }
         }
 
@@ -51,22 +51,22 @@ public static class FastTextEncoding
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetBytes(ReadOnlySpan<char> str, Encoding encoding, Span<byte> bytes)
     {
-        if (encoding is UTF8Encoding l_UTF8Encoding)
+        if (encoding is UTF8Encoding utf8Encoding)
         {
             unsafe
             {
-                fixed (char* l_Chars = &MemoryMarshal.GetReference(str))
-                fixed (byte* l_BytesPtr = &MemoryMarshal.GetReference(bytes))
-                    return l_UTF8Encoding!.GetBytes(l_Chars, str.Length, l_BytesPtr, bytes.Length);
+                fixed (char* chars = &MemoryMarshal.GetReference(str))
+                fixed (byte* bytesPtr = &MemoryMarshal.GetReference(bytes))
+                    return utf8Encoding!.GetBytes(chars, str.Length, bytesPtr, bytes.Length);
             }
         }
-        else if (encoding is UTF32Encoding l_UTF32Encoding)
+        else if (encoding is UTF32Encoding utf32Encoding)
         {
             unsafe
             {
-                fixed (char* l_Chars = &MemoryMarshal.GetReference(str))
-                fixed (byte* l_BytesPtr = &MemoryMarshal.GetReference(bytes))
-                    return l_UTF32Encoding!.GetBytes(l_Chars, str.Length, l_BytesPtr, bytes.Length);
+                fixed (char* chars = &MemoryMarshal.GetReference(str))
+                fixed (byte* bytesPtr = &MemoryMarshal.GetReference(bytes))
+                    return utf32Encoding!.GetBytes(chars, str.Length, bytesPtr, bytes.Length);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace SSC.Pool;
 
@@ -10,9 +10,9 @@ public class PooledObject<t_Type>
     : IDisposable
     where t_Type : class
 {
-    private bool m_Disposed;
-    private readonly IObjectPool<t_Type> m_Pool;
-    private readonly t_Type m_Value;
+    private bool _disposed;
+    private readonly IObjectPool<t_Type> _pool;
+    private readonly t_Type _value;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -21,10 +21,10 @@ public class PooledObject<t_Type>
     {
         get
         {
-            if (m_Disposed)
+            if (_disposed)
                 throw new ObjectDisposedException(nameof(Value));
 
-            return m_Value;
+            return _value;
         }
     }
 
@@ -38,10 +38,10 @@ public class PooledObject<t_Type>
     /// <param name="element">Element instance to guard</param>
     internal PooledObject(IObjectPool<t_Type> pool, t_Type element)
     {
-        m_Pool = pool;
-        m_Value = element;
+        _pool = pool;
+        _value = element;
 
-        m_Disposed = false;
+        _disposed = false;
     }
     /// <summary>
     /// Destructor
@@ -55,11 +55,11 @@ public class PooledObject<t_Type>
     /// </summary>
     void IDisposable.Dispose()
     {
-        if (m_Disposed)
+        if (_disposed)
             return;
 
-        m_Disposed = true;
+        _disposed = true;
         GC.SuppressFinalize(this);
-        m_Pool.Release(m_Value);
+        _pool.Release(_value);
     }
 }

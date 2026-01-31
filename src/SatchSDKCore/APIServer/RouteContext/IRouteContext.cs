@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -10,7 +10,7 @@ namespace SSC.APIServer.RouteContext;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public abstract class IRouteContext
 {
-    private Dictionary<string, object?>? m_Objects;
+    private Dictionary<string, object?>? _objects;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -46,16 +46,16 @@ public abstract class IRouteContext
     /// <param name="object">Object to add</param>
     public void AddObject<t_Type>(string name, t_Type? @object)
     {
-        if (m_Objects == null)
-            m_Objects = new();
+        if (_objects == null)
+            _objects = new();
 
-        if (m_Objects.ContainsKey(name))
+        if (_objects.ContainsKey(name))
         {
             Logging.Log(ELogSeverity.Warning, $"[CP_API_SDK.Network][RouteContext.AddObject<{typeof(t_Type).FullName}>] An object with the same type had been registered already");
             return;
         }
 
-        m_Objects.Add(name, @object);
+        _objects.Add(name, @object);
     }
     /// <summary>
     /// Try get object from the context
@@ -66,19 +66,19 @@ public abstract class IRouteContext
     public bool TryGetObject<t_Type>(string name, out t_Type? @object)
     {
         @object = default;
-        if (m_Objects == null)
+        if (_objects == null)
             return false;
 
-        if (!m_Objects.TryGetValue(name, out var l_Object))
+        if (!_objects.TryGetValue(name, out var outObject))
             return false;
 
-        if (l_Object != null && l_Object.GetType() != typeof(t_Type?))
+        if (outObject != null && outObject.GetType() != typeof(t_Type?))
         {
             Logging.Log(ELogSeverity.Warning, $"[CP_API_SDK.Network][RouteContext.AddObject<{typeof(t_Type).FullName}>] An object with the same type had been registered already");
             return false;
         }
 
-        @object = (t_Type?)l_Object;
+        @object = (t_Type?)outObject;
         return true;
     }
 }

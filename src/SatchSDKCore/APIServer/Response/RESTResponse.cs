@@ -1,8 +1,8 @@
-﻿using SSC.Net.HttpEx;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using SSC.Net.HttpEx;
 
 namespace SSC.APIServer.Response;
 
@@ -12,7 +12,7 @@ namespace SSC.APIServer.Response;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public sealed class RESTResponse : IResponse
 {
-    public const string ContentType_AppJson  = "application/json";
+    public const string ContentType_AppJson = "application/json";
     public const string ContentType_TextHTML = "text/html";
 
     ////////////////////////////////////////////////////////////////////////////

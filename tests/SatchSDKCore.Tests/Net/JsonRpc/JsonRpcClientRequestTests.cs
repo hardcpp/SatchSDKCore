@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using SSC.Net.JsonRpc;
 using SSC;
+using SSC.Net.JsonRpc;
 
 namespace SSC.Tests.Net.JsonRpc;
 

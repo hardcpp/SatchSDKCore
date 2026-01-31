@@ -1,10 +1,10 @@
-﻿using SSC.Misc.Hookable;
-using SSC.Net.HttpEx;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
+using SSC.Misc.Hookable;
+using SSC.Net.HttpEx;
 
 namespace SSC.APIServer.Handler;
 
@@ -18,8 +18,8 @@ public class RESTHTTPServerHandler : IHttpServerExRequestHandler
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private ThreadLocal<List<string>>               m_SegmentBuffers        = new(() => new(10));
-    private ThreadLocal<Dictionary<string, string>> m_ArgumentsCollectors   = new(() => new());
+    private readonly ThreadLocal<List<string>> _segmentBuffers = new(() => new(10));
+    private readonly ThreadLocal<Dictionary<string, string>> _argumentsCollectors = new(() => new());
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -38,27 +38,27 @@ public class RESTHTTPServerHandler : IHttpServerExRequestHandler
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var l_OgRequest  = context.ListenerRequest;
-        var l_RestMethod = GetRestMethodFromHttpMethod(l_OgRequest);
-        var l_Segments   = GetSegmentsFromAbsolutePath(l_OgRequest.Url!.AbsolutePath);
-        var l_Arguments  = m_ArgumentsCollectors.Value!;
+        var ogRequest = context.ListenerRequest;
+        var restMethod = GetRestMethodFromHttpMethod(ogRequest);
+        var segments = GetSegmentsFromAbsolutePath(ogRequest.Url!.AbsolutePath);
+        var arguments = _argumentsCollectors.Value!;
 
-        l_Arguments.Clear();
+        arguments.Clear();
 
-        if (!MainBlueprint.TryFindRoute(l_RestMethod, CollectionsMarshal.AsSpan(l_Segments), l_Arguments, out var l_Route))
+        if (!MainBlueprint.TryFindRoute(restMethod, CollectionsMarshal.AsSpan(segments), arguments, out var route))
             return false;
 
-        var l_HTTPRequest = new Request.HTTPRequest(context);
-        var l_RESTContext = new RouteContext.RESTRouteContext(l_HTTPRequest, l_RestMethod);
+        var httpRequest = new Request.HTTPRequest(context);
+        var restContext = new RouteContext.RESTRouteContext(httpRequest, restMethod);
 
-        l_Route!.TryInvoke(l_RESTContext, l_Arguments, out var l_Error, out var l_Response);
+        route!.TryInvoke(restContext, arguments, out var error, out var response);
 
-        if (l_Response != null)
-            context.ServerResponse = l_Response.AsRESTResponse?.HTTPServerResponse ?? null;
-        else if (!string.IsNullOrEmpty(l_Error))
+        if (response != null)
+            context.ServerResponse = response.AsRESTResponse?.HTTPServerResponse ?? null;
+        else if (!string.IsNullOrEmpty(error))
         {
-            Logging.Log(ELogSeverity.Error, $"Failed to execute route '{l_Route.RESTEndpoint}': {l_Error}");
-            context.ServerResponse = Response.RESTResponse.CodeResult(l_RESTContext, HttpStatusCode.InternalServerError).HTTPServerResponse;
+            Logging.Log(ELogSeverity.Error, $"Failed to execute route '{route.RESTEndpoint}': {error}");
+            context.ServerResponse = Response.RESTResponse.CodeResult(restContext, HttpStatusCode.InternalServerError).HTTPServerResponse;
         }
 
         return true;
@@ -103,27 +103,27 @@ public class RESTHTTPServerHandler : IHttpServerExRequestHandler
     /// <returns>List of segments</returns>
     protected List<string> GetSegmentsFromAbsolutePath(string absolutePath)
     {
-        var l_Result = m_SegmentBuffers.Value!;
-        l_Result.Clear();
+        var result = _segmentBuffers.Value!;
+        result.Clear();
 
-        for (var l_I = 0; l_I < absolutePath.Length; ++l_I)
+        for (var i = 0; i < absolutePath.Length; ++i)
         {
-            if (absolutePath[l_I] == '/')
+            if (absolutePath[i] == '/')
                 continue;
 
-            var l_NextSeparator = absolutePath.IndexOf('/', l_I);
-            if (l_NextSeparator == -1)
+            var nextSeparator = absolutePath.IndexOf('/', i);
+            if (nextSeparator == -1)
             {
-                l_Result.Add(absolutePath[l_I..]);
-                l_I = absolutePath.Length;
+                result.Add(absolutePath[i..]);
+                i = absolutePath.Length;
             }
             else
             {
-                l_Result.Add(absolutePath[l_I..l_NextSeparator]);
-                l_I = l_NextSeparator;
+                result.Add(absolutePath[i..nextSeparator]);
+                i = nextSeparator;
             }
         }
 
-        return l_Result;
+        return result;
     }
 }

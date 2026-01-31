@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 
 namespace SSC.Net.HttpEx;
@@ -8,7 +8,7 @@ namespace SSC.Net.HttpEx;
 /// </summary>
 public interface IHttpClientExDataHandler
 {
-    public abstract int IdealBufferSize { get; }
+    abstract int IdealBufferSize { get; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -16,16 +16,16 @@ public interface IHttpClientExDataHandler
     /// <summary>
     /// When the reading begin
     /// </summary>
-    public abstract void Begin();
+    abstract void Begin();
     /// <summary>
     /// Process a buffer
     /// </summary>
     /// <param name="buffer">Current buffer</param>
     /// <param name="totalSize">Total size if known</param>
     /// <returns></returns>
-    public abstract ValueTask ProcessAsync(ReadOnlySpan<byte> buffer, long? totalSize);
+    abstract ValueTask ProcessAsync(ReadOnlySpan<byte> buffer, long? totalSize);
     /// <summary>
     /// When the reading end
     /// </summary>
-    public abstract void End();
+    abstract void End();
 }

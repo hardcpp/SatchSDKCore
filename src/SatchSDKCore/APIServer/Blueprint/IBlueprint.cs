@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
@@ -11,12 +11,12 @@ namespace SSC.APIServer.Blueprint;
 public abstract class IBlueprint
 {
     public abstract Type BlueprintType { get; }
-    public abstract Type RouteType     { get; }
+    public abstract Type RouteType { get; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public readonly string  Name;
+    public readonly string Name;
     public readonly string? Prefix;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -31,7 +31,7 @@ public abstract class IBlueprint
     {
         ArgumentNullException.ThrowIfNull(name);
 
-        Name   = name;
+        Name = name;
         Prefix = prefix;
     }
 
@@ -67,24 +67,24 @@ public abstract class IBlueprint
         ()
         where t_Type : class
     {
-        var l_TypeInfo = typeof(t_Type);
-        var l_Methods  = l_TypeInfo.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        var typeInfo = typeof(t_Type);
+        var methods = typeInfo.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 
-        if (l_Methods == null || l_Methods.Length == 0)
-            throw new Exception($"No methods found in type {l_TypeInfo.FullName} for collecting routes");
+        if (methods == null || methods.Length == 0)
+            throw new Exception($"No methods found in type {typeInfo.FullName} for collecting routes");
 
-        for (var l_MI = 0; l_MI < l_Methods.Length; l_MI++)
+        for (var mI = 0; mI < methods.Length; mI++)
         {
-            var l_Method = l_Methods[l_MI];
-            var l_Attributes = l_Method.GetCustomAttributes(RouteType);
+            var method = methods[mI];
+            var attributes = method.GetCustomAttributes(RouteType);
 
-            foreach (Route.IRoute l_Route in l_Attributes)
+            foreach (Route.IRoute route in attributes)
             {
-                if (!RouteType.IsAssignableFrom(l_Route.GetType()))
-                    throw new Exception($"Route of type {l_Route.GetType().FullName} can not be registered in a blueprint of type {GetType().FullName}");
+                if (!RouteType.IsAssignableFrom(route.GetType()))
+                    throw new Exception($"Route of type {route.GetType().FullName} can not be registered in a blueprint of type {GetType().FullName}");
 
-                l_Route.Init(l_Method);
-                RegisterRoute(l_Route);
+                route.Init(method);
+                RegisterRoute(route);
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -15,32 +15,32 @@ public interface IHttpClientEx : IDisposable
     /// Global client options
     /// </summary>
     [Flags]
-    public enum EOptions
+    enum EOptions
     {
-        None               = 0,
-        ForceCacheDiscard  = 1 << 0,
-        KeepAlive          = 1 << 1,
+        None = 0,
+        ForceCacheDiscard = 1 << 0,
+        KeepAlive = 1 << 1,
         NoRetryOnRateLimit = 1 << 2,
     }
     /// <summary>
     /// Options for requests
     /// </summary>
     [Flags]
-    public enum ERequestOptions
+    enum ERequestOptions
     {
-        None                = 0,
-        IgnoreRetryPolicy   = 1 << 0,
-        NoRetryOnRateLimit  = 1 << 1,
+        None = 0,
+        IgnoreRetryPolicy = 1 << 0,
+        NoRetryOnRateLimit = 1 << 1,
     }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public abstract EOptions           Options        { get; }
-    public abstract int                MaxRetry       { get; set; }
-    public abstract TimeSpan           RetryInterval  { get; set; }
-    public abstract HttpRequestHeaders GlobalHeaders  { get; }
-    public abstract CookieContainer?   CookieJar      { get; set; }
+    abstract EOptions Options { get; }
+    abstract int MaxRetry { get; set; }
+    abstract TimeSpan RetryInterval { get; set; }
+    abstract HttpRequestHeaders GlobalHeaders { get; }
+    abstract CookieContainer? CookieJar { get; set; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -55,13 +55,13 @@ public interface IHttpClientEx : IDisposable
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns>The response if the request reached the server</returns>
-    public HttpClientExResponse DoRequest(
-        string                    method,
-        string                    url,
-        HttpClientExPayload?      payload         = null,
-        ERequestOptions           options         = ERequestOptions.None,
-        IHttpClientExDataHandler? dataHandler     = null,
-        IProgress<float>?         progressHandler = null
+    HttpClientExResponse DoRequest(
+        string method,
+        string url,
+        HttpClientExPayload? payload = null,
+        ERequestOptions options = ERequestOptions.None,
+        IHttpClientExDataHandler? dataHandler = null,
+        IProgress<float>? progressHandler = null
     );
     /// <summary>
     /// Do a non-blocking request in the background with a callback
@@ -74,15 +74,15 @@ public interface IHttpClientEx : IDisposable
     /// <param name="options">Request options</param>
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
-    public void DoRequestInBackground(
-        string                         method,
-        string                         url,
-        CancellationToken              cancellationToken,
+    void DoRequestInBackground(
+        string method,
+        string url,
+        CancellationToken cancellationToken,
         Action<HttpClientExResponse?>? callback,
-        HttpClientExPayload?           payload           = null,
-        ERequestOptions                options           = ERequestOptions.None,
-        IHttpClientExDataHandler?      dataHandler       = null,
-        IProgress<float>?              progressHandler   = null
+        HttpClientExPayload? payload = null,
+        ERequestOptions options = ERequestOptions.None,
+        IHttpClientExDataHandler? dataHandler = null,
+        IProgress<float>? progressHandler = null
     );
     /// <summary>
     /// Do an async request
@@ -95,13 +95,13 @@ public interface IHttpClientEx : IDisposable
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns>The response if the request reached the server</returns>
-    public Task<HttpClientExResponse> DoRequestAsync(
-        string                    method,
-        string                    url,
-        CancellationToken         cancellationToken,
-        HttpClientExPayload?      payload           = null,
-        ERequestOptions           options           = ERequestOptions.None,
-        IHttpClientExDataHandler? dataHandler       = null,
-        IProgress<float>?         progressHandler   = null
+    Task<HttpClientExResponse> DoRequestAsync(
+        string method,
+        string url,
+        CancellationToken cancellationToken,
+        HttpClientExPayload? payload = null,
+        ERequestOptions options = ERequestOptions.None,
+        IHttpClientExDataHandler? dataHandler = null,
+        IProgress<float>? progressHandler = null
     );
 }

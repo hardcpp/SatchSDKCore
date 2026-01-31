@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace SSC.APIServer.Route;
@@ -23,7 +23,7 @@ public enum ERestMethod
 public class RESTRoute : IRoute
 {
     public readonly ERestMethod RESTMethod;
-    public readonly string      RESTEndpoint;
+    public readonly string RESTEndpoint;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -40,7 +40,7 @@ public class RESTRoute : IRoute
         if (string.IsNullOrEmpty(endpoint) || endpoint[0] != '/' || (endpoint.Length > 1 && endpoint[^1] == '/'))
             throw new Exception($"Malformated route path '{endpoint}'");
 
-        RESTMethod   = method;
+        RESTMethod = method;
         RESTEndpoint = endpoint;
     }
 
@@ -57,8 +57,8 @@ public class RESTRoute : IRoute
     {
         return Response.RESTResponse.Result(
             routeContext: routeContext,
-            code:         System.Net.HttpStatusCode.InternalServerError,
-            content:      "Internal error"
+            code: System.Net.HttpStatusCode.InternalServerError,
+            content: "Internal error"
         );
     }
     /// <summary>
@@ -71,8 +71,8 @@ public class RESTRoute : IRoute
     {
         return Response.RESTResponse.Result(
             routeContext: routeContext,
-            code:         System.Net.HttpStatusCode.BadRequest,
-            content:      $"Bad request: {error}"
+            code: System.Net.HttpStatusCode.BadRequest,
+            content: $"Bad request: {error}"
         );
     }
     /// <summary>
@@ -84,8 +84,8 @@ public class RESTRoute : IRoute
     {
         return Response.RESTResponse.Result(
             routeContext: routeContext,
-            code:         System.Net.HttpStatusCode.RequestTimeout,
-            content:      $"Request timeout"
+            code: System.Net.HttpStatusCode.RequestTimeout,
+            content: $"Request timeout"
         );
     }
 }

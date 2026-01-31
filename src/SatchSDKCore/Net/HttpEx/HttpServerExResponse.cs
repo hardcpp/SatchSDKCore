@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -11,9 +11,9 @@ namespace SSC.Net.HttpEx;
 public class HttpServerExResponse
 {
     public readonly HttpStatusCode Code;
-    public readonly HttpContent?   Content;
-    public readonly Encoding?      ContentEncoding;
-    public readonly string?        ContentType;
+    public readonly HttpContent? Content;
+    public readonly Encoding? ContentEncoding;
+    public readonly string? ContentType;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -26,8 +26,8 @@ public class HttpServerExResponse
     /// <param name="contentEncoding">Optional encoding</param>
     public HttpServerExResponse(HttpStatusCode code, HttpContent? content, Encoding? contentEncoding)
     {
-        Code            = code;
-        Content         = content;
+        Code = code;
+        Content = content;
         ContentEncoding = contentEncoding;
     }
 

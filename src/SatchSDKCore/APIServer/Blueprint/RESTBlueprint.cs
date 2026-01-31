@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -18,7 +18,7 @@ public class RESTBlueprint : IBlueprint
     ////////////////////////////////////////////////////////////////////////////
 
     public override Type BlueprintType => typeof(RESTBlueprint);
-    public override Type RouteType     => typeof(Route.RESTRoute);
+    public override Type RouteType => typeof(Route.RESTRoute);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -47,8 +47,8 @@ public class RESTBlueprint : IBlueprint
         m_RouteTreeNode = new Internal.RESTRuleTreeNode()
         {
             Parent = null,
-            Key    = null!,
-            IsArg  = false
+            Key = null!,
+            IsArg = false
         };
 
         /// Register the prefix
@@ -66,16 +66,16 @@ public class RESTBlueprint : IBlueprint
     {
         ArgumentNullException.ThrowIfNull(blueprint);
 
-        var l_RESTBlueprint = blueprint as RESTBlueprint;
+        var restBlueprint = blueprint as RESTBlueprint;
 
-        if (!TryGetRESTRuleTreeNodeFor(ComposeRule(Prefix), createMissings: true, out var l_TargetRuleTreeNode))
-            throw new Exception($"Failed to register RESTBlueprint {l_RESTBlueprint!.Name}");
+        if (!TryGetRESTRuleTreeNodeFor(ComposeRule(Prefix), createMissings: true, out var targetRuleTreeNode))
+            throw new Exception($"Failed to register RESTBlueprint {restBlueprint!.Name}");
 
-        if (Array.IndexOf(l_TargetRuleTreeNode!.Blueprints, l_RESTBlueprint!) != -1)
-            throw new Exception($"RESTBlueprint '{l_RESTBlueprint!.Name}' is already registered in RESTBlueprint '{Name}'");
+        if (Array.IndexOf(targetRuleTreeNode!.Blueprints, restBlueprint!) != -1)
+            throw new Exception($"RESTBlueprint '{restBlueprint!.Name}' is already registered in RESTBlueprint '{Name}'");
 
-        Array.Resize(ref l_TargetRuleTreeNode.Blueprints, l_TargetRuleTreeNode.Blueprints.Length + 1);
-        l_TargetRuleTreeNode.Blueprints[^1] = l_RESTBlueprint!;
+        Array.Resize(ref targetRuleTreeNode.Blueprints, targetRuleTreeNode.Blueprints.Length + 1);
+        targetRuleTreeNode.Blueprints[^1] = restBlueprint!;
     }
     /// <summary>
     /// Register route
@@ -85,16 +85,16 @@ public class RESTBlueprint : IBlueprint
     {
         ArgumentNullException.ThrowIfNull(route);
 
-        var l_RESTRoute = route as Route.RESTRoute;
-        var l_Rule = ComposeRule(Prefix, l_RESTRoute!.RESTEndpoint);
+        var rESTRoute = route as Route.RESTRoute;
+        var rule = ComposeRule(Prefix, rESTRoute!.RESTEndpoint);
 
-        if (!TryGetRESTRuleTreeNodeFor(l_Rule, createMissings: true, out var l_TargetRuleTreeNode))
-            throw new Exception($"Failed to register REST rule {l_RESTRoute.RESTMethod}:{l_Rule}");
+        if (!TryGetRESTRuleTreeNodeFor(rule, createMissings: true, out var targetRuleTreeNode))
+            throw new Exception($"Failed to register REST rule {rESTRoute.RESTMethod}:{rule}");
 
-        if (l_TargetRuleTreeNode!.Routes[(int)l_RESTRoute.RESTMethod] != null)
-            throw new Exception($"A route for REST rule {l_RESTRoute.RESTMethod}:{l_Rule} already exist");
+        if (targetRuleTreeNode!.Routes[(int)rESTRoute.RESTMethod] != null)
+            throw new Exception($"A route for REST rule {rESTRoute.RESTMethod}:{rule} already exist");
 
-        l_TargetRuleTreeNode.Routes[(int)l_RESTRoute.RESTMethod] = l_RESTRoute;
+        targetRuleTreeNode.Routes[(int)rESTRoute.RESTMethod] = rESTRoute;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -113,41 +113,41 @@ public class RESTBlueprint : IBlueprint
 
         ArgumentNullException.ThrowIfNull(composedRule);
 
-        var l_Parts = composedRule.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var l_CurrentNode = m_RouteTreeNode;
+        var parts = composedRule.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var currentNode = m_RouteTreeNode;
 
-        for (var l_SegI = 0; l_SegI < l_Parts.Length; l_SegI++)
+        for (var segI = 0; segI < parts.Length; segI++)
         {
-            var l_CurrentSegment = l_Parts[l_SegI];
-            var l_Key            = l_CurrentSegment;
-            var l_IsArg          = l_CurrentSegment[0] == '<' && l_CurrentSegment[^1] == '>';
+            var currentSegment = parts[segI];
+            var key = currentSegment;
+            var isArg = currentSegment[0] == '<' && currentSegment[^1] == '>';
 
-            if (l_IsArg)
-                l_Key = l_Key[1..^1];
+            if (isArg)
+                key = key[1..^1];
 
-            var l_ExistingSub = l_CurrentNode!.Childs?.FirstOrDefault(x => x.Key == l_Key);
+            var existingSub = currentNode!.Childs?.FirstOrDefault(x => x.Key == key);
 
-            if (l_ExistingSub != null)
-                l_CurrentNode = l_ExistingSub;
+            if (existingSub != null)
+                currentNode = existingSub;
             else if (createMissings)
             {
-                var l_NextSub = new Internal.RESTRuleTreeNode()
+                var nextSub = new Internal.RESTRuleTreeNode()
                 {
-                    Parent = l_CurrentNode,
-                    Key    = l_Key,
-                    IsArg  = l_IsArg
+                    Parent = currentNode,
+                    Key = key,
+                    IsArg = isArg
                 };
 
-                Array.Resize(ref l_CurrentNode!.Childs, l_CurrentNode!.Childs!.Length + 1);
-                l_CurrentNode.Childs[^1] = l_NextSub;
+                Array.Resize(ref currentNode!.Childs, currentNode!.Childs!.Length + 1);
+                currentNode.Childs[^1] = nextSub;
 
-                l_CurrentNode = l_NextSub;
+                currentNode = nextSub;
             }
             else
                 return false;
         }
 
-        result = l_CurrentNode;
+        result = currentNode;
         return result != null;
     }
     /// <summary>
@@ -166,11 +166,11 @@ public class RESTBlueprint : IBlueprint
     {
         restRoute = null;
 
-        var l_RouteTreeNode = m_RouteTreeNode.Walk(segments, 0, argumentsCollector);
-        if (l_RouteTreeNode == null)
+        var routeTreeNode = m_RouteTreeNode.Walk(segments, 0, argumentsCollector);
+        if (routeTreeNode == null)
             return false;
 
-        restRoute = l_RouteTreeNode.Routes[(int)restMethod];
+        restRoute = routeTreeNode.Routes[(int)restMethod];
         return restRoute != null;
     }
 
@@ -184,25 +184,25 @@ public class RESTBlueprint : IBlueprint
     /// <returns></returns>
     private string ComposeRule(params string?[] segments)
     {
-        var l_Builder = new StringBuilder();
-        for (int l_I = 0; l_I < segments.Length; l_I++)
+        var builder = new StringBuilder();
+        for (int i = 0; i < segments.Length; i++)
         {
-            var l_Current = segments[l_I];
-            if (string.IsNullOrEmpty(l_Current))
+            var current = segments[i];
+            if (string.IsNullOrEmpty(current))
                 continue;
 
-            if (l_I != 0)
-                l_Builder.Append("/");
-            if (l_Current.Length >= 2 && l_Current[0] == '/' && l_Current[^1] == '/')
-                l_Builder.Append(l_Current, 1, l_Current.Length - 2);
-            else if (l_Current[0] == '/')
-                l_Builder.Append(l_Current, 1, l_Current.Length - 1);
-            else if (l_Current[^1] == '/')
-                l_Builder.Append(l_Current, 0, l_Current.Length - 1);
+            if (i != 0)
+                builder.Append("/");
+            if (current.Length >= 2 && current[0] == '/' && current[^1] == '/')
+                builder.Append(current, 1, current.Length - 2);
+            else if (current[0] == '/')
+                builder.Append(current, 1, current.Length - 1);
+            else if (current[^1] == '/')
+                builder.Append(current, 0, current.Length - 1);
             else
-                l_Builder.Append(l_Current);
+                builder.Append(current);
         }
 
-        return l_Builder.ToString();
+        return builder.ToString();
     }
 }

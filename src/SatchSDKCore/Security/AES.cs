@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -31,34 +31,34 @@ internal class AES
 
         try
         {
-            byte[] l_CipherData;
-            var l_AES = Aes.Create();
-            l_AES.Key = key;
-            l_AES.GenerateIV();
-            l_AES.Mode = CipherMode.CBC;
+            byte[] cipherData;
+            var aes = Aes.Create();
+            aes.Key = key;
+            aes.GenerateIV();
+            aes.Mode = CipherMode.CBC;
 
-            var l_Cipher = l_AES.CreateEncryptor(l_AES.Key, l_AES.IV);
+            var cipher = aes.CreateEncryptor(aes.Key, aes.IV);
 
-            using (MemoryStream l_MemoryStream = new MemoryStream())
+            using (MemoryStream memoryStream = new MemoryStream())
             {
-                using (CryptoStream l_CryptoStream = new CryptoStream(l_MemoryStream, l_Cipher, CryptoStreamMode.Write))
+                using (CryptoStream cryptoStream = new CryptoStream(memoryStream, cipher, CryptoStreamMode.Write))
                 {
-                    l_CryptoStream.Write(data);
+                    cryptoStream.Write(data);
                 }
 
-                l_CipherData = l_MemoryStream.ToArray();
+                cipherData = memoryStream.ToArray();
             }
 
-            var l_ResultBytes = new byte[l_AES.IV.Length + l_CipherData.Length];
-            Array.Copy(l_AES.IV, 0, l_ResultBytes, 0, l_AES.IV.Length);
-            Array.Copy(l_CipherData, 0, l_ResultBytes, l_AES.IV.Length, l_CipherData.Length);
+            var resultBytes = new byte[aes.IV.Length + cipherData.Length];
+            Array.Copy(aes.IV, 0, resultBytes, 0, aes.IV.Length);
+            Array.Copy(cipherData, 0, resultBytes, aes.IV.Length, cipherData.Length);
 
-            return l_ResultBytes;
+            return resultBytes;
         }
-        catch (Exception l_Exception)
+        catch (Exception exception)
         {
             Logging.Log(ELogSeverity.Error, $"[CP_API_SDK.Security][EasyAES.EasyCBCEncrypt] Error:");
-            Logging.Log(ELogSeverity.Error, l_Exception);
+            Logging.Log(ELogSeverity.Error, exception);
 
             throw;
         }
@@ -80,31 +80,31 @@ internal class AES
 
         try
         {
-            var l_IV = new byte[c_IVSize];
-            var l_CipherData = new byte[data.Length - c_IVSize];
+            var iv = new byte[c_IVSize];
+            var cipherData = new byte[data.Length - c_IVSize];
 
-            Array.Copy(data, 0, l_IV, 0, c_IVSize);
-            Array.Copy(data, c_IVSize, l_CipherData, 0, l_CipherData.Length);
+            Array.Copy(data, 0, iv, 0, c_IVSize);
+            Array.Copy(data, c_IVSize, cipherData, 0, cipherData.Length);
 
-            var l_AES = Aes.Create();
-            l_AES.Key = key;
-            l_AES.IV = l_IV;
-            l_AES.Mode = CipherMode.CBC;
+            var aes = Aes.Create();
+            aes.Key = key;
+            aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
 
-            using (MemoryStream l_MemoryStream = new MemoryStream())
+            using (MemoryStream memoryStream = new MemoryStream())
             {
-                using (CryptoStream l_CryptoStream = new CryptoStream(l_MemoryStream, l_AES.CreateDecryptor(), CryptoStreamMode.Write))
+                using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Write))
                 {
-                    l_CryptoStream.Write(l_CipherData, 0, l_CipherData.Length);
+                    cryptoStream.Write(cipherData, 0, cipherData.Length);
                 }
 
-                return l_MemoryStream.ToArray();
+                return memoryStream.ToArray();
             }
         }
-        catch (Exception l_Exception)
+        catch (Exception exception)
         {
             Logging.Log(ELogSeverity.Error, $"[CP_API_SDK.Security][EasyAES.EasyCBCDecrypt] Error:");
-            Logging.Log(ELogSeverity.Error, l_Exception);
+            Logging.Log(ELogSeverity.Error, exception);
 
             throw;
         }

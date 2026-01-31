@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace SSC.APIServer.Blueprint.Internal;
@@ -8,12 +8,12 @@ namespace SSC.APIServer.Blueprint.Internal;
 /// </summary>
 internal class RESTRuleTreeNode
 {
-    internal required RESTRuleTreeNode?  Parent;
-    internal required string             Key;
-    internal required bool               IsArg;
-    internal          RESTRuleTreeNode[] Childs     = Array.Empty<RESTRuleTreeNode>();
-    internal          RESTBlueprint[]    Blueprints = Array.Empty<RESTBlueprint>();
-    internal          Route.RESTRoute[]  Routes     = new Route.RESTRoute[RESTBlueprint.REST_METHOD_COUNT];
+    internal required RESTRuleTreeNode? Parent;
+    internal required string Key;
+    internal required bool IsArg;
+    internal RESTRuleTreeNode[] Childs = Array.Empty<RESTRuleTreeNode>();
+    internal RESTBlueprint[] Blueprints = Array.Empty<RESTBlueprint>();
+    internal Route.RESTRoute[] Routes = new Route.RESTRoute[RESTBlueprint.REST_METHOD_COUNT];
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -34,11 +34,11 @@ internal class RESTRuleTreeNode
 
         if (startPosition == segments.Length)
         {
-            for (var l_I = 0; l_I < Blueprints.Length; ++l_I)
+            for (var i = 0; i < Blueprints.Length; ++i)
             {
-                var l_Res = Blueprints[l_I].m_RouteTreeNode.Walk(segments, startPosition + 0, arguments);
-                if (l_Res != null)
-                    return l_Res;
+                var res = Blueprints[i].m_RouteTreeNode.Walk(segments, startPosition + 0, arguments);
+                if (res != null)
+                    return res;
             }
 
             return this;
@@ -46,19 +46,19 @@ internal class RESTRuleTreeNode
 
         if ((segments.Length - startPosition) >= 1)
         {
-            for (var l_I = 0; l_I < Childs.Length; ++l_I)
+            for (var i = 0; i < Childs.Length; ++i)
             {
-                var l_Res = Childs[l_I].Walk(segments, startPosition + 1, arguments);
-                if (l_Res != null)
-                    return l_Res;
+                var res = Childs[i].Walk(segments, startPosition + 1, arguments);
+                if (res != null)
+                    return res;
             }
         }
 
-        for (var l_I = 0; l_I < Blueprints.Length; ++l_I)
+        for (var i = 0; i < Blueprints.Length; ++i)
         {
-            var l_Res = Blueprints[l_I].m_RouteTreeNode.Walk(segments, startPosition + 0, arguments);
-            if (l_Res != null)
-                return l_Res;
+            var res = Blueprints[i].m_RouteTreeNode.Walk(segments, startPosition + 0, arguments);
+            if (res != null)
+                return res;
         }
 
         return null;

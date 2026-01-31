@@ -1,4 +1,3 @@
-﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -6,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace SSC.APIServer.Route;
 
@@ -15,23 +15,23 @@ namespace SSC.APIServer.Route;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public abstract class IRoute : Attribute
 {
-    public MethodInfo?             Method               { get; private set; }
-    public ParameterInfo[]?        Parameters           { get; private set; }
-    public Type[]?                 ParametersType       { get; private set; }
-    public bool[]?                 ParametersOptional   { get; private set; }
-    public string[]?               ParametersFixedName  { get; private set; }
-    public string[]?               ParametersHint       { get; private set; }
-    public RouteHook.IRouteHook[]? Hooks                { get; private set; }
-    public bool                    IsAsync              { get; private set; }
-    public TimeSpan?               AsyncTimeout         { get; private set; }
-    public bool                    HasContextParameter  { get; private set; }
-    public int                     UserParametersOffset { get; private set; }
+    public MethodInfo? Method { get; private set; }
+    public ParameterInfo[]? Parameters { get; private set; }
+    public Type[]? ParametersType { get; private set; }
+    public bool[]? ParametersOptional { get; private set; }
+    public string[]? ParametersFixedName { get; private set; }
+    public string[]? ParametersHint { get; private set; }
+    public RouteHook.IRouteHook[]? Hooks { get; private set; }
+    public bool IsAsync { get; private set; }
+    public TimeSpan? AsyncTimeout { get; private set; }
+    public bool HasContextParameter { get; private set; }
+    public int UserParametersOffset { get; private set; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private ThreadLocal<object[]>? m_InvokeBuffer;
-    private string?                m_AsyncTimeoutStr = null;
+    private ThreadLocal<object[]>? _invokeBuffer;
+    private readonly string? _asyncTimeoutStr = null;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -42,7 +42,7 @@ public abstract class IRoute : Attribute
     /// <param name="asyncTimeoutStr">Timeout for async</param>
     public IRoute(string? asyncTimeoutStr = null)
     {
-        m_AsyncTimeoutStr = asyncTimeoutStr;
+        _asyncTimeoutStr = asyncTimeoutStr;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -62,12 +62,12 @@ public abstract class IRoute : Attribute
 
         ArgumentNullException.ThrowIfNull(method);
 
-        Method              = method;
-        Parameters          = method.GetParameters();
-        ParametersType      = new Type[Parameters.Length];
-        ParametersOptional  = new bool[Parameters.Length];
+        Method = method;
+        Parameters = method.GetParameters();
+        ParametersType = new Type[Parameters.Length];
+        ParametersOptional = new bool[Parameters.Length];
         ParametersFixedName = new string[Parameters.Length];
-        ParametersHint      = new string[Parameters.Length];
+        ParametersHint = new string[Parameters.Length];
 
         // Check if the method is async first
         static bool IsTaskType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type returnType)
@@ -98,8 +98,8 @@ public abstract class IRoute : Attribute
                 throw new Exception($"Route {method.Name} has wrong return Type, should be of IResponse");
         }
 
-        var l_Hooks = Method.GetCustomAttributes<RouteHook.IRouteHook>(true);
-        Hooks = l_Hooks.Any() ? l_Hooks.ToArray() : Array.Empty<RouteHook.IRouteHook>();
+        var hooks = Method.GetCustomAttributes<RouteHook.IRouteHook>(true);
+        Hooks = hooks.Any() ? hooks.ToArray() : Array.Empty<RouteHook.IRouteHook>();
         if (IsAsync)
         {
             if (Parameters.Length == 0 || Parameters[0].ParameterType != typeof(CancellationToken))
@@ -110,8 +110,8 @@ public abstract class IRoute : Attribute
 
             UserParametersOffset = HasContextParameter ? 2 : 1;
 
-            if (m_AsyncTimeoutStr != null)
-                AsyncTimeout = m_AsyncTimeoutStr != null ? TimeSpan.ParseExact(m_AsyncTimeoutStr, @"m\:s\.fff", System.Globalization.CultureInfo.InvariantCulture) : null;
+            if (_asyncTimeoutStr != null)
+                AsyncTimeout = _asyncTimeoutStr != null ? TimeSpan.ParseExact(_asyncTimeoutStr, @"m\:s\.fff", System.Globalization.CultureInfo.InvariantCulture) : null;
             else
                 AsyncTimeout = TimeSpan.FromSeconds(60);
         }
@@ -122,30 +122,30 @@ public abstract class IRoute : Attribute
 
             UserParametersOffset = HasContextParameter ? 1 : 0;
 
-            if (m_AsyncTimeoutStr != null)
+            if (_asyncTimeoutStr != null)
                 throw new Exception($"Route {method.Name} has timeout but is not async");
         }
 
-        for (var l_I = 0; l_I < Parameters.Length; ++l_I)
+        for (var i = 0; i < Parameters.Length; ++i)
         {
-            var l_Parameter       = Parameters[l_I]!;
-            var l_IsNullable      = l_Parameter.ParameterType.IsGenericType && l_Parameter.ParameterType.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
-            var l_HasDefaultValue = l_Parameter.HasDefaultValue;
+            var parameter = Parameters[i]!;
+            var isNullable = parameter.ParameterType.IsGenericType && parameter.ParameterType.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
+            var hasDefaultValue = parameter.HasDefaultValue;
 
-            ParametersType[l_I]      = l_IsNullable ? l_Parameter.ParameterType.GenericTypeArguments[0] : l_Parameter.ParameterType;
-            ParametersOptional[l_I]  = l_IsNullable || l_HasDefaultValue;
-            ParametersFixedName[l_I] = l_Parameter.Name!.StartsWith("p_") ? l_Parameter.Name[2..] : l_Parameter.Name;
+            ParametersType[i] = isNullable ? parameter.ParameterType.GenericTypeArguments[0] : parameter.ParameterType;
+            ParametersOptional[i] = isNullable || hasDefaultValue;
+            ParametersFixedName[i] = parameter.Name!.StartsWith("p_") ? parameter.Name[2..] : parameter.Name;
 
-            if (l_I < UserParametersOffset)
+            if (i < UserParametersOffset)
             {
-                ParametersHint[l_I] = string.Empty;
+                ParametersHint[i] = string.Empty;
                 continue;
             }
 
-            ParametersHint[l_I] = $"{(l_I - UserParametersOffset) + 1}:{ParametersFixedName[l_I]}";
+            ParametersHint[i] = $"{(i - UserParametersOffset) + 1}:{ParametersFixedName[i]}";
         }
 
-        m_InvokeBuffer = new ThreadLocal<object[]>(() => new object[Parameters.Length]);
+        _invokeBuffer = new ThreadLocal<object[]>(() => new object[Parameters.Length]);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -224,96 +224,95 @@ public abstract class IRoute : Attribute
     /// <returns>Call status</returns>
     private bool TryInvokeInternal(RouteContext.IRouteContext routeContext, out string? outError, out Response.IResponse? outResponse)
     {
-        outError    = null;
+        outError = null;
         outResponse = null;
 
-        object[] l_InvokeBuffer = m_InvokeBuffer!.Value!;
+        object[] invokeBuffer = _invokeBuffer!.Value!;
 
         if (HasContextParameter)
-            l_InvokeBuffer[IsAsync ? 1 : 0] = routeContext;
+            invokeBuffer[IsAsync ? 1 : 0] = routeContext;
 
-        for (var l_I = 0; l_I < Hooks!.Length; ++l_I)
+        for (var i = 0; i < Hooks!.Length; ++i)
         {
-            if (!Hooks![l_I].TryIntercept(routeContext, out var l_InterceptResult))
+            if (!Hooks![i].TryIntercept(routeContext, out var interceptResult))
                 continue;
 
-            if (l_InterceptResult == null)
+            if (interceptResult == null)
             {
-                Logging.Log(ELogSeverity.Error, $"[IRoute.TryInvokeInternal] Invalid result type for hook {Hooks[l_I].GetType().FullName}");
+                Logging.Log(ELogSeverity.Error, $"[IRoute.TryInvokeInternal] Invalid result type for hook {Hooks[i].GetType().FullName}");
 
-                Array.Clear(l_InvokeBuffer);
+                Array.Clear(invokeBuffer);
 
                 return false;
             }
 
-            outResponse = l_InterceptResult;
-            Array.Clear(l_InvokeBuffer);
+            outResponse = interceptResult;
+            Array.Clear(invokeBuffer);
 
             return true;
         }
 
-        var l_CancellationTokenSource = null as CancellationTokenSource;
+        var cancellationTokenSource = null as CancellationTokenSource;
         if (IsAsync)
         {
-            l_CancellationTokenSource = new CancellationTokenSource();
-            l_InvokeBuffer[0]         = l_CancellationTokenSource.Token;
+            cancellationTokenSource = new CancellationTokenSource();
+            invokeBuffer[0] = cancellationTokenSource.Token;
         }
 
-        var l_Return = null as object;
+        var returnValue = null as object;
         try
         {
-            l_Return = Method!.Invoke(null, l_InvokeBuffer);
+            returnValue = Method!.Invoke(null, invokeBuffer);
         }
-        catch (Exception l_Exception)
+        catch (Exception exception)
         {
             Logging.Log(ELogSeverity.Error, $"[IRoute.TryInvokeInternal] Route {Method!.GetType().FullName} failed with exception:");
-            Logging.Log(ELogSeverity.Error, l_Exception);
+            Logging.Log(ELogSeverity.Error, exception);
 
             outError = "Request failed";
-            outResponse = GetResponseForException(routeContext, l_Exception);
+            outResponse = GetResponseForException(routeContext, exception);
 
             return false;
         }
 
-        if (l_Return != null)
+        if (returnValue != null)
         {
-            var l_ReturnValue = null as object;
             if (IsAsync)
             {
-                var l_Task = l_Return as Task<Response.IResponse>;
-                if (l_Task!.Exception?.InnerException != null)
-                    throw l_Task.Exception?.InnerException!;
+                var task = returnValue as Task<Response.IResponse>;
+                if (task!.Exception?.InnerException != null)
+                    throw task.Exception?.InnerException!;
                 else if (AsyncTimeout.HasValue)
-                    l_Task.Wait(AsyncTimeout.Value);
+                    task.Wait(AsyncTimeout.Value);
                 else
-                    l_Task.Wait();
+                    task.Wait();
 
-                if (l_Task.IsCompletedSuccessfully)
-                    outResponse = l_Task.Result;
+                if (task.IsCompletedSuccessfully)
+                    outResponse = task.Result;
                 else
                 {
-                    if (l_Task.Exception?.InnerException != null || l_Task.Exception != null)
+                    if (task.Exception?.InnerException != null || task.Exception != null)
                     {
-                        var l_Exception = l_Task.Exception?.InnerException ?? l_Task.Exception;
+                        var exception = task.Exception?.InnerException ?? task.Exception;
                         Logging.Log(ELogSeverity.Error, $"[IRoute.TryInvokeInternal] Route {Method.GetType().FullName} failed with exception:");
-                        Logging.Log(ELogSeverity.Error, l_Exception!);
+                        Logging.Log(ELogSeverity.Error, exception!);
 
-                        outError    = "Request failed";
-                        outResponse = GetResponseForException(routeContext, l_Exception!);
+                        outError = "Request failed";
+                        outResponse = GetResponseForException(routeContext, exception!);
 
                         return false;
                     }
                     else if (AsyncTimeout.HasValue)
-                        l_CancellationTokenSource?.Cancel();
+                        cancellationTokenSource?.Cancel();
 
-                    outError    = "Request failed/timeout";
+                    outError = "Request failed/timeout";
                     outResponse = GetResponseForAsyncTimeout(routeContext);
 
                     return false;
                 }
             }
             else
-                outResponse = l_Return as Response.IResponse;
+                outResponse = returnValue as Response.IResponse;
         }
 
         return true;
@@ -330,40 +329,40 @@ public abstract class IRoute : Attribute
     /// <returns>True if succeeded</returns>
     protected bool TryTransferParameters(JArray? inParameters, out string? outError)
     {
-        object[] l_InvokeBuffer = m_InvokeBuffer!.Value!;
-        Array.Clear(l_InvokeBuffer);
+        object[] invokeBuffer = _invokeBuffer!.Value!;
+        Array.Clear(invokeBuffer);
 
         outError = null;
 
-        for (var l_I = UserParametersOffset; l_I < Parameters!.Length; ++l_I)
+        for (var i = UserParametersOffset; i < Parameters!.Length; ++i)
         {
-            var l_ParameterInfo      = Parameters[l_I];
-            var l_ParameterFixedName = ParametersFixedName![l_I];
-            var l_ParameterHint      = ParametersHint![l_I];
+            var parameterInfo = Parameters[i];
+            var parameterFixedName = ParametersFixedName![i];
+            var parameterHint = ParametersHint![i];
 
-            if (inParameters == null || (l_I - UserParametersOffset) >= inParameters.Count)
+            if (inParameters == null || (i - UserParametersOffset) >= inParameters.Count)
             {
-                if (!l_ParameterInfo.HasDefaultValue && !ParametersOptional![l_I])
+                if (!parameterInfo.HasDefaultValue && !ParametersOptional![i])
                 {
-                    outError = $"Parameter {l_ParameterHint} is missing";
+                    outError = $"Parameter {parameterHint} is missing";
                     return false;
                 }
 
 #pragma warning disable CS8601
-                l_InvokeBuffer[l_I] = ParametersOptional![l_I] ? null : l_ParameterInfo.DefaultValue!;
+                invokeBuffer[i] = ParametersOptional![i] ? null : parameterInfo.DefaultValue!;
 #pragma warning restore CS8601
             }
             else
             {
-                var l_Result = Reflection.TypeConverter.TryGetValueAsFromJToken(
-                    ParametersType![l_I],
-                    inParameters[l_I - UserParametersOffset],
-                    l_ParameterHint,
+                var result = Reflection.TypeConverter.TryGetValueAsFromJToken(
+                    ParametersType![i],
+                    inParameters[i - UserParametersOffset],
+                    parameterHint,
                     out outError,
-                    ref l_InvokeBuffer[l_I]
+                    ref invokeBuffer[i]
                 );
 
-                if (!l_Result)
+                if (!result)
                     return false;
             }
         }
@@ -378,40 +377,40 @@ public abstract class IRoute : Attribute
     /// <returns>True if succeeded</returns>
     protected bool TryTransferParameters(JObject? inParameters, out string? outError)
     {
-        object[] l_InvokeBuffer = m_InvokeBuffer!.Value!;
-        Array.Clear(l_InvokeBuffer);
+        object[] invokeBuffer = _invokeBuffer!.Value!;
+        Array.Clear(invokeBuffer);
 
         outError = null;
 
-        for (var l_I = UserParametersOffset; l_I < Parameters!.Length; ++l_I)
+        for (var i = UserParametersOffset; i < Parameters!.Length; ++i)
         {
-            var l_ParameterInfo      = Parameters[l_I];
-            var l_ParameterFixedName = ParametersFixedName![l_I];
-            var l_ParameterHint      = ParametersHint![l_I];
+            var parameterInfo = Parameters[i];
+            var parameterFixedName = ParametersFixedName![i];
+            var parameterHint = ParametersHint![i];
 
-            if (inParameters == null || !inParameters.ContainsKey(l_ParameterFixedName))
+            if (inParameters == null || !inParameters.ContainsKey(parameterFixedName))
             {
-                if (!l_ParameterInfo.HasDefaultValue && !ParametersOptional![l_I])
+                if (!parameterInfo.HasDefaultValue && !ParametersOptional![i])
                 {
-                    outError = $"Parameter {l_ParameterHint} is missing";
+                    outError = $"Parameter {parameterHint} is missing";
                     return false;
                 }
 
 #pragma warning disable CS8601
-                l_InvokeBuffer[l_I] = ParametersOptional![l_I] ? null : l_ParameterInfo.DefaultValue!;
+                invokeBuffer[i] = ParametersOptional![i] ? null : parameterInfo.DefaultValue!;
 #pragma warning restore CS8601
             }
             else
             {
-                var l_Result = Reflection.TypeConverter.TryGetValueAsFromJToken(
-                    ParametersType![l_I],
-                    inParameters![l_ParameterFixedName]!,
-                    l_ParameterHint,
+                var result = Reflection.TypeConverter.TryGetValueAsFromJToken(
+                    ParametersType![i],
+                    inParameters![parameterFixedName]!,
+                    parameterHint,
                     out outError,
-                    ref l_InvokeBuffer[l_I]
+                    ref invokeBuffer[i]
                 );
 
-                if (!l_Result)
+                if (!result)
                     return false;
             }
         }
@@ -426,40 +425,40 @@ public abstract class IRoute : Attribute
     /// <returns>True if succeeded</returns>
     protected bool TryTransferParameters(IReadOnlyDictionary<string, string>? inParameters, out string? outError)
     {
-        object[] l_InvokeBuffer = m_InvokeBuffer!.Value!;
-        Array.Clear(l_InvokeBuffer);
+        object[] invokeBuffer = _invokeBuffer!.Value!;
+        Array.Clear(invokeBuffer);
 
         outError = null;
 
-        for (var l_I = UserParametersOffset; l_I < Parameters!.Length; ++l_I)
+        for (var i = UserParametersOffset; i < Parameters!.Length; ++i)
         {
-            var l_ParameterInfo      = Parameters[l_I];
-            var l_ParameterFixedName = ParametersFixedName![l_I];
-            var l_ParameterHint      = ParametersHint![l_I];
+            var parameterInfo = Parameters[i];
+            var parameterFixedName = ParametersFixedName![i];
+            var parameterHint = ParametersHint![i];
 
-            if (inParameters == null || !inParameters.ContainsKey(l_ParameterFixedName))
+            if (inParameters == null || !inParameters.ContainsKey(parameterFixedName))
             {
-                if (!l_ParameterInfo.HasDefaultValue && !ParametersOptional![l_I])
+                if (!parameterInfo.HasDefaultValue && !ParametersOptional![i])
                 {
-                    outError = $"Parameter {l_ParameterHint} is missing";
+                    outError = $"Parameter {parameterHint} is missing";
                     return false;
                 }
 
 #pragma warning disable CS8601
-                l_InvokeBuffer[l_I] = ParametersOptional![l_I] ? null : l_ParameterInfo.DefaultValue!;
+                invokeBuffer[i] = ParametersOptional![i] ? null : parameterInfo.DefaultValue!;
 #pragma warning restore CS8601
             }
             else
             {
-                var l_Result = Reflection.TypeConverter.TryGetValueAsFromString(
-                    ParametersType![l_I],
-                    inParameters?[l_ParameterFixedName] ?? string.Empty,
-                    l_ParameterHint,
+                var result = Reflection.TypeConverter.TryGetValueAsFromString(
+                    ParametersType![i],
+                    inParameters?[parameterFixedName] ?? string.Empty,
+                    parameterHint,
                     out outError,
-                    ref l_InvokeBuffer[l_I]
+                    ref invokeBuffer[i]
                 );
 
-                if (!l_Result)
+                if (!result)
                     return false;
             }
         }

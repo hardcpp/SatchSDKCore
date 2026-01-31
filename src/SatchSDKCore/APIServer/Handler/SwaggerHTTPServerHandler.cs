@@ -1,6 +1,6 @@
+using System;
 using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;
-using System;
 
 namespace SSC.APIServer.Handler;
 
@@ -42,16 +42,16 @@ public class SwaggerHTTPServerHandler : IHttpServerExRequestHandler
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var l_OgRequest = context.ListenerRequest;
-        if (l_OgRequest.Url!.AbsolutePath != "/swagger" || l_OgRequest.HttpMethod != "GET")
+        var ogRequest = context.ListenerRequest;
+        if (ogRequest.Url!.AbsolutePath != "/swagger" || ogRequest.HttpMethod != "GET")
             return false;
 
-        var l_RestMethod  = Route.ERestMethod.Get;
-        var l_HTTPRequest = new Request.HTTPRequest(context);
-        var l_RESTContext = new RouteContext.RESTRouteContext(l_HTTPRequest, l_RestMethod);
+        var restMethod = Route.ERestMethod.Get;
+        var httpRequest = new Request.HTTPRequest(context);
+        var restContext = new RouteContext.RESTRouteContext(httpRequest, restMethod);
 
         context.ServerResponse = Response.RESTResponse.Result(
-            routeContext: l_RESTContext,
+            routeContext: restContext,
             code: System.Net.HttpStatusCode.OK,
             content: s_HTMLCode,
             contentType: Response.RESTResponse.ContentType_TextHTML

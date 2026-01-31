@@ -1,4 +1,4 @@
-﻿namespace SSC.Misc;
+namespace SSC.Misc;
 
 public enum ENestedFlowControl
 {

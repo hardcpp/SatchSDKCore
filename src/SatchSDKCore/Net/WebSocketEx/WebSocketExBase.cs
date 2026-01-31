@@ -1,4 +1,3 @@
-﻿using SSC.Misc;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -9,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using SSC.Misc;
 
 namespace SSC.Net.WebSocketEx;
 
@@ -27,19 +27,19 @@ public abstract class WebSocketExBase
     private readonly int _maxFrameLength;
     private readonly int _maxMessageLength;
 
-    private bool   _closeSignaled     = false;
-    private byte[] _receiveBuffer     = null!;
-    private int    _receiveBufferWPos = 0;
+    private bool _closeSignaled = false;
+    private readonly byte[] _receiveBuffer = null!;
+    private int _receiveBufferWPos = 0;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     public readonly ArrayPool<byte> Allocator;
 
-    public WebSocket?          Socket             { get; protected set; } = null!;
-    public NameValueCollection NegociatingHeaders { get;  internal set; } = null!;
-    public IPEndPoint          LocalEndPoint      { get;  internal set; } = null!;
-    public IPEndPoint          RemoteEndPoint     { get;  internal set; } = null!;
+    public WebSocket? Socket { get; protected set; } = null!;
+    public NameValueCollection NegociatingHeaders { get; internal set; } = null!;
+    public IPEndPoint LocalEndPoint { get; internal set; } = null!;
+    public IPEndPoint RemoteEndPoint { get; internal set; } = null!;
 
     public bool IsConnected => Socket?.State == WebSocketState.Open;
 
@@ -55,21 +55,21 @@ public abstract class WebSocketExBase
     /// <param name="maxMessageLength">Max length of a single message</param>
     /// <param name="maxReceiveQueueSize">Max length of the message queue</param>
     public WebSocketExBase(
-        WebSocket?       webSocket,
-        ArrayPool<byte>? allocator           = null,
-        int              maxFrameLength      = 1024,
-        int              maxMessageLength    = 5 * 1024 * 1024,
-        int              maxReceiveQueueSize = 50
+        WebSocket? webSocket,
+        ArrayPool<byte>? allocator = null,
+        int maxFrameLength = 1024,
+        int maxMessageLength = 5 * 1024 * 1024,
+        int maxReceiveQueueSize = 50
         )
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxMessageLength, maxFrameLength);
 
-        Socket    = webSocket;
+        Socket = webSocket;
         Allocator = allocator ?? ArrayPool<byte>.Shared;
 
         _receivedMessages = new BlockingCollection<(byte[], int, WebSocketMessageType)>(maxReceiveQueueSize);
 
-        _maxFrameLength   = maxFrameLength;
+        _maxFrameLength = maxFrameLength;
         _maxMessageLength = maxMessageLength;
 
         _receiveBuffer = new byte[_maxMessageLength];
@@ -125,9 +125,9 @@ public abstract class WebSocketExBase
 
             try
             {
-                var idealSize           = Math.Min(_maxFrameLength, _receiveBuffer.Length - _receiveBufferWPos);
+                var idealSize = Math.Min(_maxFrameLength, _receiveBuffer.Length - _receiveBufferWPos);
                 var receiveArraySegment = new ArraySegment<byte>(_receiveBuffer, _receiveBufferWPos, idealSize);
-                var received            = await Socket.ReceiveAsync(receiveArraySegment, _cancellationTokenSource.Token).ConfigureAwait(false);
+                var received = await Socket.ReceiveAsync(receiveArraySegment, _cancellationTokenSource.Token).ConfigureAwait(false);
 
                 if (received.MessageType == WebSocketMessageType.Binary || received.MessageType == WebSocketMessageType.Text)
                 {
@@ -213,12 +213,12 @@ public abstract class WebSocketExBase
             encoding = Encoding.UTF8;
 
         var bytesSize = FastTextEncoding.GetByteCount(data, encoding);
-        var array     = Allocator.Rent(bytesSize);
+        var array = Allocator.Rent(bytesSize);
 
         try
         {
-            var l_FinalSize = FastTextEncoding.GetBytes(data, encoding, array.AsSpan());
-            return Send(array.AsMemory(0, l_FinalSize), WebSocketMessageType.Text);
+            var finalSize = FastTextEncoding.GetBytes(data, encoding, array.AsSpan());
+            return Send(array.AsMemory(0, finalSize), WebSocketMessageType.Text);
         }
         finally
         {
@@ -237,8 +237,8 @@ public abstract class WebSocketExBase
     {
         ArgumentNullException.ThrowIfNull(data);
 
-        var l_FixedLength = length != -1 ? length : data!.Length;
-        return Send(new ReadOnlyMemory<byte>(data, offset, l_FixedLength), type);
+        var fixedLength = length != -1 ? length : data!.Length;
+        return Send(new ReadOnlyMemory<byte>(data, offset, fixedLength), type);
     }
     /// <summary>
     /// Send a raw message
@@ -261,7 +261,7 @@ public abstract class WebSocketExBase
         }
 
         /// Get the ArraySegment to avoid potential copy in native send implementation
-        if (!MemoryMarshal.TryGetArray(data, out var l_ArraySegment))
+        if (!MemoryMarshal.TryGetArray(data, out var arraySegment))
         {
             Logging.Log(
                 ELogSeverity.Error,
@@ -276,14 +276,14 @@ public abstract class WebSocketExBase
             _sendSemaphore.Wait();
 
             var totalSentSize = 0;
-            var remainingSize = l_ArraySegment.Count;
+            var remainingSize = arraySegment.Count;
 
             while (remainingSize > 0)
             {
-                var frameSize   = Math.Min(remainingSize, _maxFrameLength);
+                var frameSize = Math.Min(remainingSize, _maxFrameLength);
                 var isLastFrame = frameSize == remainingSize;
 
-                var sendTask = Socket.SendAsync(l_ArraySegment.Slice(totalSentSize, frameSize), type, isLastFrame, _cancellationTokenSource.Token);
+                var sendTask = Socket.SendAsync(arraySegment.Slice(totalSentSize, frameSize), type, isLastFrame, _cancellationTokenSource.Token);
                 sendTask.ConfigureAwait(false);
                 sendTask.Wait();
 

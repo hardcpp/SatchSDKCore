@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 
 namespace SSC.Net.HttpEx;
 
@@ -12,10 +12,10 @@ public class HttpServerExRequestContext
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public HttpListenerRequest   ListenerRequest  => ListenerContext.Request;
-    public HttpListenerResponse  ListenerResponse => ListenerContext.Response;
+    public HttpListenerRequest ListenerRequest => ListenerContext.Request;
+    public HttpListenerResponse ListenerResponse => ListenerContext.Response;
     public HttpServerExResponse? ServerResponse;
-    public bool                  ConnectionUpgraded { get; internal set; } = false;
+    public bool ConnectionUpgraded { get; internal set; } = false;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////

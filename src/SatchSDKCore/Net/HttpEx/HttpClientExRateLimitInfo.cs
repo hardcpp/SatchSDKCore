@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -41,9 +41,9 @@ public sealed class HttpClientExRateLimitInfo
 
         return new HttpClientExRateLimitInfo()
         {
-            Limit       = GetLimit(headers),
-            Remaining   = GetRemaining(headers),
-            Reset       = GetReset(headers),
+            Limit = GetLimit(headers),
+            Remaining = GetRemaining(headers),
+            Reset = GetReset(headers),
         };
     }
 
@@ -88,10 +88,10 @@ public sealed class HttpClientExRateLimitInfo
         foreach (var kvp in transformedHeaders)
         {
             var keyLower = kvp.Key.ToLower();
-            if (   keyLower == "x-rate-limit-limit" || keyLower == "x-ratelimit-limit"
-                || keyLower == "rate-limit-limit"   || keyLower == "ratelimit-limit"
+            if (keyLower == "x-rate-limit-limit" || keyLower == "x-ratelimit-limit"
+                || keyLower == "rate-limit-limit" || keyLower == "ratelimit-limit"
                 || keyLower == "x-rate-limit-total" || keyLower == "x-ratelimit-total"
-                || keyLower == "rate-limit-total"   || keyLower == "ratelimit-total")
+                || keyLower == "rate-limit-total" || keyLower == "ratelimit-total")
             {
                 if (int.TryParse(kvp.Value, out var value))
                     return value;
@@ -112,8 +112,8 @@ public sealed class HttpClientExRateLimitInfo
         foreach (var kvp in transformedHeaders)
         {
             var keyLower = kvp.Key.ToLower();
-            if (   keyLower == "x-rate-limit-remaining" || keyLower == "x-ratelimit-remaining"
-                || keyLower == "rate-limit-remaining"   || keyLower == "ratelimit-remaining")
+            if (keyLower == "x-rate-limit-remaining" || keyLower == "x-ratelimit-remaining"
+                || keyLower == "rate-limit-remaining" || keyLower == "ratelimit-remaining")
             {
                 if (int.TryParse(kvp.Value, out var value))
                     return value;
@@ -134,8 +134,8 @@ public sealed class HttpClientExRateLimitInfo
         foreach (var kvp in transformedHeaders)
         {
             var keyLower = kvp.Key.ToLower();
-            if (   keyLower == "x-rate-limit-reset" || keyLower == "x-ratelimit-reset"
-                || keyLower == "rate-limit-reset"   || keyLower == "ratelimit-reset")
+            if (keyLower == "x-rate-limit-reset" || keyLower == "x-ratelimit-reset"
+                || keyLower == "rate-limit-reset" || keyLower == "ratelimit-reset")
             {
                 if (!long.TryParse(kvp.Value, out var value))
                     return DateTime.Now.AddSeconds(2);

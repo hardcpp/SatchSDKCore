@@ -1,6 +1,6 @@
-using SSC.Security;
 using System.Reflection;
 using System.Text;
+using SSC.Security;
 
 namespace SSC.Tests.Security;
 
@@ -11,9 +11,9 @@ namespace SSC.Tests.Security;
 public class AESTests
 {
     // Use reflection to access internal AES class
-    private static Type? _aesType;
-    private static MethodInfo? _encryptMethod;
-    private static MethodInfo? _decryptMethod;
+    private static readonly Type? _aesType;
+    private static readonly MethodInfo? _encryptMethod;
+    private static readonly MethodInfo? _decryptMethod;
 
     static AESTests()
     {

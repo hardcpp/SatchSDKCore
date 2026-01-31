@@ -1,4 +1,4 @@
-﻿namespace SSC.Extensions;
+namespace SSC.Extensions;
 
 /// <summary>
 /// String extension methods

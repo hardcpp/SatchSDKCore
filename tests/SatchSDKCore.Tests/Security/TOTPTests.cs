@@ -1,5 +1,5 @@
-using SSC.Security;
 using System.Text;
+using SSC.Security;
 
 namespace SSC.Tests.Security;
 

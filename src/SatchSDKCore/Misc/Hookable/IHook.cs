@@ -1,4 +1,4 @@
-﻿namespace SSC.Misc.Hookable;
+namespace SSC.Misc.Hookable;
 
 /// <summary>
 /// Hook interface
@@ -11,5 +11,5 @@ public interface IHook<T>
     /// </summary>
     /// <param name="context">Context</param>
     /// <returns>True if should interupt context</returns>
-    public abstract bool Intercept(T context);
+    abstract bool Intercept(T context);
 }

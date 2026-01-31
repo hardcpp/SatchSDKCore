@@ -12,18 +12,18 @@ public class MTObjectPool<t_Type>
 {
     public int CountAll { get; private set; }
     public int CountActive => CountAll - CountInactive;
-    public int CountInactive => m_Stack.Count;
+    public int CountInactive => _stack.Count;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly Stack<t_Type> m_Stack;
-    private readonly Func<t_Type> m_CreateFunc;
-    private readonly Action<t_Type>? m_ActionOnGet;
-    private readonly Action<t_Type>? m_ActionOnRelease;
-    private readonly Action<t_Type>? m_ActionOnDestroy;
-    private readonly int m_MaxSize;
-    private readonly bool m_CollectionCheck;
+    private readonly Stack<t_Type> _stack;
+    private readonly Func<t_Type> _createFunc;
+    private readonly Action<t_Type>? _actionOnGet;
+    private readonly Action<t_Type>? _actionOnRelease;
+    private readonly Action<t_Type>? _actionOnDestroy;
+    private readonly int _maxSize;
+    private readonly bool _collectionCheck;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -43,17 +43,17 @@ public class MTObjectPool<t_Type>
         if (maxSize <= 0)
             throw new ArgumentException("Max Size must be greater than 0", nameof(maxSize));
 
-        m_Stack = new Stack<t_Type>(defaultCapacity);
-        m_CreateFunc = createFunc;
-        m_MaxSize = maxSize;
-        m_ActionOnGet = actionOnGet;
-        m_ActionOnRelease = actionOnRelease;
-        m_ActionOnDestroy = actionOnDestroy;
-        m_CollectionCheck = collectionCheck;
+        _stack = new Stack<t_Type>(defaultCapacity);
+        _createFunc = createFunc;
+        _maxSize = maxSize;
+        _actionOnGet = actionOnGet;
+        _actionOnRelease = actionOnRelease;
+        _actionOnDestroy = actionOnDestroy;
+        _collectionCheck = collectionCheck;
 
         while (defaultCapacity-- > 0)
         {
-            m_Stack.Push(m_CreateFunc());
+            _stack.Push(_createFunc());
             CountAll++;
         }
     }
@@ -76,21 +76,21 @@ public class MTObjectPool<t_Type>
     /// <returns></returns>
     public t_Type Get()
     {
-        t_Type l_Result;
+        t_Type result;
 
-        lock (m_Stack)
+        lock (_stack)
         {
-            if (m_Stack.Count == 0)
+            if (_stack.Count == 0)
             {
-                l_Result = m_CreateFunc();
+                result = _createFunc();
                 CountAll++;
             }
             else
-                l_Result = m_Stack.Pop();
+                result = _stack.Pop();
         }
 
-        m_ActionOnGet?.Invoke(l_Result);
-        return l_Result;
+        _actionOnGet?.Invoke(result);
+        return result;
     }
     /// <summary>
     /// Managed object get
@@ -105,17 +105,17 @@ public class MTObjectPool<t_Type>
     /// <param name="p_Element">Element to release</param>
     public void Release(t_Type p_Element)
     {
-        lock (m_Stack)
+        lock (_stack)
         {
-            if (m_CollectionCheck && m_Stack.Count > 0 && m_Stack.Contains(p_Element))
+            if (_collectionCheck && _stack.Count > 0 && _stack.Contains(p_Element))
                 throw new InvalidOperationException("Trying to release an object that has already been released to the pool.");
 
-            m_ActionOnRelease?.Invoke(p_Element);
+            _actionOnRelease?.Invoke(p_Element);
 
-            if (CountInactive < m_MaxSize)
-                m_Stack.Push(p_Element);
+            if (CountInactive < _maxSize)
+                _stack.Push(p_Element);
             else
-                m_ActionOnDestroy?.Invoke(p_Element);
+                _actionOnDestroy?.Invoke(p_Element);
         }
     }
 
@@ -127,15 +127,15 @@ public class MTObjectPool<t_Type>
     /// </summary>
     public void Clear()
     {
-        lock (m_Stack)
+        lock (_stack)
         {
-            if (m_ActionOnDestroy != null)
+            if (_actionOnDestroy != null)
             {
-                foreach (t_Type l_Current in m_Stack)
-                    m_ActionOnDestroy(l_Current);
+                foreach (t_Type current in _stack)
+                    _actionOnDestroy(current);
             }
 
-            m_Stack.Clear();
+            _stack.Clear();
         }
 
         CountAll = 0;

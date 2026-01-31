@@ -1,18 +1,18 @@
-﻿using SSC.Net.HttpEx;
 using System;
 using System.Buffers;
+using SSC.Net.HttpEx;
 
 namespace SSC.Net.WebSocketEx;
 
 public interface IWebSocketServerEx<TSession, TSessionID> : IHttpServerExRequestHandler, IDisposable
-    where TSession   : WebSocketServerExSession<TSession, TSessionID>
+    where TSession : WebSocketServerExSession<TSession, TSessionID>
     where TSessionID : notnull
 {
-    public string          AbsolutePath        { get; }
-    public int             MaxReceiveQueueSize { get; }
-    public int             MaxFrameLength      { get; }
-    public int             MaxMessageLength    { get; }
-    public ArrayPool<byte> Allocator           { get; }
+    string AbsolutePath { get; }
+    int MaxReceiveQueueSize { get; }
+    int MaxFrameLength { get; }
+    int MaxMessageLength { get; }
+    ArrayPool<byte> Allocator { get; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -20,11 +20,11 @@ public interface IWebSocketServerEx<TSession, TSessionID> : IHttpServerExRequest
     /// <summary>
     /// Start the HttpServerEx server and threads
     /// </summary>
-    public void Start();
+    void Start();
     /// <summary>
     /// Stop the HttpServerEx server and wait for all the threads to stop
     /// </summary>
-    public void Stop();
+    void Stop();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -35,5 +35,5 @@ public interface IWebSocketServerEx<TSession, TSessionID> : IHttpServerExRequest
     /// <param name="predicate">Predicate to match the session</param>
     /// <param name="default">Default session to return if none matched</param>
     /// <returns>Matched session or default</returns>
-    public TSession? FindSession(Func<TSession, bool> predicate, TSession? @default = null);
+    TSession? FindSession(Func<TSession, bool> predicate, TSession? @default = null);
 }

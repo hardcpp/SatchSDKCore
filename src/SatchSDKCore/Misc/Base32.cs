@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -63,31 +63,31 @@ public static class Base32
         if (charSpan.Length == 0)
             return Array.Empty<byte>();
 
-        int l_OutLength     = charSpan.Length * c_Shift / 8;
-        var l_Result        = new byte[l_OutLength];
-        int l_BitsBuffer    = 0;
-        int l_BitsRemaining = 0;
-        int l_Next          = 0;
-        int l_SymboNumber   = 0;
+        int outLength = charSpan.Length * c_Shift / 8;
+        var result = new byte[outLength];
+        int bitsBuffer = 0;
+        int bitsRemaining = 0;
+        int next = 0;
+        int symboNumber = 0;
 
-        for (var l_I = 0; l_I < charSpan.Length; ++l_I)
+        for (var i = 0; i < charSpan.Length; ++i)
         {
-            l_SymboNumber = SymbolToInt(char.ToUpper(charSpan[l_I]));
-            if (l_SymboNumber < 0)
-                throw new FormatException("Illegal character: `" + charSpan[l_I] + "`");
+            symboNumber = SymbolToInt(char.ToUpper(charSpan[i]));
+            if (symboNumber < 0)
+                throw new FormatException("Illegal character: `" + charSpan[i] + "`");
 
-            l_BitsBuffer <<= c_Shift;
-            l_BitsBuffer |= l_SymboNumber & c_Mask;
-            l_BitsRemaining += c_Shift;
+            bitsBuffer <<= c_Shift;
+            bitsBuffer |= symboNumber & c_Mask;
+            bitsRemaining += c_Shift;
 
-            if (l_BitsRemaining >= 8)
+            if (bitsRemaining >= 8)
             {
-                l_Result[l_Next++] = (byte)(l_BitsBuffer >> l_BitsRemaining - 8);
-                l_BitsRemaining -= 8;
+                result[next++] = (byte)(bitsBuffer >> bitsRemaining - 8);
+                bitsRemaining -= 8;
             }
         }
 
-        return l_Result;
+        return result;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -140,45 +140,45 @@ public static class Base32
         if (bytes.Length >= 1 << 28)
             throw new ArgumentOutOfRangeException(nameof(bytes));
 
-        int l_OutputLength  = (bytes.Length * 8 + c_Shift - 1) / c_Shift;
-        var l_Builder       = new StringBuilder(l_OutputLength);
-        int l_Position      = 0;
-        int l_LastPosition  = l_Position + bytes.Length;
-        int l_BitsBuffer    = bytes[l_Position++];
-        int l_BitsRemaining = 8;
+        int outputLength = (bytes.Length * 8 + c_Shift - 1) / c_Shift;
+        var builder = new StringBuilder(outputLength);
+        int position = 0;
+        int lastPosition = position + bytes.Length;
+        int bitsBuffer = bytes[position++];
+        int bitsRemaining = 8;
 
-        while (l_BitsRemaining > 0 || l_Position < l_LastPosition)
+        while (bitsRemaining > 0 || position < lastPosition)
         {
-            if (l_BitsRemaining < c_Shift)
+            if (bitsRemaining < c_Shift)
             {
-                if (l_Position < l_LastPosition)
+                if (position < lastPosition)
                 {
-                    l_BitsBuffer <<= 8;
-                    l_BitsBuffer |= bytes[l_Position++] & 0xFF;
-                    l_BitsRemaining += 8;
+                    bitsBuffer <<= 8;
+                    bitsBuffer |= bytes[position++] & 0xFF;
+                    bitsRemaining += 8;
                 }
                 else
                 {
-                    int l_Padding = c_Shift - l_BitsRemaining;
-                    l_BitsBuffer <<= l_Padding;
-                    l_BitsRemaining += l_Padding;
+                    int padding = c_Shift - bitsRemaining;
+                    bitsBuffer <<= padding;
+                    bitsRemaining += padding;
                 }
             }
 
-            int l_Index = c_Mask & l_BitsBuffer >> l_BitsRemaining - c_Shift;
-            l_BitsRemaining -= c_Shift;
+            int index = c_Mask & bitsBuffer >> bitsRemaining - c_Shift;
+            bitsRemaining -= c_Shift;
 
-            l_Builder.Append(m_Digits[l_Index]);
+            builder.Append(m_Digits[index]);
         }
 
         if (options.HasFlag(Base32FormattingOptions.Pad))
         {
-            int l_Padding = 8 - l_Builder.Length % 8;
-            if (l_Padding > 0)
-                l_Builder.Append('=', l_Padding == 8 ? 0 : l_Padding);
+            int padding = 8 - builder.Length % 8;
+            if (padding > 0)
+                builder.Append('=', padding == 8 ? 0 : padding);
         }
 
-        return l_Builder.ToString();
+        return builder.ToString();
     }
 
     ////////////////////////////////////////////////////////////////////////////

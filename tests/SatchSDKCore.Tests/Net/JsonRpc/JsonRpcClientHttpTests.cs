@@ -4,9 +4,9 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using SSC;
 using SSC.Net.HttpEx;
 using SSC.Net.JsonRpc;
-using SSC;
 using static SSC.Net.JsonRpc.IJsonRpcClient;
 
 namespace SSC.Tests.Net.JsonRpc;
