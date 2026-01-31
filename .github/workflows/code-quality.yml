@@ -1,0 +1,224 @@
+name: Code Quality
+
+on:
+    push:
+        branches:
+            - stable
+            - dev
+    pull_request:
+        branches: ["**"]
+
+env:
+    DOTNET_VERSION: "9.0.x"
+
+jobs:
+    code-analysis:
+        name: Code Analysis
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            pull-requests: write
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
+
+            - name: Cache NuGet packages
+              uses: actions/cache@v4
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
+
+            - name: Restore dependencies
+              run: dotnet restore
+
+            - name: Build
+              run: dotnet build --no-restore --configuration Release
+
+            - name: Run .NET Analyzers
+              run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=false /warnaserror-
+
+    format-check:
+        name: Format Check
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            pull-requests: write
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
+
+            - name: Cache NuGet packages
+              uses: actions/cache@v4
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
+
+            - name: Restore dependencies
+              run: dotnet restore
+
+            - name: Check code formatting
+              run: dotnet format --verify-no-changes --verbosity diagnostic
+
+            - name: Comment PR if formatting issues found
+              if: failure() && github.event_name == 'pull_request'
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      github.rest.issues.createComment({
+                        issue_number: context.issue.number,
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        body: '⚠️ **Code formatting issues detected!**\n\nPlease run `dotnet format` to fix formatting issues before merging.'
+                      })
+
+    test-and-coverage:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            pull-requests: write
+
+        steps:
+            - uses: actions/checkout@v4
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
+            - name: Cache NuGet packages
+              uses: actions/cache@v4
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
+            - name: Restore dependencies
+              run: dotnet restore
+            - name: Build
+              run: dotnet build --no-restore
+            - name: Run Unit Tests with Coverage
+              timeout-minutes: 10
+              run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" --results-directory ./coverage -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+            - name: Code Coverage Report
+              uses: irongut/CodeCoverageSummary@v1.3.0
+              with:
+                  filename: coverage/*/coverage.cobertura.xml
+                  badge: true
+                  fail_below_min: true
+                  format: markdown
+                  hide_branch_rate: false
+                  hide_complexity: false
+                  indicators: true
+                  output: both
+                  thresholds: "60 80"
+            - name: Add Coverage PR Comment
+              uses: marocchino/sticky-pull-request-comment@v2
+              if: github.event_name == 'pull_request'
+              with:
+                  recreate: true
+                  path: code-coverage-results.md
+            - name: Write to Job Summary
+              run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+            - name: Upload Test Results
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: test-results
+                  path: "**/test-results.trx"
+            - name: Upload Coverage Reports
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: coverage-reports
+                  path: "coverage/**/coverage.cobertura.xml"
+
+    duplicate-code-detection:
+        name: Duplicate Code Detection
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Install jscpd
+              run: npm install -g jscpd
+
+            - name: Run duplicate code detection
+              run: |
+                  jscpd src/ --min-lines 10 --min-tokens 50 --format "csharp" --reporters "console,json" --output ./jscpd-report || true
+
+            - name: Upload duplicate code report
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: duplicate-code-report
+                  path: jscpd-report/
+
+    metrics:
+        name: Code Metrics
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
+
+            - name: Cache NuGet packages
+              uses: actions/cache@v4
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
+
+            - name: Restore dependencies
+              run: dotnet restore
+
+            - name: Build
+              run: dotnet build --no-restore --configuration Release
+
+            - name: Generate code metrics
+              continue-on-error: true
+              run: |
+                  echo "# Code Metrics Report" > metrics-report.md
+                  echo "" >> metrics-report.md
+                  echo "## Project Statistics" >> metrics-report.md
+                  echo "" >> metrics-report.md
+                  echo "### Source Files" >> metrics-report.md
+                  find src -name "*.cs" | wc -l | xargs -I {} echo "Total C# files: {}" >> metrics-report.md
+                  find src -name "*.cs" -exec wc -l {} + | tail -1 | awk '{print "Total lines of code: " $1}' >> metrics-report.md
+                  echo "" >> metrics-report.md
+                  echo "### Test Files" >> metrics-report.md
+                  find tests -name "*.cs" 2>/dev/null | wc -l | xargs -I {} echo "Total test files: {}" >> metrics-report.md || echo "Total test files: 0" >> metrics-report.md
+                  find tests -name "*.cs" -exec wc -l {} + 2>/dev/null | tail -1 | awk '{print "Total test lines: " $1}' >> metrics-report.md || echo "Total test lines: 0" >> metrics-report.md
+
+            - name: Upload metrics report
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: code-metrics
+                  path: metrics-report.md
