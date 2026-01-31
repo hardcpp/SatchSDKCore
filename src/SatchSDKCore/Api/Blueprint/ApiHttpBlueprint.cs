@@ -66,16 +66,16 @@ public class ApiHttpBlueprint : ApiBlueprint
     {
         ArgumentNullException.ThrowIfNull(blueprint);
 
-        var httpBlueprint = blueprint as ApiHttpBlueprint;
+        var httpBlueprint = (ApiHttpBlueprint)blueprint;
 
         if (!TryGetHttpRuleTreeNodeFor(ComposeRule(Prefix), createMissings: true, out var targetRuleTreeNode))
-            throw new Exception($"Failed to register ApiHttpBlueprint {httpBlueprint!.Name}");
+            throw new Exception($"Failed to register ApiHttpBlueprint {httpBlueprint.Name}");
 
-        if (Array.IndexOf(targetRuleTreeNode!.Blueprints, httpBlueprint!) != -1)
-            throw new Exception($"ApiHttpBlueprint '{httpBlueprint!.Name}' is already registered in ApiHttpBlueprint '{Name}'");
+        if (Array.IndexOf(targetRuleTreeNode!.Blueprints, httpBlueprint) != -1)
+            throw new Exception($"ApiHttpBlueprint '{httpBlueprint.Name}' is already registered in ApiHttpBlueprint '{Name}'");
 
         Array.Resize(ref targetRuleTreeNode.Blueprints, targetRuleTreeNode.Blueprints.Length + 1);
-        targetRuleTreeNode.Blueprints[^1] = httpBlueprint!;
+        targetRuleTreeNode.Blueprints[^1] = httpBlueprint;
     }
     /// <summary>
     /// Register route
