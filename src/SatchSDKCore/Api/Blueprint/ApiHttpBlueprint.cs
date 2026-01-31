@@ -107,7 +107,7 @@ public class ApiHttpBlueprint : ApiBlueprint
     /// <param name="createMissings">Create missing nodes on the path?</param>
     /// <param name="result">Output result</param>
     /// <returns>True if a ApiHttpRuleTreeNode was found</returns>
-    private bool TryGetHttpRuleTreeNodeFor(string composedRule, bool createMissings, out Internal.ApiHttpRuleTreeNode? result)
+    private bool TryGetHttpRuleTreeNodeFor(string composedRule, bool createMissings, [NotNullWhen(true)] out Internal.ApiHttpRuleTreeNode? result)
     {
         result = null;
 
