@@ -18,7 +18,7 @@ public interface IJsonRpcClient
     enum ECallOptions
     {
         None = 0,
-        IgnoreRetryPolicy = 1 << 0,
+        IgnoreRetryPolicy = 1 << 0
     }
 
     ////////////////////////////////////////////////////////////////////////////

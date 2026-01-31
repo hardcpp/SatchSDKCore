@@ -39,11 +39,11 @@ public sealed class HttpClientExRateLimitInfo
 
         var headers = GetFlattenedHeaders(coreHttpResponseMessage);
 
-        return new HttpClientExRateLimitInfo()
+        return new HttpClientExRateLimitInfo
         {
             Limit = GetLimit(headers),
             Remaining = GetRemaining(headers),
-            Reset = GetReset(headers),
+            Reset = GetReset(headers)
         };
     }
 
@@ -95,8 +95,7 @@ public sealed class HttpClientExRateLimitInfo
             {
                 if (int.TryParse(kvp.Value, out var value))
                     return value;
-                else
-                    return -1;
+                return -1;
             }
         }
 
@@ -117,8 +116,7 @@ public sealed class HttpClientExRateLimitInfo
             {
                 if (int.TryParse(kvp.Value, out var value))
                     return value;
-                else
-                    return -1;
+                return -1;
             }
         }
 

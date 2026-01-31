@@ -70,7 +70,7 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
         {
             Logging.Log(
                 ELogSeverity.Error,
-                $"[Network.WebSocket][WebSocketSession.InternalOnSessionOpen] Error while starting the session:"
+                "[Network.WebSocket][WebSocketSession.InternalOnSessionOpen] Error while starting the session:"
             );
             Logging.Log(ELogSeverity.Error, exception);
         }
@@ -113,7 +113,7 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
         {
             Logging.Log(
                 ELogSeverity.Error,
-                $"[Network.WebSocket][WebSocketSession.InternalOnSessionUpdate] Error while updating the session:"
+                "[Network.WebSocket][WebSocketSession.InternalOnSessionUpdate] Error while updating the session:"
             );
             Logging.Log(ELogSeverity.Error, exception);
         }
@@ -131,7 +131,7 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
         {
             Logging.Log(
                 ELogSeverity.Error,
-                $"[Network.WebSocket][WebSocketSession.InternalOnSessionRemove] Error while terminating the session:"
+                "[Network.WebSocket][WebSocketSession.InternalOnSessionRemove] Error while terminating the session:"
             );
             Logging.Log(ELogSeverity.Error, exception);
         }

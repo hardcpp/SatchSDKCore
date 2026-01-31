@@ -20,7 +20,7 @@ public interface IHttpClientEx : IDisposable
         None = 0,
         ForceCacheDiscard = 1 << 0,
         KeepAlive = 1 << 1,
-        NoRetryOnRateLimit = 1 << 2,
+        NoRetryOnRateLimit = 1 << 2
     }
     /// <summary>
     /// Options for requests
@@ -30,17 +30,17 @@ public interface IHttpClientEx : IDisposable
     {
         None = 0,
         IgnoreRetryPolicy = 1 << 0,
-        NoRetryOnRateLimit = 1 << 1,
+        NoRetryOnRateLimit = 1 << 1
     }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    abstract EOptions Options { get; }
-    abstract int MaxRetry { get; set; }
-    abstract TimeSpan RetryInterval { get; set; }
-    abstract HttpRequestHeaders GlobalHeaders { get; }
-    abstract CookieContainer? CookieJar { get; set; }
+    EOptions Options { get; }
+    int MaxRetry { get; set; }
+    TimeSpan RetryInterval { get; set; }
+    HttpRequestHeaders GlobalHeaders { get; }
+    CookieContainer? CookieJar { get; set; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////

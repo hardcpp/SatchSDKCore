@@ -27,16 +27,16 @@ public abstract class WebSocketExBase
     private readonly int _maxFrameLength;
     private readonly int _maxMessageLength;
 
-    private bool _closeSignaled = false;
+    private bool _closeSignaled;
     private readonly byte[] _receiveBuffer = null!;
-    private int _receiveBufferWPos = 0;
+    private int _receiveBufferWPos;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     public readonly ArrayPool<byte> Allocator;
 
-    public WebSocket? Socket { get; protected set; } = null!;
+    public WebSocket? Socket { get; protected set; }
     public NameValueCollection NegociatingHeaders { get; internal set; } = null!;
     public IPEndPoint LocalEndPoint { get; internal set; } = null!;
     public IPEndPoint RemoteEndPoint { get; internal set; } = null!;
@@ -150,7 +150,7 @@ public abstract class WebSocketExBase
 
                                 Logging.Log(
                                     ELogSeverity.Error,
-                                    $"[Network.WebSocket][WebSocketSession.ReadSocket] Error while updating the session:"
+                                    "[Network.WebSocket][WebSocketSession.ReadSocket] Error while updating the session:"
                                 );
                                 Logging.Log(ELogSeverity.Error, exception);
 
@@ -365,7 +365,7 @@ public abstract class WebSocketExBase
         {
             Logging.Log(
                 ELogSeverity.Error,
-                $"[Network.WebSocket][WebSocketSession.InternalOnSocketClose] Closing socket error:"
+                "[Network.WebSocket][WebSocketSession.InternalOnSocketClose] Closing socket error:"
             );
             Logging.Log(ELogSeverity.Error, exception);
         }

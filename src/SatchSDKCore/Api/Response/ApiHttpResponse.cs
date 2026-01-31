@@ -33,7 +33,7 @@ public sealed class ApiHttpResponse : ApiResponse
     public ApiHttpResponse(Request.ApiRequest request, HttpStatusCode code, HttpContent? content, Encoding? contentEncoding)
         : base(request)
     {
-        HttpServerExResponse = new Net.HttpEx.HttpServerExResponse(code, content, contentEncoding);
+        HttpServerExResponse = new HttpServerExResponse(code, content, contentEncoding);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -47,5 +47,5 @@ public sealed class ApiHttpResponse : ApiResponse
     public static ApiHttpResponse CodeResult(RouteContext.ApiRouteContext routeContext, HttpStatusCode code)
         => new(routeContext.Request, code, new StringContent(code.ToString(), Encoding.UTF8), Encoding.UTF8);
     public static ApiHttpResponse Result(RouteContext.ApiRouteContext routeContext, HttpStatusCode code, string content, string contentType = "text/plain")
-        => new(routeContext.Request, code, new StringContent(content.ToString(), Encoding.UTF8, contentType), Encoding.UTF8);
+        => new(routeContext.Request, code, new StringContent(content, Encoding.UTF8, contentType), Encoding.UTF8);
 }

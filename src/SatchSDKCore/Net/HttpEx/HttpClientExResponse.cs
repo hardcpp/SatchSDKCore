@@ -18,9 +18,9 @@ public sealed class HttpClientExResponse
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private byte[]? _bodyBytes = null;
-    private IHttpClientExDataHandler? _bodyDataHandler = null;
-    private string? _bodyString = null;
+    private byte[]? _bodyBytes;
+    private IHttpClientExDataHandler? _bodyDataHandler;
+    private string? _bodyString;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -49,7 +49,8 @@ public sealed class HttpClientExResponse
                 _bodyString = null;
                 return _bodyString;
             }
-            else if (_bodyBytes.Length == 0)
+
+            if (_bodyBytes.Length == 0)
             {
                 _bodyString = string.Empty;
                 return _bodyString;

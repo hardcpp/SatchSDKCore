@@ -82,7 +82,7 @@ public static class Base32
 
             if (bitsRemaining >= 8)
             {
-                result[next++] = (byte)(bitsBuffer >> bitsRemaining - 8);
+                result[next++] = (byte)(bitsBuffer >> (bitsRemaining - 8));
                 bitsRemaining -= 8;
             }
         }
@@ -140,7 +140,7 @@ public static class Base32
         if (bytes.Length >= 1 << 28)
             throw new ArgumentOutOfRangeException(nameof(bytes));
 
-        int outputLength = (bytes.Length * 8 + c_Shift - 1) / c_Shift;
+        int outputLength = ((bytes.Length * 8) + c_Shift - 1) / c_Shift;
         var builder = new StringBuilder(outputLength);
         int position = 0;
         int lastPosition = position + bytes.Length;
@@ -165,7 +165,7 @@ public static class Base32
                 }
             }
 
-            int index = c_Mask & bitsBuffer >> bitsRemaining - c_Shift;
+            int index = c_Mask & (bitsBuffer >> (bitsRemaining - c_Shift));
             bitsRemaining -= c_Shift;
 
             builder.Append(m_Digits[index]);
@@ -173,7 +173,7 @@ public static class Base32
 
         if (options.HasFlag(Base32FormattingOptions.Pad))
         {
-            int padding = 8 - builder.Length % 8;
+            int padding = 8 - (builder.Length % 8);
             if (padding > 0)
                 builder.Append('=', padding == 8 ? 0 : padding);
         }

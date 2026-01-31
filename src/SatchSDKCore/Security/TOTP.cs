@@ -33,9 +33,9 @@ public class TOTP
         var hMACComputedHash = hmacSha1.ComputeHash(data);
 
         var offset = hMACComputedHash[hMACComputedHash.Length - 1] & 0x0F;
-        var otp = (hMACComputedHash[offset + 0] & 0x7F) << 24
-                     | (hMACComputedHash[offset + 1] & 0xFF) << 16
-                     | (hMACComputedHash[offset + 2] & 0xFF) << 8
+        var otp = ((hMACComputedHash[offset + 0] & 0x7F) << 24)
+                     | ((hMACComputedHash[offset + 1] & 0xFF) << 16)
+                     | ((hMACComputedHash[offset + 2] & 0xFF) << 8)
                      | (hMACComputedHash[offset + 3] & 0xFF);
 
         return OTPToDigits(otp, digits);
@@ -70,7 +70,7 @@ public class TOTP
     private static long CalculateTimeStepFromTimestamp(DateTime dateTime, int period)
     {
         var unixTimestamp = (dateTime.Ticks - c_UnixEpochTicks) / c_TicksToSeconds;
-        var window = unixTimestamp / (long)period;
+        var window = unixTimestamp / period;
         return window;
     }
     /// <summary>

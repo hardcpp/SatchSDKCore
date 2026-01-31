@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
-using SSC;
 using SSC.Misc.Hookable;
 
 namespace SSC.Net.HttpEx;

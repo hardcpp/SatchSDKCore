@@ -71,7 +71,7 @@ public class JsonRpcClientHttp : JsonRpcClientBase
             "POST",
             _overrideUrl ?? string.Empty,
             cancellationToken,
-            (httpResult) => { callback?.Invoke(BuildJSONRPCClientResult(request, httpResult)); },
+            httpResult => { callback?.Invoke(BuildJSONRPCClientResult(request, httpResult)); },
             HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
             CallOptionsToRequestOptions(options)
         );
@@ -114,7 +114,7 @@ public class JsonRpcClientHttp : JsonRpcClientBase
         {
             var jsonResult = JsonObject.Parse(httpResponse.BodyString) as JsonObject;
 
-            return new JsonRpcClientResult()
+            return new JsonRpcClientResult
             {
                 Result = (jsonResult?["result"] ?? null) as JsonObject,
                 Error = (jsonResult?["error"] ?? null) as JsonObject

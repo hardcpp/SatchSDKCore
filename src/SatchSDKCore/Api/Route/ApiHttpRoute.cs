@@ -18,7 +18,7 @@ public enum ApiHttpMethod
 /// <summary>
 /// HTTP route attribute
 /// </summary>
-[AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public class ApiHttpRoute : ApiRoute
 {
@@ -85,7 +85,7 @@ public class ApiHttpRoute : ApiRoute
         return Response.ApiHttpResponse.Result(
             routeContext: routeContext,
             code: System.Net.HttpStatusCode.RequestTimeout,
-            content: $"Request timeout"
+            content: "Request timeout"
         );
     }
 }

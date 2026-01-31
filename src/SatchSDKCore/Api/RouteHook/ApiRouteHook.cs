@@ -5,7 +5,7 @@ namespace SSC.Api.RouteHook;
 /// <summary>
 /// Route hook attribute
 /// </summary>
-[AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 public abstract class ApiRouteHook : Attribute
 {
     /// <summary>

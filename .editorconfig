@@ -137,7 +137,7 @@ csharp_style_throw_expression = true:suggestion
 csharp_style_conditional_delegate_call = true:suggestion
 
 # Modifier preferences
-csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:suggestion
+csharp_preferred_modifier_order = public, private, protected, internal, static, extern, new, virtual, abstract, sealed, override, readonly, unsafe, volatile, async:suggestion
 
 # Expression-level preferences
 csharp_prefer_braces = true:silent
@@ -233,11 +233,11 @@ dotnet_naming_rule.types_should_be_pascal_case.severity = warning
 dotnet_naming_rule.types_should_be_pascal_case.symbols = types
 dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case_style
 
-dotnet_naming_symbols.types.applicable_kinds = class,struct,delegate,event
+dotnet_naming_symbols.types.applicable_kinds = class, struct, delegate, event
 
 # Non-field members (methods, properties, events) are PascalCase
 dotnet_naming_rule.non_field_members_should_be_pascal_case.severity = warning
 dotnet_naming_rule.non_field_members_should_be_pascal_case.symbols = non_field_members
 dotnet_naming_rule.non_field_members_should_be_pascal_case.style = pascal_case_style
 
-dotnet_naming_symbols.non_field_members.applicable_kinds = property,event,method
+dotnet_naming_symbols.non_field_members.applicable_kinds = property, event, method

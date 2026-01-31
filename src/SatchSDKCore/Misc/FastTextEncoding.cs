@@ -25,7 +25,8 @@ public static class FastTextEncoding
                     return utf8Encoding!.GetByteCount(chars, str.Length);
             }
         }
-        else if (encoding is UTF32Encoding utf32Encoding)
+
+        if (encoding is UTF32Encoding utf32Encoding)
         {
             unsafe
             {
@@ -60,7 +61,8 @@ public static class FastTextEncoding
                     return utf8Encoding!.GetBytes(chars, str.Length, bytesPtr, bytes.Length);
             }
         }
-        else if (encoding is UTF32Encoding utf32Encoding)
+
+        if (encoding is UTF32Encoding utf32Encoding)
         {
             unsafe
             {

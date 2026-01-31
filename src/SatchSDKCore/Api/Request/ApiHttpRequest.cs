@@ -22,7 +22,6 @@ public sealed class ApiHttpRequest : ApiRequest
     /// </summary>
     /// <param name="context">HttpServerEx request context</param>
     public ApiHttpRequest(HttpServerExRequestContext context)
-        : base()
     {
         ArgumentNullException.ThrowIfNull(context);
 

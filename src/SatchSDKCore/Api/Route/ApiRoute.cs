@@ -31,7 +31,7 @@ public abstract class ApiRoute : Attribute
     ////////////////////////////////////////////////////////////////////////////
 
     private ThreadLocal<object[]>? _invokeBuffer;
-    private readonly string? _asyncTimeoutStr = null;
+    private readonly string? _asyncTimeoutStr;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -282,7 +282,7 @@ public abstract class ApiRoute : Attribute
                 var task = returnValue as Task<Response.ApiResponse>;
                 if (task!.Exception?.InnerException != null)
                     throw task.Exception?.InnerException!;
-                else if (AsyncTimeout.HasValue)
+                if (AsyncTimeout.HasValue)
                     task.Wait(AsyncTimeout.Value);
                 else
                     task.Wait();
@@ -302,7 +302,8 @@ public abstract class ApiRoute : Attribute
 
                         return false;
                     }
-                    else if (AsyncTimeout.HasValue)
+
+                    if (AsyncTimeout.HasValue)
                         cancellationTokenSource?.Cancel();
 
                     outError = "Request failed/timeout";

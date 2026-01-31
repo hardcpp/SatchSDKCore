@@ -44,7 +44,7 @@ public class ApiHttpBlueprint : ApiBlueprint
         }
 
         /// Create the root tree node
-        m_RouteTreeNode = new Internal.ApiHttpRuleTreeNode()
+        m_RouteTreeNode = new Internal.ApiHttpRuleTreeNode
         {
             Parent = null,
             Key = null!,
@@ -131,7 +131,7 @@ public class ApiHttpBlueprint : ApiBlueprint
                 currentNode = existingSub;
             else if (createMissings)
             {
-                var nextSub = new Internal.ApiHttpRuleTreeNode()
+                var nextSub = new Internal.ApiHttpRuleTreeNode
                 {
                     Parent = currentNode,
                     Key = key,

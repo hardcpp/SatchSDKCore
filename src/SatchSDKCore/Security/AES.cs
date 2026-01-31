@@ -57,7 +57,7 @@ internal class AES
         }
         catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[CP_API_SDK.Security][EasyAES.EasyCBCEncrypt] Error:");
+            Logging.Log(ELogSeverity.Error, "[CP_API_SDK.Security][EasyAES.EasyCBCEncrypt] Error:");
             Logging.Log(ELogSeverity.Error, exception);
 
             throw;
@@ -103,7 +103,7 @@ internal class AES
         }
         catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[CP_API_SDK.Security][EasyAES.EasyCBCDecrypt] Error:");
+            Logging.Log(ELogSeverity.Error, "[CP_API_SDK.Security][EasyAES.EasyCBCDecrypt] Error:");
             Logging.Log(ELogSeverity.Error, exception);
 
             throw;

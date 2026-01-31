@@ -15,7 +15,7 @@ public abstract class JsonConfig
     <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] t_Type>
     where t_Type : JsonConfig<t_Type>, new()
 {
-    private static t_Type? _instance = null;
+    private static t_Type? _instance;
     private static readonly string _name = typeof(t_Type).Name;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -28,7 +28,7 @@ public abstract class JsonConfig
     ////////////////////////////////////////////////////////////////////////////
 
     protected JsonSerializerSettings _jsonSerializerSettings = new();
-    protected JObject? _rawLoaded = null;
+    protected JObject? _rawLoaded;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////

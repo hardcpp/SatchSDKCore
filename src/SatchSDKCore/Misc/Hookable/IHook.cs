@@ -11,5 +11,5 @@ public interface IHook<T>
     /// </summary>
     /// <param name="context">Context</param>
     /// <returns>True if should interupt context</returns>
-    abstract bool Intercept(T context);
+    bool Intercept(T context);
 }

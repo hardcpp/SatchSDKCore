@@ -60,9 +60,9 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
     {
         Options = options;
 
-        _clientHandler = new HttpClientHandler()
+        _clientHandler = new HttpClientHandler
         {
-            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
         };
 
         _client = new HttpClient(_clientHandler)

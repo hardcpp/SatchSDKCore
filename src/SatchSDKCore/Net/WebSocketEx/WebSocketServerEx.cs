@@ -29,7 +29,7 @@ public class WebSocketServerEx<TSession, TSessionID> : IWebSocketServerEx<TSessi
     private readonly List<TSession>[] _workerSessions;
     private readonly ConcurrentQueue<TSession>[] _workerNewSessions;
 
-    private bool _isRunning = false;
+    private bool _isRunning;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -285,7 +285,7 @@ public class WebSocketServerEx<TSession, TSessionID> : IWebSocketServerEx<TSessi
         webSocketServerSession.LocalEndPoint = context.ListenerRequest.LocalEndPoint;
         webSocketServerSession.RemoteEndPoint = context.ListenerRequest.RemoteEndPoint;
 
-        var leastBusyWorker = Array.IndexOf(_workerSessions, _workerSessions.OrderBy((x) => x.Count).FirstOrDefault());
+        var leastBusyWorker = Array.IndexOf(_workerSessions, _workerSessions.OrderBy(x => x.Count).FirstOrDefault());
         _workerNewSessions[leastBusyWorker].Enqueue(webSocketServerSession);
 
         return true;

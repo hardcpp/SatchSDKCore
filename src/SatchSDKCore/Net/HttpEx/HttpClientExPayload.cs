@@ -72,7 +72,7 @@ public class HttpClientExPayload
     /// <param name="content">Json content</param>
     /// <returns></returns>
     public static HttpClientExPayload FromJsonString(string content)
-        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content), $"application/json; charset=utf-8");
+        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content), "application/json; charset=utf-8");
     /// <summary>
     /// Constructor from Json
     /// </summary>
@@ -80,5 +80,5 @@ public class HttpClientExPayload
     /// <param name="indent">Should indent?</param>
     /// <returns></returns>
     public static HttpClientExPayload FromJson(JsonNode content)
-        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content.ToJsonString(SDKConfig.JsonSerializerOptions)), $"application/json; charset=utf-8");
+        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content.ToJsonString(SDKConfig.JsonSerializerOptions)), "application/json; charset=utf-8");
 }
