@@ -110,10 +110,9 @@ public abstract class ApiRoute : Attribute
 
             UserParametersOffset = HasContextParameter ? 2 : 1;
 
-            if (_asyncTimeoutStr != null)
-                AsyncTimeout = TimeSpan.ParseExact(_asyncTimeoutStr, @"m\:s\.fff", System.Globalization.CultureInfo.InvariantCulture);
-            else
-                AsyncTimeout = TimeSpan.FromSeconds(60);
+            AsyncTimeout = _asyncTimeoutStr != null
+                ? TimeSpan.ParseExact(_asyncTimeoutStr, @"m\:s\.fff", System.Globalization.CultureInfo.InvariantCulture)
+                : TimeSpan.FromSeconds(60);
         }
         else
         {
