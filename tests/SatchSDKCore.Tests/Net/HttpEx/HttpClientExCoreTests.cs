@@ -935,16 +935,22 @@ public class HttpClientExCoreTests : IDisposable
         var client = CreateClient(TestServerUrl);
         var cts = new CancellationTokenSource();
 
-        // Act
-        var task = client.DoRequestAsync("GET", "test", cts.Token);
-        cts.CancelAfter(500); // Cancel after 500ms, before rate limit reset
+        try
+        {
+            // Act
+            var task = client.DoRequestAsync("GET", "test", cts.Token);
+            cts.CancelAfter(500); // Cancel after 500ms, before rate limit reset
 
-        // Assert
-        await Assert.ThrowsAsync<TaskCanceledException>(async () => await task);
-        Assert.Equal(1, handler.CallCount); // Should only be called once before cancellation
-
-        // Cleanup
-        StopTestServer();
+            // Assert
+            await Assert.ThrowsAsync<TaskCanceledException>(async () => await task);
+            Assert.Equal(1, handler.CallCount); // Should only be called once before cancellation
+        }
+        finally
+        {
+            // Cleanup - ensure server is stopped even if test fails
+            StopTestServer();
+            await Task.Delay(100); // Give server time to fully shutdown
+        }
     }
 
     /// <summary>
