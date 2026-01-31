@@ -376,8 +376,7 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
     {
         using (var responseStream = await baseHttpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
         {
-            var memoryStream = dataHandler != null ? null : new MemoryStream();
-            try
+            using (var memoryStream = dataHandler != null ? null : new MemoryStream())
             {
                 var readBuffer = new byte[dataHandler?.IdealBufferSize ?? 8 * 1024];
                 var contentLength = baseHttpResponse.Content.Headers.ContentLength;
@@ -419,10 +418,6 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
                         break;
                     }
                 }
-            }
-            finally
-            {
-                memoryStream?.Dispose();
             }
         }
     }
