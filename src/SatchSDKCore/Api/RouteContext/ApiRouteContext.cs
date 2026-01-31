@@ -17,11 +17,6 @@ public abstract class ApiRouteContext
 
     public readonly Request.ApiRequest Request;
 
-    public ApiJsonRpcRouteContext? AsJsonRpcRouteContext
-        => this is ApiJsonRpcRouteContext casted ? casted : null;
-    public ApiHttpRouteContext? AsHttpRouteContext
-        => this is ApiHttpRouteContext casted ? casted : null;
-
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 

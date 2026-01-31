@@ -249,7 +249,7 @@ public class RESTResponseTests
         var response = new ApiHttpResponse(mockRequest, HttpStatusCode.OK, null, null);
 
         // Act
-        var asREST = response.AsHttpResponse;
+        var asREST = response.AsHttpResponse();
 
         // Assert
         Assert.NotNull(asREST);

@@ -80,7 +80,7 @@ public class ApiResponseTests
         var response = new TestResponse(mockRequest);
 
         // Act
-        var asHttp = response.AsHttpResponse;
+        var asHttp = response.AsHttpResponse();
 
         // Assert
         Assert.Null(asHttp);
@@ -97,7 +97,7 @@ public class ApiResponseTests
         var apiHttpResponse = new ApiHttpResponse(mockRequest, HttpStatusCode.OK, null, null);
 
         // Act
-        var asHttp = apiHttpResponse.AsHttpResponse;
+        var asHttp = apiHttpResponse.AsHttpResponse();
 
         // Assert
         Assert.NotNull(asHttp);
@@ -173,7 +173,7 @@ public class ApiResponseTests
         var response = new TestResponse(mockRequest);
 
         // Act
-        var asHttpResponse = response.AsHttpResponse;
+        var asHttpResponse = response.AsHttpResponse();
 
         // Assert - Should not throw and should be null for non-REST response
         Assert.Null(asHttpResponse);

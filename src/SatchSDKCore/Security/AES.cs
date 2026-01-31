@@ -52,6 +52,7 @@ internal class AES
             var resultBytes = new byte[aes.IV.Length + cipherData.Length];
             Array.Copy(aes.IV, 0, resultBytes, 0, aes.IV.Length);
             Array.Copy(cipherData, 0, resultBytes, aes.IV.Length, cipherData.Length);
+            aes.Dispose();
 
             return resultBytes;
         }
@@ -98,6 +99,7 @@ internal class AES
                     cryptoStream.Write(cipherData, 0, cipherData.Length);
                 }
 
+                aes.Dispose();
                 return memoryStream.ToArray();
             }
         }

@@ -23,7 +23,7 @@ public class ApiHttpBlueprint : ApiBlueprint
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    internal Internal.ApiHttpRuleTreeNode m_RouteTreeNode;
+    internal readonly Internal.ApiHttpRuleTreeNode _routeTreeNode;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -37,14 +37,11 @@ public class ApiHttpBlueprint : ApiBlueprint
     public ApiHttpBlueprint(string name, string? prefix = null)
         : base(name, prefix)
     {
-        if (prefix != null && prefix.Length > 0)
-        {
-            if (prefix[0] == '/' || prefix[^1] == '/')
-                throw new Exception($"ApiHttpBlueprint prefixes can not start or end by '/' -> {prefix}");
-        }
+        if (prefix != null && prefix.Length > 0 && (prefix[0] == '/' || prefix[^1] == '/'))
+            throw new Exception($"ApiHttpBlueprint prefixes can not start or end by '/' -> {prefix}");
 
         /// Create the root tree node
-        m_RouteTreeNode = new Internal.ApiHttpRuleTreeNode
+        _routeTreeNode = new Internal.ApiHttpRuleTreeNode
         {
             Parent = null,
             Key = null!,
@@ -114,7 +111,7 @@ public class ApiHttpBlueprint : ApiBlueprint
         ArgumentNullException.ThrowIfNull(composedRule);
 
         var parts = composedRule.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var currentNode = m_RouteTreeNode;
+        var currentNode = _routeTreeNode;
 
         for (var segI = 0; segI < parts.Length; segI++)
         {
@@ -166,7 +163,7 @@ public class ApiHttpBlueprint : ApiBlueprint
     {
         httpRoute = null;
 
-        var routeTreeNode = m_RouteTreeNode.Walk(segments, 0, argumentsCollector);
+        var routeTreeNode = _routeTreeNode.Walk(segments, 0, argumentsCollector);
         if (routeTreeNode == null)
             return false;
 

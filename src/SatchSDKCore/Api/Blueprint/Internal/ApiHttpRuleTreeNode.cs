@@ -15,7 +15,7 @@ internal class ApiHttpRuleTreeNode
 
     internal ApiHttpRuleTreeNode[] Childs = Array.Empty<ApiHttpRuleTreeNode>();
     internal ApiHttpBlueprint[] Blueprints = Array.Empty<ApiHttpBlueprint>();
-    internal Route.ApiHttpRoute?[] Routes = new Route.ApiHttpRoute?[ApiHttpBlueprint.HTTP_METHOD_COUNT];
+    internal readonly Route.ApiHttpRoute?[] Routes = new Route.ApiHttpRoute?[ApiHttpBlueprint.HTTP_METHOD_COUNT];
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ internal class ApiHttpRuleTreeNode
 
             // Try to match the remaining segments through the blueprint
             var remainingSegments = segments.Slice(segmentIndex);
-            var result = blueprint.m_RouteTreeNode.Walk(remainingSegments, 0, argumentsCollector);
+            var result = blueprint._routeTreeNode.Walk(remainingSegments, 0, argumentsCollector);
 
             if (result != null)
                 return result;

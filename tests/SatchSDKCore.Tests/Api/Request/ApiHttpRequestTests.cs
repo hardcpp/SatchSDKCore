@@ -405,7 +405,7 @@ public class ApiHttpRequestTests
             ApiRequest iRequest = request;
 
             // Act
-            var asHttpRequest = iRequest.AsHttpRequest;
+            var asHttpRequest = iRequest.AsHttpRequest();
 
             // Assert
             Assert.NotNull(asHttpRequest);

@@ -374,55 +374,56 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
         IProgress<float>? progressHandler
     )
     {
-        var memoryStream = new MemoryStream();
-        var responseStream = await baseHttpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        var readBuffer = new byte[dataHandler?.IdealBufferSize ?? 8 * 1024];
-        var contentLength = baseHttpResponse.Content.Headers.ContentLength;
-        var totalReaded = 0L;
-
-        // TODO handle chunked encoding
-        try
+        using (var responseStream = await baseHttpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
         {
-            dataHandler?.Begin();
-
-            while (true)
+            var memoryStream = dataHandler != null ? null : new MemoryStream();
+            try
             {
-                int currentReaded;
-                if ((currentReaded = await responseStream.ReadAsync(readBuffer, 0, readBuffer.Length, cancellationToken).ConfigureAwait(false)) > 0)
+                var readBuffer = new byte[dataHandler?.IdealBufferSize ?? 8 * 1024];
+                var contentLength = baseHttpResponse.Content.Headers.ContentLength;
+                var totalReaded = 0L;
+
+                // TODO handle chunked encoding
+                dataHandler?.Begin();
+
+                while (true)
                 {
-                    // Handle potential late cancel at the end of ReadAsync
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    if (dataHandler != null)
-                        await dataHandler.ProcessAsync(readBuffer.AsSpan(0, currentReaded), contentLength.HasValue ? contentLength.Value : null).ConfigureAwait(false);
-                    else
-                        await memoryStream.WriteAsync(readBuffer, 0, currentReaded, cancellationToken).ConfigureAwait(false);
-
-                    totalReaded += currentReaded;
-
-                    if (contentLength.HasValue)
-                        progressHandler?.Report(totalReaded / (float)contentLength.Value);
-                }
-                else
-                {
-                    progressHandler?.Report(1.0f);
-
-                    if (dataHandler != null)
+                    int currentReaded;
+                    if ((currentReaded = await responseStream.ReadAsync(readBuffer, 0, readBuffer.Length, cancellationToken).ConfigureAwait(false)) > 0)
                     {
-                        dataHandler.End();
-                        resultResponse.DangerousSetBodyDataHandler(dataHandler);
+                        // Handle potential late cancel at the end of ReadAsync
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        if (dataHandler != null)
+                            await dataHandler.ProcessAsync(readBuffer.AsSpan(0, currentReaded), contentLength.HasValue ? contentLength.Value : null).ConfigureAwait(false);
+                        else
+                            await memoryStream!.WriteAsync(readBuffer, 0, currentReaded, cancellationToken).ConfigureAwait(false);
+
+                        totalReaded += currentReaded;
+
+                        if (contentLength.HasValue)
+                            progressHandler?.Report(totalReaded / (float)contentLength.Value);
                     }
                     else
-                        resultResponse.DangerousSetBodyBytes(memoryStream.ToArray());
+                    {
+                        progressHandler?.Report(1.0f);
 
-                    break;
+                        if (dataHandler != null)
+                        {
+                            dataHandler.End();
+                            resultResponse.DangerousSetBodyDataHandler(dataHandler);
+                        }
+                        else
+                            resultResponse.DangerousSetBodyBytes(memoryStream!.ToArray());
+
+                        break;
+                    }
                 }
             }
-        }
-        finally
-        {
-            responseStream.Dispose();
-            memoryStream.Dispose();
+            finally
+            {
+                memoryStream?.Dispose();
+            }
         }
     }
 }

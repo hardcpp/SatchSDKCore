@@ -56,7 +56,7 @@ public class JSONRPCRouteContextTests
         var context = new ApiJsonRpcRouteContext(mockRequest);
 
         // Act
-        var asJSONRPC = context.AsJsonRpcRouteContext;
+        var asJSONRPC = context.AsJsonRpcRouteContext();
 
         // Assert
         Assert.NotNull(asJSONRPC);
@@ -74,7 +74,7 @@ public class JSONRPCRouteContextTests
         var context = new ApiJsonRpcRouteContext(mockRequest);
 
         // Act
-        var asREST = context.AsHttpRouteContext;
+        var asREST = context.AsHttpRouteContext();
 
         // Assert
         Assert.Null(asREST);
@@ -310,8 +310,8 @@ public class JSONRPCRouteContextTests
         var jsonRpcContext = new ApiJsonRpcRouteContext(mockRequest);
 
         // Act & Assert
-        Assert.NotNull(jsonRpcContext.AsJsonRpcRouteContext);
-        Assert.Null(jsonRpcContext.AsHttpRouteContext);
+        Assert.NotNull(jsonRpcContext.AsJsonRpcRouteContext());
+        Assert.Null(jsonRpcContext.AsHttpRouteContext());
     }
 
     /// <summary>

@@ -18,3 +18,15 @@ public sealed class ApiJsonRpcRouteContext : ApiRouteContext
 
     }
 }
+
+
+public static class ApiJsonRpcRouteContextExtensions
+{
+    /// <summary>
+    /// Cast ApiRouteContext to ApiJsonRpcRouteContext
+    /// </summary>
+    /// <param name="self">The ApiRouteContext instance</param>
+    /// <returns>ApiJsonRpcRouteContext if the cast is successful, otherwise null</returns>
+    public static ApiJsonRpcRouteContext? AsJsonRpcRouteContext(this ApiRouteContext self)
+        => self as ApiJsonRpcRouteContext;
+}

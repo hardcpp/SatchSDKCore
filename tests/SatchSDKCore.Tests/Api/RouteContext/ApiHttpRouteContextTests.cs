@@ -81,7 +81,7 @@ public class ApiHttpRouteContextTests
         var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act
-        var asHttp = context.AsHttpRouteContext;
+        var asHttp = context.AsHttpRouteContext();
 
         // Assert
         Assert.NotNull(asHttp);
@@ -99,7 +99,7 @@ public class ApiHttpRouteContextTests
         var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act
-        var asJsonRpc = context.AsJsonRpcRouteContext;
+        var asJsonRpc = context.AsJsonRpcRouteContext();
 
         // Assert
         Assert.Null(asJsonRpc);

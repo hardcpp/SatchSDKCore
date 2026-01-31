@@ -23,3 +23,14 @@ public sealed class ApiHttpRouteContext : ApiRouteContext
         HttpMethod = httpMethod;
     }
 }
+
+public static class ApiHttpRouteContextExtensions
+{
+    /// <summary>
+    /// Cast ApiRouteContext to ApiHttpRouteContext
+    /// </summary>
+    /// <param name="self">The ApiRouteContext instance</param>
+    /// <returns>ApiHttpRouteContext if the cast is successful, otherwise null</returns>
+    public static ApiHttpRouteContext? AsHttpRouteContext(this ApiRouteContext self)
+        => self as ApiHttpRouteContext;
+}

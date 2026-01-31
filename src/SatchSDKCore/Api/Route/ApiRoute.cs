@@ -111,7 +111,7 @@ public abstract class ApiRoute : Attribute
             UserParametersOffset = HasContextParameter ? 2 : 1;
 
             if (_asyncTimeoutStr != null)
-                AsyncTimeout = _asyncTimeoutStr != null ? TimeSpan.ParseExact(_asyncTimeoutStr, @"m\:s\.fff", System.Globalization.CultureInfo.InvariantCulture) : null;
+                AsyncTimeout = TimeSpan.ParseExact(_asyncTimeoutStr, @"m\:s\.fff", System.Globalization.CultureInfo.InvariantCulture);
             else
                 AsyncTimeout = TimeSpan.FromSeconds(60);
         }
@@ -304,10 +304,12 @@ public abstract class ApiRoute : Attribute
                     }
 
                     if (AsyncTimeout.HasValue)
-                        cancellationTokenSource?.Cancel();
+                        cancellationTokenSource!.Cancel();
 
                     outError = "Request failed/timeout";
                     outResponse = GetResponseForAsyncTimeout(routeContext);
+
+                    cancellationTokenSource!.Dispose();
 
                     return false;
                 }
@@ -338,7 +340,6 @@ public abstract class ApiRoute : Attribute
         for (var i = UserParametersOffset; i < Parameters!.Length; ++i)
         {
             var parameterInfo = Parameters[i];
-            var parameterFixedName = ParametersFixedName![i];
             var parameterHint = ParametersHint![i];
 
             if (inParameters == null || (i - UserParametersOffset) >= inParameters.Count)
@@ -453,7 +454,7 @@ public abstract class ApiRoute : Attribute
             {
                 var result = Reflection.TypeConverter.TryGetValueAsFromString(
                     ParametersType![i],
-                    inParameters?[parameterFixedName] ?? string.Empty,
+                    inParameters[parameterFixedName] ?? string.Empty,
                     parameterHint,
                     out outError,
                     ref invokeBuffer[i]
