@@ -83,7 +83,7 @@ public sealed class HttpClientExResponse
         StatusCode = statusCode;
         ReasonPhrase = reasonPhrase;
         IsSuccessStatusCode = isSuccessStatusCode;
-        ShouldRetry = IsSuccessStatusCode ? false : (int)statusCode < 400 || (int)statusCode >= 500;
+        ShouldRetry = !IsSuccessStatusCode && ((int)statusCode < 400 || (int)statusCode >= 500);
     }
     /// <summary>
     /// Constructor
@@ -94,7 +94,7 @@ public sealed class HttpClientExResponse
         StatusCode = coreHttpResponse.StatusCode;
         ReasonPhrase = coreHttpResponse.ReasonPhrase;
         IsSuccessStatusCode = coreHttpResponse.IsSuccessStatusCode;
-        ShouldRetry = IsSuccessStatusCode ? false : (int)coreHttpResponse.StatusCode < 400 || (int)coreHttpResponse.StatusCode >= 500;
+        ShouldRetry = !IsSuccessStatusCode && ((int)coreHttpResponse.StatusCode < 400 || (int)coreHttpResponse.StatusCode >= 500);
     }
 
     ////////////////////////////////////////////////////////////////////////////
