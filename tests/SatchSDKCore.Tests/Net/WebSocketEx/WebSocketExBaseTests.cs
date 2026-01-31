@@ -5,7 +5,7 @@ using System.Net.WebSockets;
 using System.Text;
 using SSC.Net.WebSocketEx;
 
-namespace SatchSDKCore.Tests.Net.WebSocketEx;
+namespace SSC.Tests.Net.WebSocketEx;
 
 /// <summary>
 /// Tests for WebSocketExBase abstract class which provides common WebSocket functionality

@@ -8,7 +8,7 @@ using SSC.APIServer.Route;
 using SSC.APIServer.RouteContext;
 using SSC.APIServer.RouteHook;
 
-namespace SatchSDKCore.Tests.APIServer.Route;
+namespace SSC.Tests.APIServer.Route;
 
 /// <summary>
 /// Tests for IRoute abstract class which serves as the base for all route types.

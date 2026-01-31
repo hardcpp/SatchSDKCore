@@ -9,7 +9,7 @@ using SSC.Net.JsonRpc;
 using SSC;
 using static SSC.Net.JsonRpc.IJsonRpcClient;
 
-namespace SatchSDKCore.Tests.Net.JsonRpc;
+namespace SSC.Tests.Net.JsonRpc;
 
 /// <summary>
 /// Tests for JsonRpcClientHttp class which provides HTTP-based JSON-RPC 2.0 client implementation

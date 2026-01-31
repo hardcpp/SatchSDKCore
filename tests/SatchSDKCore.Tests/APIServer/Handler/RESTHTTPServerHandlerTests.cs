@@ -1,6 +1,4 @@
-using System;
 using System.Net;
-using Xunit;
 using SSC.APIServer.Handler;
 using SSC.APIServer.Blueprint;
 using SSC.APIServer.Route;
@@ -8,9 +6,8 @@ using SSC.APIServer.Response;
 using SSC.APIServer.RouteContext;
 using SSC.Net.HttpEx;
 using SSC.Misc.Hookable;
-using SSC.Misc;
 
-namespace SatchSDKCore.Tests.APIServer.Handler;
+namespace SSC.Tests.APIServer.Handler;
 
 /// <summary>
 /// Unit tests for the RESTHTTPServerHandler class
@@ -954,18 +951,18 @@ public class RESTHTTPServerHandlerTests
     /// Test that handler can be used concurrently
     /// </summary>
     [Fact]
-    public void Handler_ConcurrentAccess_ShouldBeSafe()
+    public async Task Handler_ConcurrentAccess_ShouldBeSafe()
     {
         // Arrange
         var handler = new TestableRESTHTTPServerHandler();
         handler.MainBlueprint.AddRoutesOf<TestHandlerRoutes>();
 
         // Act & Assert - Multiple threads can use the handler
-        var tasks = new System.Threading.Tasks.Task[10];
+        var tasks = new Task[10];
         for (int i = 0; i < tasks.Length; i++)
         {
             int index = i;
-            tasks[i] = System.Threading.Tasks.Task.Run(() =>
+            tasks[i] = Task.Run(() =>
             {
                 var segments = handler.TestGetSegmentsFromAbsolutePath($"/api/users/{index}");
                 Assert.Equal(3, segments.Count);
@@ -975,25 +972,25 @@ public class RESTHTTPServerHandlerTests
             });
         }
 
-        System.Threading.Tasks.Task.WaitAll(tasks);
+        await Task.WhenAll(tasks);
     }
 
     /// <summary>
     /// Test thread-local buffers are isolated
     /// </summary>
     [Fact]
-    public void Handler_ThreadLocalBuffers_ShouldBeIsolated()
+    public async Task Handler_ThreadLocalBuffers_ShouldBeIsolated()
     {
         // Arrange
         var handler = new TestableRESTHTTPServerHandler();
         var results = new System.Collections.Concurrent.ConcurrentBag<List<string>>();
 
         // Act - Multiple threads parsing different paths
-        var tasks = new System.Threading.Tasks.Task[5];
+        var tasks = new Task[5];
         for (int i = 0; i < tasks.Length; i++)
         {
             int index = i;
-            tasks[i] = System.Threading.Tasks.Task.Run(() =>
+            tasks[i] = Task.Run(() =>
             {
                 var path = $"/thread{index}/segment{index}";
                 var segments = handler.TestGetSegmentsFromAbsolutePath(path);
@@ -1001,7 +998,7 @@ public class RESTHTTPServerHandlerTests
             });
         }
 
-        System.Threading.Tasks.Task.WaitAll(tasks);
+        await Task.WhenAll(tasks);
 
         // Assert - Each thread should have gotten different results
         Assert.Equal(5, results.Count);

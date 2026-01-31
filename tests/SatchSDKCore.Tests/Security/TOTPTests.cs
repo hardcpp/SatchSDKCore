@@ -1,7 +1,7 @@
 using SSC.Security;
 using System.Text;
 
-namespace SatchSDKCore.Tests.Security;
+namespace SSC.Tests.Security;
 
 /// <summary>
 /// Tests for TOTP (Time-based One-Time Password) class which implements

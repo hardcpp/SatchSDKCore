@@ -2,7 +2,7 @@ using System.Net;
 using SSC.APIServer.Request;
 using SSC.APIServer.RouteContext;
 
-namespace SatchSDKCore.Tests.APIServer.RouteContext;
+namespace SSC.Tests.APIServer.RouteContext;
 
 /// <summary>
 /// Tests for JSONRPCRouteContext class which represents a JSON-RPC route context

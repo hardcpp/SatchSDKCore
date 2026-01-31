@@ -1,7 +1,7 @@
 using System.Net;
 using SSC.Net.HttpEx;
 
-namespace SatchSDKCore.Tests.Net.HttpEx;
+namespace SSC.Tests.Net.HttpEx;
 
 /// <summary>
 /// Tests for HttpClientExRateLimitInfo class which parses and encapsulates HTTP rate limiting

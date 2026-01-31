@@ -3,7 +3,7 @@ using System.Text;
 using SSC.APIServer.Request;
 using SSC.Net.HttpEx;
 
-namespace SatchSDKCore.Tests.APIServer.Request;
+namespace SSC.Tests.APIServer.Request;
 
 /// <summary>
 /// Tests for HTTPRequest class which wraps HttpServerExRequestContext to provide

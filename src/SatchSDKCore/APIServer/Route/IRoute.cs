@@ -70,7 +70,15 @@ public abstract class IRoute : Attribute
         ParametersHint      = new string[Parameters.Length];
 
         // Check if the method is async first
-        IsAsync = method.ReturnType.GetMethod(nameof(Task.GetAwaiter)) != null;
+        static bool IsTaskType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type returnType)
+            => returnType.GetMethod(nameof(Task.GetAwaiter)) != null;
+
+        // Suppress IL2072: We're only checking for GetAwaiter which is a standard method on Task types
+        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2072",
+            Justification = "Checking for GetAwaiter method is a standard pattern to detect Task types")]
+        static bool CheckIfAsync(MethodInfo methodInfo) => IsTaskType(methodInfo.ReturnType);
+
+        IsAsync = CheckIfAsync(method);
 
         // Validate return type based on whether it's async or not
         if (IsAsync)

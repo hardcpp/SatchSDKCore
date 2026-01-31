@@ -1,12 +1,10 @@
-using System;
-using Xunit;
 using SSC.APIServer.Handler;
 using SSC.APIServer.Blueprint;
 using SSC.APIServer.Route;
 using SSC.Net.HttpEx;
 using SSC.Misc.Hookable;
 
-namespace SatchSDKCore.Tests.APIServer.Handler;
+namespace SSC.Tests.APIServer.Handler;
 
 /// <summary>
 /// Unit tests for the SwaggerHTTPServerHandler class
@@ -413,7 +411,7 @@ public class SwaggerHTTPServerHandlerTests
     /// Test handler can be safely accessed from multiple threads
     /// </summary>
     [Fact]
-    public void Handler_ConcurrentAccess_ShouldBeSafe()
+    public async Task Handler_ConcurrentAccess_ShouldBeSafe()
     {
         // Arrange
         var blueprint = new RESTBlueprint("Test");
@@ -421,10 +419,10 @@ public class SwaggerHTTPServerHandlerTests
         var handler = new SwaggerHTTPServerHandler(blueprint);
 
         // Act - Multiple threads accessing handler properties
-        var tasks = new System.Threading.Tasks.Task[10];
+        var tasks = new Task[10];
         for (int i = 0; i < tasks.Length; i++)
         {
-            tasks[i] = System.Threading.Tasks.Task.Run(() =>
+            tasks[i] = Task.Run(() =>
             {
                 Assert.NotNull(handler.MainBlueprint);
                 Assert.NotNull(handler.Hooks);
@@ -432,7 +430,7 @@ public class SwaggerHTTPServerHandlerTests
             });
         }
 
-        System.Threading.Tasks.Task.WaitAll(tasks);
+        await Task.WhenAll(tasks);
 
         // Assert - All tasks completed successfully
         Assert.True(tasks.All(t => t.IsCompletedSuccessfully));
@@ -442,7 +440,7 @@ public class SwaggerHTTPServerHandlerTests
     /// Test that multiple handlers can be used concurrently
     /// </summary>
     [Fact]
-    public void MultipleHandlers_ConcurrentUse_ShouldBeSafe()
+    public async Task MultipleHandlers_ConcurrentUse_ShouldBeSafe()
     {
         // Arrange
         var handlers = new SwaggerHTTPServerHandler[5];
@@ -453,11 +451,11 @@ public class SwaggerHTTPServerHandlerTests
         }
 
         // Act - Use all handlers concurrently
-        var tasks = new System.Threading.Tasks.Task[handlers.Length];
+        var tasks = new Task[handlers.Length];
         for (int i = 0; i < tasks.Length; i++)
         {
             int index = i;
-            tasks[i] = System.Threading.Tasks.Task.Run(() =>
+            tasks[i] = Task.Run(() =>
             {
                 Assert.NotNull(handlers[index]);
                 Assert.NotNull(handlers[index].MainBlueprint);
@@ -465,7 +463,7 @@ public class SwaggerHTTPServerHandlerTests
             });
         }
 
-        System.Threading.Tasks.Task.WaitAll(tasks);
+        await Task.WhenAll(tasks);
 
         // Assert
         Assert.True(tasks.All(t => t.IsCompletedSuccessfully));

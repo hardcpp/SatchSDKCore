@@ -1,6 +1,6 @@
 using SSC.Misc;
 
-namespace SatchSDKCore.Tests.Misc;
+namespace SSC.Tests.Misc;
 
 /// <summary>
 /// Tests for Base32 encoding/decoding utility class which implements RFC 4648 Base32 encoding

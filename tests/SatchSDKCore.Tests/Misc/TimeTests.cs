@@ -1,7 +1,7 @@
 using System.Globalization;
 using SSC.Misc;
 
-namespace SatchSDKCore.Tests.Misc;
+namespace SSC.Tests.Misc;
 
 /// <summary>
 /// Tests for Time utility class which provides Unix timestamp conversion,

@@ -3,7 +3,7 @@ using System.Text.Json;
 using SSC.Net.JsonRpc;
 using SSC;
 
-namespace SatchSDKCore.Tests.Net.JsonRpc;
+namespace SSC.Tests.Net.JsonRpc;
 
 /// <summary>
 /// Tests for JsonRpcClientRequest class which represents a JSON-RPC 2.0 request

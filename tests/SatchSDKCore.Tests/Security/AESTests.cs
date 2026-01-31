@@ -2,7 +2,7 @@ using SSC.Security;
 using System.Reflection;
 using System.Text;
 
-namespace SatchSDKCore.Tests.Security;
+namespace SSC.Tests.Security;
 
 /// <summary>
 /// Tests for AES encryption/decryption utility class which provides AES CBC encryption

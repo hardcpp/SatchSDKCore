@@ -1,7 +1,7 @@
 using Newtonsoft.Json.Linq;
 using SSC.Reflection;
 
-namespace SatchSDKCore.Tests.Reflection;
+namespace SSC.Tests.Reflection;
 
 /// <summary>
 /// Tests for TypeConverter which provides conversion utilities for converting JToken and string values

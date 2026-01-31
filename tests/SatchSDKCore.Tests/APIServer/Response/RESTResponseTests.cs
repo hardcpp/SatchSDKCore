@@ -4,7 +4,7 @@ using SSC.APIServer.Request;
 using SSC.APIServer.Response;
 using SSC.APIServer.RouteContext;
 
-namespace SatchSDKCore.Tests.APIServer.Response;
+namespace SSC.Tests.APIServer.Response;
 
 /// <summary>
 /// Tests for RESTResponse class which represents HTTP REST API responses with

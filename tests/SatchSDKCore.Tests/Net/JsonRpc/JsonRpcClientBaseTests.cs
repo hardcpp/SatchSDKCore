@@ -4,7 +4,7 @@ using SSC.Net.JsonRpc;
 using SSC;
 using static SSC.Net.JsonRpc.IJsonRpcClient;
 
-namespace SatchSDKCore.Tests.Net.JsonRpc;
+namespace SSC.Tests.Net.JsonRpc;
 
 /// <summary>
 /// Tests for JsonRpcClientBase abstract class which provides the base implementation

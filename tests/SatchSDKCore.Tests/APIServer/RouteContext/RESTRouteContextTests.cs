@@ -3,7 +3,7 @@ using SSC.APIServer.Request;
 using SSC.APIServer.Route;
 using SSC.APIServer.RouteContext;
 
-namespace SatchSDKCore.Tests.APIServer.RouteContext;
+namespace SSC.Tests.APIServer.RouteContext;
 
 /// <summary>
 /// Tests for RESTRouteContext class which represents a REST API route context

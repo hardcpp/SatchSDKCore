@@ -1,7 +1,7 @@
 using System.Text;
 using SSC.Misc;
 
-namespace SatchSDKCore.Tests.Misc;
+namespace SSC.Tests.Misc;
 
 /// <summary>
 /// Tests for FastTextEncoding utility class which provides optimized text encoding operations

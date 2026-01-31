@@ -6,7 +6,7 @@ using SSC.APIServer.Response;
 using SSC.APIServer.Route;
 using SSC.APIServer.RouteContext;
 
-namespace SatchSDKCore.Tests.APIServer.Route;
+namespace SSC.Tests.APIServer.Route;
 
 /// <summary>
 /// Tests for RESTRoute class which represents REST API route definitions with

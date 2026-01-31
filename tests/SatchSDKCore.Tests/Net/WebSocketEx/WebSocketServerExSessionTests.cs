@@ -4,7 +4,7 @@ using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;
 using SSC.Net.WebSocketEx;
 
-namespace SatchSDKCore.Tests.Net.WebSocketEx;
+namespace SSC.Tests.Net.WebSocketEx;
 
 /// <summary>
 /// Tests for WebSocketServerExSession class which provides session management

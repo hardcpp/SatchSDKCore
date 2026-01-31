@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using SSC.Net.HttpEx;
 
-namespace SatchSDKCore.Tests.Net.HttpEx;
+namespace SSC.Tests.Net.HttpEx;
 
 /// <summary>
 /// Tests for HttpClientExPayload class which encapsulates HTTP request payload data

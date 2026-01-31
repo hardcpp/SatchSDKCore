@@ -6,7 +6,7 @@ using SSC.APIServer.Route;
 using SSC.APIServer.Response;
 using SSC.APIServer.RouteContext;
 
-namespace SatchSDKCore.Tests.APIServer.Blueprint;
+namespace SSC.Tests.APIServer.Blueprint;
 
 /// <summary>
 /// Unit tests for the RESTBlueprint class

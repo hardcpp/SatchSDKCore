@@ -3,7 +3,7 @@ using System.Text;
 using SSC.Net.HttpEx;
 using static SSC.Net.HttpEx.IHttpClientEx;
 
-namespace SatchSDKCore.Tests.Net.HttpEx;
+namespace SSC.Tests.Net.HttpEx;
 
 /// <summary>
 /// Tests for HttpClientExCore class which provides an advanced HTTP client implementation

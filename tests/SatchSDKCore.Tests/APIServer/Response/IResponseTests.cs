@@ -2,7 +2,7 @@ using System.Net;
 using SSC.APIServer.Request;
 using SSC.APIServer.Response;
 
-namespace SatchSDKCore.Tests.APIServer.Response;
+namespace SSC.Tests.APIServer.Response;
 
 /// <summary>
 /// Tests for IResponse abstract class which serves as the base class for all response types.

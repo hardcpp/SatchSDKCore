@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using SSC.Net.HttpEx;
 
-namespace SatchSDKCore.Tests.Net.HttpEx;
+namespace SSC.Tests.Net.HttpEx;
 
 /// <summary>
 /// Tests for HttpClientExResponse class which encapsulates HTTP client response data

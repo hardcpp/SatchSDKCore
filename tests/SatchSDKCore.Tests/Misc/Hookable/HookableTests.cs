@@ -1,6 +1,6 @@
 using SSC.Misc.Hookable;
 
-namespace SatchSDKCore.Tests.Misc;
+namespace SSC.Tests.Misc;
 
 /// <summary>
 /// Tests for Hookable class which provides a mechanism for registering and executing hooks

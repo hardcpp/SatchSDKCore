@@ -1,6 +1,6 @@
 using SSC.Pool;
 
-namespace SatchSDKCore.Tests.Pool;
+namespace SSC.Tests.Pool;
 
 /// <summary>
 /// Tests for MTListPool class.

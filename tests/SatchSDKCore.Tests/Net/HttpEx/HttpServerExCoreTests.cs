@@ -3,7 +3,7 @@ using System.Text;
 using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;
 
-namespace SatchSDKCore.Tests.Net.HttpEx;
+namespace SSC.Tests.Net.HttpEx;
 
 /// <summary>
 /// Tests for HttpServerExCore class which provides an HTTP server implementation

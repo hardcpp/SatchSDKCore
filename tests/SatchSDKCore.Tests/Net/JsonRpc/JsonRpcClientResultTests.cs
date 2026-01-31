@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using SSC.Net.JsonRpc;
 
-namespace SatchSDKCore.Tests.Net.JsonRpc;
+namespace SSC.Tests.Net.JsonRpc;
 
 /// <summary>
 /// Tests for JsonRpcClientResult class which encapsulates JSON-RPC 2.0 response data
