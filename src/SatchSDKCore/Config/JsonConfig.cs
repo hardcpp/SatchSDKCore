@@ -56,7 +56,7 @@ public abstract class JsonConfig
     public JsonConfig(string relativePath)
     {
         _directoryPath = Path.GetFullPath(relativePath);
-        _filePath = Path.Combine(_directoryPath, $"{s_Name}.json");
+        _filePath = Path.Join(_directoryPath, $"{s_Name}.json");
 
         _jsonSerializerSettings = new JsonSerializerSettings();
         _jsonSerializerSettings.DefaultValueHandling = DefaultValueHandling.Include;
