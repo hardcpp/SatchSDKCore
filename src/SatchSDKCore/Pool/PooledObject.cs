@@ -5,19 +5,19 @@ namespace SSC.Pool;
 /// <summary>
 /// Guarded pooled object
 /// </summary>
-/// <typeparam name="t_Type">Type of the elemnt</typeparam>
-public class PooledObject<t_Type>
+/// <typeparam name="TObjectType">Type of the elemnt</typeparam>
+public class PooledObject<TObjectType>
     : IDisposable
-    where t_Type : class
+    where TObjectType : class
 {
     private bool _disposed;
-    private readonly IObjectPool<t_Type> _pool;
-    private readonly t_Type _value;
+    private readonly IObjectPool<TObjectType> _pool;
+    private readonly TObjectType _value;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public t_Type Value
+    public TObjectType Value
     {
         get
         {
@@ -36,7 +36,7 @@ public class PooledObject<t_Type>
     /// </summary>
     /// <param name="pool">Source pool</param>
     /// <param name="element">Element instance to guard</param>
-    internal PooledObject(IObjectPool<t_Type> pool, t_Type element)
+    internal PooledObject(IObjectPool<TObjectType> pool, TObjectType element)
     {
         _pool = pool;
         _value = element;

@@ -42,16 +42,16 @@ public abstract class ApiRouteContext
     /// <summary>
     /// Add object to the context
     /// </summary>
-    /// <typeparam name="t_Type">Object type</typeparam>
+    /// <typeparam name="TObjectType">Object type</typeparam>
     /// <param name="object">Object to add</param>
-    public void AddObject<t_Type>(string name, t_Type? @object)
+    public void AddObject<TObjectType>(string name, TObjectType? @object)
     {
         if (_objects == null)
             _objects = new();
 
         if (_objects.ContainsKey(name))
         {
-            Logging.Log(ELogSeverity.Warning, $"[CP_API_SDK.Network][RouteContext.AddObject<{typeof(t_Type).FullName}>] An object with the same type had been registered already");
+            Logging.Log(ELogSeverity.Warning, $"[CP_API_SDK.Network][RouteContext.AddObject<{typeof(TObjectType).FullName}>] An object with the same type had been registered already");
             return;
         }
 
@@ -60,10 +60,10 @@ public abstract class ApiRouteContext
     /// <summary>
     /// Try get object from the context
     /// </summary>
-    /// <typeparam name="t_Type">Object type</typeparam>
+    /// <typeparam name="TObjectType">Object type</typeparam>
     /// <param name="object">Result object</param>
     /// <returns>True if the object was found</returns>
-    public bool TryGetObject<t_Type>(string name, out t_Type? @object)
+    public bool TryGetObject<TObjectType>(string name, out TObjectType? @object)
     {
         @object = default;
         if (_objects == null)
@@ -72,13 +72,13 @@ public abstract class ApiRouteContext
         if (!_objects.TryGetValue(name, out var outObject))
             return false;
 
-        if (outObject != null && outObject.GetType() != typeof(t_Type?))
+        if (outObject != null && outObject.GetType() != typeof(TObjectType?))
         {
-            Logging.Log(ELogSeverity.Warning, $"[CP_API_SDK.Network][RouteContext.AddObject<{typeof(t_Type).FullName}>] An object with the same type had been registered already");
+            Logging.Log(ELogSeverity.Warning, $"[CP_API_SDK.Network][RouteContext.AddObject<{typeof(TObjectType).FullName}>] An object with the same type had been registered already");
             return false;
         }
 
-        @object = (t_Type?)outObject;
+        @object = (TObjectType?)outObject;
         return true;
     }
 }

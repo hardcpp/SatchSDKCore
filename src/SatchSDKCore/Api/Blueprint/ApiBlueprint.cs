@@ -60,14 +60,14 @@ public abstract class ApiBlueprint
     /// <summary>
     /// Add routes of type
     /// </summary>
-    /// <typeparam name="t_Type">Type to lookup</typeparam>
+    /// <typeparam name="TType">Type to lookup</typeparam>
     /// <exception cref="Exception">If not methods where found in the type</exception>
     public void AddRoutesOf
-        <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)] t_Type>
+        <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)] TType>
         ()
-        where t_Type : class
+        where TType : class
     {
-        var typeInfo = typeof(t_Type);
+        var typeInfo = typeof(TType);
         var methods = typeInfo.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 
         if (methods == null || methods.Length == 0)

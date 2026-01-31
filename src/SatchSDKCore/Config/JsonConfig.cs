@@ -10,13 +10,13 @@ namespace SSC.Config;
 /// <summary>
 /// JSON config file
 /// </summary>
-/// <typeparam name="t_Type">Type</typeparam>
+/// <typeparam name="TConfigType">Type</typeparam>
 public abstract class JsonConfig
-    <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] t_Type>
-    where t_Type : JsonConfig<t_Type>, new()
+    <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] TConfigType>
+    where TConfigType : JsonConfig<TConfigType>, new()
 {
-    private static t_Type? _instance;
-    private static readonly string _name = typeof(t_Type).Name;
+    private static TConfigType? _instance;
+    private static readonly string _name = typeof(TConfigType).Name;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -36,12 +36,12 @@ public abstract class JsonConfig
     /// <summary>
     /// Singleton
     /// </summary>
-    public static t_Type Instance
+    public static TConfigType Instance
     {
         get
         {
             if (_instance == null)
-                _instance = new t_Type();
+                _instance = new TConfigType();
 
             return _instance;
         }
@@ -119,7 +119,7 @@ public abstract class JsonConfig
 
         try
         {
-            var defaultInstance = new t_Type();
+            var defaultInstance = new TConfigType();
             var defaultSerialized = JsonConvert.SerializeObject(defaultInstance, _jsonSerializerSettings);
             JsonConvert.PopulateObject(defaultSerialized, this, _jsonSerializerSettings);
 
@@ -189,7 +189,7 @@ public abstract class JsonConfig
         }
         catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{typeof(t_Type).Name}>.WriteFile] Failed to create directory " + directory!);
+            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{typeof(TConfigType).Name}>.WriteFile] Failed to create directory " + directory!);
             Logging.Log(ELogSeverity.Error, exception);
         }
 

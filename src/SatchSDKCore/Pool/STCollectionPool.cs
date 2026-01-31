@@ -5,10 +5,10 @@ namespace SSC.Pool;
 /// <summary>
 /// A Collection such as List, HashSet, Dictionary etc can be pooled and reused by using a CollectionPool.
 /// </summary>
-public class STCollectionPool<t_Collection, t_Item>
-    where t_Collection : class, ICollection<t_Item>, new()
+public class STCollectionPool<TCollectionType, TItemType>
+    where TCollectionType : class, ICollection<TItemType>, new()
 {
-    private static readonly STObjectPool<t_Collection> s_Pool = new(() => new(), actionOnRelease: (x => x.Clear()), defaultCapacity: 100);
+    private static readonly STObjectPool<TCollectionType> s_Pool = new(() => new(), actionOnRelease: (x => x.Clear()), defaultCapacity: 100);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -17,12 +17,12 @@ public class STCollectionPool<t_Collection, t_Item>
     /// Simple get
     /// </summary>
     /// <returns></returns>
-    public static t_Collection Get()
+    public static TCollectionType Get()
         => s_Pool.Get();
     /// <summary>
     /// Release an element
     /// </summary>
     /// <param name="p_Element">Element to release</param>
-    public static void Release(t_Collection p_Element)
+    public static void Release(TCollectionType p_Element)
         => s_Pool.Release(p_Element);
 }

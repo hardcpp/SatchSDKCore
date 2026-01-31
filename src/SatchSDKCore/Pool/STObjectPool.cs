@@ -6,9 +6,9 @@ namespace SSC.Pool;
 /// <summary>
 /// A stack based Pool.IObjectPool_1.
 /// </summary>
-public class STObjectPool<t_Type>
-    : IDisposable, IObjectPool<t_Type>
-    where t_Type : class
+public class STObjectPool<TObjectType>
+    : IDisposable, IObjectPool<TObjectType>
+    where TObjectType : class
 {
     public int CountAll { get; private set; }
     public int CountActive => CountAll - CountInactive;
@@ -17,11 +17,11 @@ public class STObjectPool<t_Type>
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly Stack<t_Type> _stack;
-    private readonly Func<t_Type> _createFunc;
-    private readonly Action<t_Type>? _actionOnGet;
-    private readonly Action<t_Type>? _actionOnRelease;
-    private readonly Action<t_Type>? _actionOnDestroy;
+    private readonly Stack<TObjectType> _stack;
+    private readonly Func<TObjectType> _createFunc;
+    private readonly Action<TObjectType>? _actionOnGet;
+    private readonly Action<TObjectType>? _actionOnRelease;
+    private readonly Action<TObjectType>? _actionOnDestroy;
     private readonly int _maxSize;
     private readonly bool _collectionCheck;
 
@@ -29,10 +29,10 @@ public class STObjectPool<t_Type>
     ////////////////////////////////////////////////////////////////////////////
 
     public STObjectPool(
-        Func<t_Type> createFunc,
-        Action<t_Type>? actionOnGet = null,
-        Action<t_Type>? actionOnRelease = null,
-        Action<t_Type>? actionOnDestroy = null,
+        Func<TObjectType> createFunc,
+        Action<TObjectType>? actionOnGet = null,
+        Action<TObjectType>? actionOnRelease = null,
+        Action<TObjectType>? actionOnDestroy = null,
         bool collectionCheck = true,
         int defaultCapacity = 10,
         int maxSize = 100)
@@ -43,7 +43,7 @@ public class STObjectPool<t_Type>
         if (maxSize <= 0)
             throw new ArgumentException("Max Size must be greater than 0", nameof(maxSize));
 
-        _stack = new Stack<t_Type>(defaultCapacity);
+        _stack = new Stack<TObjectType>(defaultCapacity);
         _createFunc = createFunc;
         _maxSize = maxSize;
         _actionOnGet = actionOnGet;
@@ -74,9 +74,9 @@ public class STObjectPool<t_Type>
     /// Simple get
     /// </summary>
     /// <returns></returns>
-    public t_Type Get()
+    public TObjectType Get()
     {
-        t_Type result;
+        TObjectType result;
 
         if (_stack.Count == 0)
         {
@@ -94,13 +94,13 @@ public class STObjectPool<t_Type>
     /// </summary>
     /// <param name="p_Element">Result value</param>
     /// <returns></returns>
-    public PooledObject<t_Type> Get(out t_Type p_Element)
-        => new PooledObject<t_Type>(this, p_Element = Get());
+    public PooledObject<TObjectType> Get(out TObjectType p_Element)
+        => new PooledObject<TObjectType>(this, p_Element = Get());
     /// <summary>
     /// Release an element
     /// </summary>
     /// <param name="p_Element">Element to release</param>
-    public void Release(t_Type p_Element)
+    public void Release(TObjectType p_Element)
     {
         if (_collectionCheck && _stack.Count > 0 && _stack.Contains(p_Element))
             throw new InvalidOperationException("Trying to release an object that has already been released to the pool.");
@@ -123,7 +123,7 @@ public class STObjectPool<t_Type>
     {
         if (_actionOnDestroy != null)
         {
-            foreach (t_Type current in _stack)
+            foreach (TObjectType current in _stack)
                 _actionOnDestroy(current);
         }
 
