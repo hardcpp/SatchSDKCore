@@ -192,7 +192,7 @@ public class ApiHttpBlueprint : ApiBlueprint
                 continue;
 
             if (i != 0)
-                builder.Append("/");
+                builder.Append('/');
             if (current.Length >= 2 && current[0] == '/' && current[^1] == '/')
                 builder.Append(current, 1, current.Length - 2);
             else if (current[0] == '/')
