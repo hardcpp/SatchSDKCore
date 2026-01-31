@@ -91,7 +91,7 @@ public class ApiHttpBlueprint : ApiBlueprint
         if (!TryGetHttpRuleTreeNodeFor(rule, createMissings: true, out var targetRuleTreeNode))
             throw new Exception($"Failed to register HTTP rule {httpRoute.HttpMethod}:{rule}");
 
-        if (targetRuleTreeNode!.Routes[(int)httpRoute.HttpMethod] != null)
+        if (targetRuleTreeNode.Routes[(int)httpRoute.HttpMethod] != null)
             throw new Exception($"A route for HTTP rule {httpRoute.HttpMethod}:{rule} already exist");
 
         targetRuleTreeNode.Routes[(int)httpRoute.HttpMethod] = httpRoute;
