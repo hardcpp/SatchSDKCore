@@ -51,7 +51,7 @@ public class Base32Tests
         var input = new byte[] { 0x48, 0x65, 0x6C }; // "Hel" - 3 bytes = 5 base32 chars, needs 3 padding
 
         // Act
-        var result = Base32.ToBase32String(input, Base32FormattingOptions.Pad);
+        var result = Base32.ToBase32String(input, EBase32FormattingOptions.Pad);
 
         // Assert
         Assert.EndsWith("=", result);
@@ -68,7 +68,7 @@ public class Base32Tests
         var input = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F }; // "Hello"
 
         // Act
-        var result = Base32.ToBase32String(input, Base32FormattingOptions.None);
+        var result = Base32.ToBase32String(input, EBase32FormattingOptions.None);
 
         // Assert
         Assert.DoesNotContain("=", result);
@@ -453,7 +453,7 @@ public class Base32Tests
         var input = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F };
 
         // Act
-        var encoded = Base32.ToBase32String(input, Base32FormattingOptions.Pad);
+        var encoded = Base32.ToBase32String(input, EBase32FormattingOptions.Pad);
         var decoded = Base32.FromBase32String(encoded);
 
         // Assert

@@ -5,7 +5,7 @@ using System.Text;
 namespace SSC.Misc;
 
 [Flags]
-public enum Base32FormattingOptions
+public enum EBase32FormattingOptions
 {
     None = 0,
     Pad = 1
@@ -16,10 +16,10 @@ public enum Base32FormattingOptions
 /// </summary>
 public static class Base32
 {
-    private static readonly char[] m_Digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".ToCharArray();
+    private static readonly char[] s_Digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".ToCharArray();
 
-    private const int c_Mask = 31;
-    private const int c_Shift = 5;
+    private const int BIT_MASK = 31;
+    private const int BIT_SHIFT = 5;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ public static class Base32
         if (charSpan.Length == 0)
             return Array.Empty<byte>();
 
-        int outLength = charSpan.Length * c_Shift / 8;
+        int outLength = charSpan.Length * BIT_SHIFT / 8;
         var result = new byte[outLength];
         int bitsBuffer = 0;
         int bitsRemaining = 0;
@@ -76,9 +76,9 @@ public static class Base32
             if (symboNumber < 0)
                 throw new FormatException("Illegal character: `" + charSpan[i] + "`");
 
-            bitsBuffer <<= c_Shift;
-            bitsBuffer |= symboNumber & c_Mask;
-            bitsRemaining += c_Shift;
+            bitsBuffer <<= BIT_SHIFT;
+            bitsBuffer |= symboNumber & BIT_MASK;
+            bitsRemaining += BIT_SHIFT;
 
             if (bitsRemaining >= 8)
             {
@@ -100,7 +100,7 @@ public static class Base32
     /// <param name="options">Encoding options</param>
     /// <returns>The string representation in base 32 of the elements in <paramref name="inArray"/></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string ToBase32String(byte[] inArray, Base32FormattingOptions options = Base32FormattingOptions.None)
+    public static string ToBase32String(byte[] inArray, EBase32FormattingOptions options = EBase32FormattingOptions.None)
     {
         ArgumentNullException.ThrowIfNull(inArray);
 
@@ -116,7 +116,7 @@ public static class Base32
     /// <param name="options">Encoding options</param>
     /// <returns>The string representation in base 32 of <paramref name="length"/> elements of <paramref name="inArray"/>, starting at position <paramref name="offset"/></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string ToBase32String(byte[] inArray, int offset, int length, Base32FormattingOptions options = Base32FormattingOptions.None)
+    public static string ToBase32String(byte[] inArray, int offset, int length, EBase32FormattingOptions options = EBase32FormattingOptions.None)
     {
         ArgumentNullException.ThrowIfNull(inArray);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -132,7 +132,7 @@ public static class Base32
     /// <param name="options">Encoding options</param>
     /// <returns>The string representation in base 32 of the elements in bytes. If the length of bytes is 0, an empty string is returned</returns>
     /// <exception cref="ArgumentOutOfRangeException">If the input bytes are too big</exception>
-    public static string ToBase32String(ReadOnlySpan<byte> bytes, Base32FormattingOptions options = Base32FormattingOptions.None)
+    public static string ToBase32String(ReadOnlySpan<byte> bytes, EBase32FormattingOptions options = EBase32FormattingOptions.None)
     {
         if (bytes.Length == 0)
             return string.Empty;
@@ -140,7 +140,7 @@ public static class Base32
         if (bytes.Length >= 1 << 28)
             throw new ArgumentOutOfRangeException(nameof(bytes));
 
-        int outputLength = ((bytes.Length * 8) + c_Shift - 1) / c_Shift;
+        int outputLength = ((bytes.Length * 8) + BIT_SHIFT - 1) / BIT_SHIFT;
         var builder = new StringBuilder(outputLength);
         int position = 0;
         int lastPosition = position + bytes.Length;
@@ -149,7 +149,7 @@ public static class Base32
 
         while (bitsRemaining > 0 || position < lastPosition)
         {
-            if (bitsRemaining < c_Shift)
+            if (bitsRemaining < BIT_SHIFT)
             {
                 if (position < lastPosition)
                 {
@@ -159,19 +159,19 @@ public static class Base32
                 }
                 else
                 {
-                    int padding = c_Shift - bitsRemaining;
+                    int padding = BIT_SHIFT - bitsRemaining;
                     bitsBuffer <<= padding;
                     bitsRemaining += padding;
                 }
             }
 
-            int index = c_Mask & (bitsBuffer >> (bitsRemaining - c_Shift));
-            bitsRemaining -= c_Shift;
+            int index = BIT_MASK & (bitsBuffer >> (bitsRemaining - BIT_SHIFT));
+            bitsRemaining -= BIT_SHIFT;
 
-            builder.Append(m_Digits[index]);
+            builder.Append(s_Digits[index]);
         }
 
-        if (options.HasFlag(Base32FormattingOptions.Pad))
+        if (options.HasFlag(EBase32FormattingOptions.Pad))
         {
             int padding = 8 - (builder.Length % 8);
             if (padding > 0)
@@ -190,43 +190,40 @@ public static class Base32
     /// <param name="symbol">Input symbol</param>
     /// <returns>Symbol index or -1</returns>
     private static int SymbolToInt(char symbol)
-    {
-        switch (symbol)
+        => symbol switch
         {
-            case 'A': return 0;
-            case 'B': return 1;
-            case 'C': return 2;
-            case 'D': return 3;
-            case 'E': return 4;
-            case 'F': return 5;
-            case 'G': return 6;
-            case 'H': return 7;
-            case 'I': return 8;
-            case 'J': return 9;
-            case 'K': return 10;
-            case 'L': return 11;
-            case 'M': return 12;
-            case 'N': return 13;
-            case 'O': return 14;
-            case 'P': return 15;
-            case 'Q': return 16;
-            case 'R': return 17;
-            case 'S': return 18;
-            case 'T': return 19;
-            case 'U': return 20;
-            case 'V': return 21;
-            case 'W': return 22;
-            case 'X': return 23;
-            case 'Y': return 24;
-            case 'Z': return 25;
-            case '2': return 26;
-            case '3': return 27;
-            case '4': return 28;
-            case '5': return 29;
-            case '6': return 30;
-            case '7': return 31;
-        }
-
-        return -1;
-    }
+            'A' => 0,
+            'B' => 1,
+            'C' => 2,
+            'D' => 3,
+            'E' => 4,
+            'F' => 5,
+            'G' => 6,
+            'H' => 7,
+            'I' => 8,
+            'J' => 9,
+            'K' => 10,
+            'L' => 11,
+            'M' => 12,
+            'N' => 13,
+            'O' => 14,
+            'P' => 15,
+            'Q' => 16,
+            'R' => 17,
+            'S' => 18,
+            'T' => 19,
+            'U' => 20,
+            'V' => 21,
+            'W' => 22,
+            'X' => 23,
+            'Y' => 24,
+            'Z' => 25,
+            '2' => 26,
+            '3' => 27,
+            '4' => 28,
+            '5' => 29,
+            '6' => 30,
+            '7' => 31,
+            _ => -1
+        };
 }
