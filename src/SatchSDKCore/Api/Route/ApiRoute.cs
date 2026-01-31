@@ -446,7 +446,7 @@ public abstract class ApiRoute : Attribute
             var parameterFixedName = ParametersFixedName![i];
             var parameterHint = ParametersHint![i];
 
-            if (inParameters == null || !inParameters.ContainsKey(parameterFixedName))
+            if (inParameters == null || !inParameters.TryGetValue(parameterFixedName, out var dictInParameter))
             {
                 if (!parameterInfo.HasDefaultValue && !ParametersOptional![i])
                 {
@@ -462,7 +462,7 @@ public abstract class ApiRoute : Attribute
             {
                 var result = Reflection.TypeConverter.TryGetValueAsFromString(
                     ParametersType![i],
-                    inParameters[parameterFixedName] ?? string.Empty,
+                    dictInParameter ?? string.Empty,
                     parameterHint,
                     out outError,
                     ref invokeBuffer[i]
