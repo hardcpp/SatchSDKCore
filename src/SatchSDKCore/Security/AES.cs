@@ -32,29 +32,30 @@ internal class AES
         try
         {
             byte[] cipherData;
-            var aes = Aes.Create();
-            aes.Key = key;
-            aes.GenerateIV();
-            aes.Mode = CipherMode.CBC;
-
-            var cipher = aes.CreateEncryptor(aes.Key, aes.IV);
-
-            using (MemoryStream memoryStream = new MemoryStream())
+            using (var aes = Aes.Create())
             {
-                using (CryptoStream cryptoStream = new CryptoStream(memoryStream, cipher, CryptoStreamMode.Write))
+                aes.Key = key;
+                aes.GenerateIV();
+                aes.Mode = CipherMode.CBC;
+
+                var cipher = aes.CreateEncryptor(aes.Key, aes.IV);
+
+                using (MemoryStream memoryStream = new MemoryStream())
                 {
-                    cryptoStream.Write(data);
+                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, cipher, CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(data);
+                    }
+
+                    cipherData = memoryStream.ToArray();
                 }
 
-                cipherData = memoryStream.ToArray();
+                var resultBytes = new byte[aes.IV.Length + cipherData.Length];
+                Array.Copy(aes.IV, 0, resultBytes, 0, aes.IV.Length);
+                Array.Copy(cipherData, 0, resultBytes, aes.IV.Length, cipherData.Length);
+
+                return resultBytes;
             }
-
-            var resultBytes = new byte[aes.IV.Length + cipherData.Length];
-            Array.Copy(aes.IV, 0, resultBytes, 0, aes.IV.Length);
-            Array.Copy(cipherData, 0, resultBytes, aes.IV.Length, cipherData.Length);
-            aes.Dispose();
-
-            return resultBytes;
         }
         catch (Exception exception)
         {
@@ -88,19 +89,20 @@ internal class AES
             Array.Copy(data, IV_SIZE, cipherData, 0, cipherData.Length);
 
             using (var aes = Aes.Create())
-            {
+                using (MemoryStream memoryStream = new MemoryStream())
                 aes.Key = key;
                 aes.IV = iv;
                 aes.Mode = CipherMode.CBC;
 
                 using (MemoryStream memoryStream = new MemoryStream())
-                {
+                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Write))
                     using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(cipherData, 0, cipherData.Length);
                     }
-
+                    }
                     return memoryStream.ToArray();
+                }
                 }
             }
         }
