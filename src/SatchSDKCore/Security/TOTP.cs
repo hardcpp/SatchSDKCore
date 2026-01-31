@@ -28,10 +28,12 @@ public class TOTP
         var window = CalculateTimeStepFromTimestamp(DateTime.UtcNow, period) + windowOffset;
         var data = GetBigEndianBytes(window);
 
-        var hmacSha1 = new HMACSHA1();
-        hmacSha1.Key = secret;
-        var hMACComputedHash = hmacSha1.ComputeHash(data);
-        hmacSha1.Dispose();
+        byte[] hMACComputedHash;
+        using (var hmacSha1 = new HMACSHA1())
+        {
+            hmacSha1.Key = secret;
+            hMACComputedHash = hmacSha1.ComputeHash(data);
+        }
 
         var offset = hMACComputedHash[hMACComputedHash.Length - 1] & 0x0F;
         var otp = ((hMACComputedHash[offset + 0] & 0x7F) << 24)
