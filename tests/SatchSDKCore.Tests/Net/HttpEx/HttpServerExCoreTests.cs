@@ -18,13 +18,14 @@ public class HttpServerExCoreTests
     private class TestRequestHandler : IHttpServerExRequestHandler
     {
         public IHookable<HttpServerExRequestContext> Hooks { get; } = new Hookable<HttpServerExRequestContext>();
-        public int CallCount { get; private set; }
+        public int CallCount;
         public bool ShouldHandle { get; set; } = true;
         public HttpServerExResponse? ResponseToReturn { get; set; }
 
         public bool TryHandle(HttpServerExRequestContext context)
         {
-            CallCount++;
+            Interlocked.Increment(ref CallCount);
+
             if (ShouldHandle && ResponseToReturn != null)
             {
                 context.ServerResponse = ResponseToReturn;
