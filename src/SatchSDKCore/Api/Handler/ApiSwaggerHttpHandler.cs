@@ -46,14 +46,14 @@ public class ApiSwaggerHttpHandler : IHttpServerExRequestHandler
         if (ogRequest.Url!.AbsolutePath != "/swagger" || ogRequest.HttpMethod != "GET")
             return false;
 
-        var httpMethod = Route.ApiHttpMethod.Get;
+        var httpMethod = Route.EApiHttpMethod.Get;
         var httpRequest = new Request.ApiHttpRequest(context);
         var httpContext = new RouteContext.ApiHttpRouteContext(httpRequest, httpMethod);
 
         context.ServerResponse = Response.ApiHttpResponse.Result(
             routeContext: httpContext,
             code: System.Net.HttpStatusCode.OK,
-            content: s_HTMLCode,
+            content: HTML_CODE,
             contentType: Response.ApiHttpResponse.ContentType_TextHTML
         ).HttpServerExResponse;
 
@@ -63,7 +63,7 @@ public class ApiSwaggerHttpHandler : IHttpServerExRequestHandler
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private const string s_HTMLCode = """
+    private const string HTML_CODE = """
         <!DOCTYPE html>
         <html lang="en">
         <head>

@@ -62,7 +62,7 @@ public class HttpServerExCoreTests
 
         // Assert
         Assert.NotNull(server);
-        Assert.NotNull(server.listener);
+        Assert.NotNull(server.Listener);
         Assert.NotNull(server.Hooks);
     }
 
@@ -208,7 +208,7 @@ public class HttpServerExCoreTests
         server.Start();
 
         // Assert
-        Assert.True(server.listener.IsListening);
+        Assert.True(server.Listener.IsListening);
 
         // Cleanup
         server.Stop();
@@ -228,7 +228,7 @@ public class HttpServerExCoreTests
         server.Stop();
 
         // Assert
-        Assert.False(server.listener.IsListening);
+        Assert.False(server.Listener.IsListening);
     }
 
     /// <summary>
@@ -258,7 +258,7 @@ public class HttpServerExCoreTests
         server.Dispose();
 
         // Assert
-        Assert.False(server.listener.IsListening);
+        Assert.False(server.Listener.IsListening);
     }
 
     /// <summary>

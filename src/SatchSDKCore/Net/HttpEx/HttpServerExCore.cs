@@ -32,7 +32,7 @@ public class HttpServerExCore : IHttpServerEx
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public HttpListener listener => _listener;
+    public HttpListener Listener => _listener;
 
     public IHookable<HttpServerExRequestContext> Hooks { get; } = new Hookable<HttpServerExRequestContext>();
 

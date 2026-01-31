@@ -21,37 +21,37 @@ public class RESTHTTPServerHandlerTests
     /// </summary>
     public class TestHandlerRoutes
     {
-        [ApiHttpRoute(ApiHttpMethod.Get, "/api/test")]
+        [ApiHttpRoute(EApiHttpMethod.Get, "/api/test")]
         public static ApiResponse GetTest(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, HttpStatusCode.OK, "Test response");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Post, "/api/users")]
+        [ApiHttpRoute(EApiHttpMethod.Post, "/api/users")]
         public static ApiResponse PostUser(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, HttpStatusCode.Created, "User created");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Get, "/api/users/<id>")]
+        [ApiHttpRoute(EApiHttpMethod.Get, "/api/users/<id>")]
         public static ApiResponse GetUserById(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, HttpStatusCode.OK, "User found");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Delete, "/api/users/<id>")]
+        [ApiHttpRoute(EApiHttpMethod.Delete, "/api/users/<id>")]
         public static ApiResponse DeleteUser(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, HttpStatusCode.NoContent, "");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Put, "/api/users/<id>")]
+        [ApiHttpRoute(EApiHttpMethod.Put, "/api/users/<id>")]
         public static ApiResponse PutUser(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, HttpStatusCode.OK, "User updated");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Patch, "/api/users/<id>")]
+        [ApiHttpRoute(EApiHttpMethod.Patch, "/api/users/<id>")]
         public static ApiResponse PatchUser(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, HttpStatusCode.OK, "User patched");
@@ -93,7 +93,7 @@ public class RESTHTTPServerHandlerTests
         // Assert
         var args = new System.Collections.Generic.Dictionary<string, string>();
         var found = handler.MainBlueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api", "test" },
             args,
             out var route
@@ -477,12 +477,12 @@ public class RESTHTTPServerHandlerTests
     /// This is tested indirectly through the blueprint
     /// </summary>
     [Theory]
-    [InlineData(ApiHttpMethod.Get)]
-    [InlineData(ApiHttpMethod.Post)]
-    [InlineData(ApiHttpMethod.Put)]
-    [InlineData(ApiHttpMethod.Patch)]
-    [InlineData(ApiHttpMethod.Delete)]
-    public void SupportedRestMethods_ShouldBeRecognized(ApiHttpMethod method)
+    [InlineData(EApiHttpMethod.Get)]
+    [InlineData(EApiHttpMethod.Post)]
+    [InlineData(EApiHttpMethod.Put)]
+    [InlineData(EApiHttpMethod.Patch)]
+    [InlineData(EApiHttpMethod.Delete)]
+    public void SupportedRestMethods_ShouldBeRecognized(EApiHttpMethod method)
     {
         // Arrange
         var handler = new ApiHttpHandler();
@@ -494,19 +494,19 @@ public class RESTHTTPServerHandlerTests
 
         switch (method)
         {
-            case ApiHttpMethod.Get:
+            case EApiHttpMethod.Get:
                 found = handler.MainBlueprint.TryFindRoute(method, new[] { "api", "test" }, args, out _);
                 break;
-            case ApiHttpMethod.Post:
+            case EApiHttpMethod.Post:
                 found = handler.MainBlueprint.TryFindRoute(method, new[] { "api", "users" }, args, out _);
                 break;
-            case ApiHttpMethod.Put:
+            case EApiHttpMethod.Put:
                 found = handler.MainBlueprint.TryFindRoute(method, new[] { "api", "users", "123" }, args, out _);
                 break;
-            case ApiHttpMethod.Patch:
+            case EApiHttpMethod.Patch:
                 found = handler.MainBlueprint.TryFindRoute(method, new[] { "api", "users", "123" }, args, out _);
                 break;
-            case ApiHttpMethod.Delete:
+            case EApiHttpMethod.Delete:
                 found = handler.MainBlueprint.TryFindRoute(method, new[] { "api", "users", "123" }, args, out _);
                 break;
         }
@@ -537,7 +537,7 @@ public class RESTHTTPServerHandlerTests
         // Act
         var args = new System.Collections.Generic.Dictionary<string, string>();
         var found = handler.MainBlueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api", "v1", "api", "test" },
             args,
             out var route
@@ -561,7 +561,7 @@ public class RESTHTTPServerHandlerTests
         // Act
         var args = new System.Collections.Generic.Dictionary<string, string>();
         var found = handler.MainBlueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api", "users", "test-user-id" },
             args,
             out var route
@@ -622,7 +622,7 @@ public class RESTHTTPServerHandlerTests
         // Act
         var args = new System.Collections.Generic.Dictionary<string, string>();
         var found = handler.MainBlueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "any", "route" },
             args,
             out var route
@@ -653,7 +653,7 @@ public class RESTHTTPServerHandlerTests
         // Act & Assert - api1 route
         var args1 = new System.Collections.Generic.Dictionary<string, string>();
         var found1 = handler.MainBlueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api1", "api", "test" },
             args1,
             out var route1
@@ -663,7 +663,7 @@ public class RESTHTTPServerHandlerTests
         // Act & Assert - api2 route
         var args2 = new System.Collections.Generic.Dictionary<string, string>();
         var found2 = handler.MainBlueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api2", "api", "test" },
             args2,
             out var route2
@@ -1019,13 +1019,13 @@ public class RESTHTTPServerHandlerTests
     /// </summary>
     public class TestErrorRoutes
     {
-        [ApiHttpRoute(ApiHttpMethod.Get, "/api/error")]
+        [ApiHttpRoute(EApiHttpMethod.Get, "/api/error")]
         public static ApiResponse GetError(ApiHttpRouteContext context)
         {
             throw new InvalidOperationException("Test error");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Get, "/api/null")]
+        [ApiHttpRoute(EApiHttpMethod.Get, "/api/null")]
         public static ApiResponse GetNull(ApiHttpRouteContext context)
         {
             return null!;
@@ -1078,7 +1078,7 @@ public class RESTHTTPServerHandlerTests
         // Act - Try to find a route
         var args = new System.Collections.Generic.Dictionary<string, string>();
         var found = handler.MainBlueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api5", "api", "test" },
             args,
             out var route

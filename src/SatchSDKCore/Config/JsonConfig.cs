@@ -15,8 +15,8 @@ public abstract class JsonConfig
     <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] TConfigType>
     where TConfigType : JsonConfig<TConfigType>, new()
 {
-    private static TConfigType? _instance;
-    private static readonly string _name = typeof(TConfigType).Name;
+    private static TConfigType? s_Instance;
+    private static readonly string s_Name = typeof(TConfigType).Name;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -40,10 +40,10 @@ public abstract class JsonConfig
     {
         get
         {
-            if (_instance == null)
-                _instance = new TConfigType();
+            if (s_Instance == null)
+                s_Instance = new TConfigType();
 
-            return _instance;
+            return s_Instance;
         }
     }
 
@@ -56,7 +56,7 @@ public abstract class JsonConfig
     public JsonConfig(string relativePath)
     {
         _directoryPath = Path.GetFullPath(relativePath);
-        _filePath = Path.Combine(_directoryPath, $"{_name}.json");
+        _filePath = Path.Combine(_directoryPath, $"{s_Name}.json");
 
         _jsonSerializerSettings = new JsonSerializerSettings();
         _jsonSerializerSettings.DefaultValueHandling = DefaultValueHandling.Include;
@@ -92,7 +92,7 @@ public abstract class JsonConfig
         }
         catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{_name}>.ReadImplementation] Failed to read config file in {_directoryPath}");
+            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{s_Name}>.ReadImplementation] Failed to read config file in {_directoryPath}");
             Logging.Log(ELogSeverity.Error, exception);
 
             TryBackupAndReset();
@@ -127,7 +127,7 @@ public abstract class JsonConfig
         }
         catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{_name}>.Reset] Failed");
+            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{s_Name}>.Reset] Failed");
             Logging.Log(ELogSeverity.Error, exception);
         }
     }
@@ -152,7 +152,7 @@ public abstract class JsonConfig
         }
         catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{_name}>.WriteFile] Failed to write file {_filePath}");
+            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{s_Name}>.WriteFile] Failed to write file {_filePath}");
             Logging.Log(ELogSeverity.Error, exception);
         }
     }
@@ -213,7 +213,7 @@ public abstract class JsonConfig
             }
             catch (Exception exception)
             {
-                Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{_name}>.WriteFile] Failed to backup file {_filePath}, trying deletion...");
+                Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{s_Name}>.WriteFile] Failed to backup file {_filePath}, trying deletion...");
                 Logging.Log(ELogSeverity.Error, exception);
 
                 File.Delete(_filePath);

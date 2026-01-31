@@ -17,31 +17,31 @@ public class ApiHttpBlueprintTests
     /// </summary>
     public class TestRoutes
     {
-        [ApiHttpRoute(ApiHttpMethod.Get, "/test")]
+        [ApiHttpRoute(EApiHttpMethod.Get, "/test")]
         public static ApiResponse GetTest(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, System.Net.HttpStatusCode.OK, "Test response");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Post, "/users")]
+        [ApiHttpRoute(EApiHttpMethod.Post, "/users")]
         public static ApiResponse PostUser(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, System.Net.HttpStatusCode.Created, "User created");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Get, "/users/<id>")]
+        [ApiHttpRoute(EApiHttpMethod.Get, "/users/<id>")]
         public static ApiResponse GetUserById(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, System.Net.HttpStatusCode.OK, "User found");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Delete, "/users/<id>")]
+        [ApiHttpRoute(EApiHttpMethod.Delete, "/users/<id>")]
         public static ApiResponse DeleteUser(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, System.Net.HttpStatusCode.NoContent, "");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Put, "/users/<id>/settings/<settingId>")]
+        [ApiHttpRoute(EApiHttpMethod.Put, "/users/<id>/settings/<settingId>")]
         public static ApiResponse UpdateUserSetting(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, System.Net.HttpStatusCode.OK, "Setting updated");
@@ -147,14 +147,14 @@ public class ApiHttpBlueprintTests
         // Assert - Try to find the registered routes
         var args = new Dictionary<string, string>();
 
-        Assert.True(blueprint.TryFindRoute(ApiHttpMethod.Get, new[] { "test" }, args, out var getRoute));
+        Assert.True(blueprint.TryFindRoute(EApiHttpMethod.Get, new[] { "test" }, args, out var getRoute));
         Assert.NotNull(getRoute);
-        Assert.Equal(ApiHttpMethod.Get, getRoute.HttpMethod);
+        Assert.Equal(EApiHttpMethod.Get, getRoute.HttpMethod);
         Assert.Equal("/test", getRoute.HttpEndpoint);
 
-        Assert.True(blueprint.TryFindRoute(ApiHttpMethod.Post, new[] { "users" }, args, out var postRoute));
+        Assert.True(blueprint.TryFindRoute(EApiHttpMethod.Post, new[] { "users" }, args, out var postRoute));
         Assert.NotNull(postRoute);
-        Assert.Equal(ApiHttpMethod.Post, postRoute.HttpMethod);
+        Assert.Equal(EApiHttpMethod.Post, postRoute.HttpMethod);
     }
 
     /// <summary>
@@ -169,7 +169,7 @@ public class ApiHttpBlueprintTests
 
         // Act
         var args = new Dictionary<string, string>();
-        var found = blueprint.TryFindRoute(ApiHttpMethod.Get, new[] { "users", "123" }, args, out var route);
+        var found = blueprint.TryFindRoute(EApiHttpMethod.Get, new[] { "users", "123" }, args, out var route);
 
         // Assert
         Assert.True(found);
@@ -192,7 +192,7 @@ public class ApiHttpBlueprintTests
         // Act
         var args = new Dictionary<string, string>();
         var found = blueprint.TryFindRoute(
-            ApiHttpMethod.Put,
+            EApiHttpMethod.Put,
             new[] { "users", "456", "settings", "789" },
             args,
             out var route
@@ -220,7 +220,7 @@ public class ApiHttpBlueprintTests
         // Act
         var args = new Dictionary<string, string>();
         var found = blueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "users", "test%20user" },
             args,
             out var route
@@ -248,7 +248,7 @@ public class ApiHttpBlueprintTests
         // Act
         var args = new Dictionary<string, string>();
         var found = blueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "nonexistent" },
             args,
             out var route
@@ -272,7 +272,7 @@ public class ApiHttpBlueprintTests
         // Act
         var args = new Dictionary<string, string>();
         var found = blueprint.TryFindRoute(
-            ApiHttpMethod.Delete,  // Wrong method, should be Get
+            EApiHttpMethod.Delete,  // Wrong method, should be Get
             new[] { "test" },
             args,
             out var route
@@ -296,7 +296,7 @@ public class ApiHttpBlueprintTests
         // Act
         var args = new Dictionary<string, string>();
         var found = blueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "users", "123", "extra" },  // Too many segments
             args,
             out var route
@@ -328,7 +328,7 @@ public class ApiHttpBlueprintTests
         // Assert
         var args = new Dictionary<string, string>();
         var found = mainBlueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api", "v1", "test" },
             args,
             out var route
@@ -423,7 +423,7 @@ public class ApiHttpBlueprintTests
         // Act & Assert - v1 routes
         var args1 = new Dictionary<string, string>();
         Assert.True(mainBlueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api", "v1", "test" },
             args1,
             out var route1
@@ -433,7 +433,7 @@ public class ApiHttpBlueprintTests
         // Act & Assert - v2 routes
         var args2 = new Dictionary<string, string>();
         Assert.True(mainBlueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api", "v2", "test" },
             args2,
             out var route2
@@ -457,7 +457,7 @@ public class ApiHttpBlueprintTests
         // Act
         var args = new Dictionary<string, string>();
         var found = rootBlueprint.TryFindRoute(
-            ApiHttpMethod.Post,
+            EApiHttpMethod.Post,
             new[] { "api", "users" },
             args,
             out var route
@@ -466,7 +466,7 @@ public class ApiHttpBlueprintTests
         // Assert
         Assert.True(found);
         Assert.NotNull(route);
-        Assert.Equal(ApiHttpMethod.Post, route.HttpMethod);
+        Assert.Equal(EApiHttpMethod.Post, route.HttpMethod);
     }
 
     /// <summary>
@@ -489,7 +489,7 @@ public class ApiHttpBlueprintTests
         // Act
         var args = new Dictionary<string, string>();
         var found = level0.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api", "v1", "admin", "test" },
             args,
             out var route
@@ -517,7 +517,7 @@ public class ApiHttpBlueprintTests
         // Act
         var args = new Dictionary<string, string>();
         var found = blueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             Array.Empty<string>(),
             args,
             out var route
@@ -534,7 +534,7 @@ public class ApiHttpBlueprintTests
     public void REST_METHOD_COUNT_ShouldMatchEnumValues()
     {
         // Arrange & Act
-        var enumValues = Enum.GetValues<ApiHttpMethod>();
+        var enumValues = Enum.GetValues<EApiHttpMethod>();
 
         // Assert
         Assert.Equal(enumValues.Length, ApiHttpBlueprint.HTTP_METHOD_COUNT);

@@ -6,7 +6,7 @@ namespace SSC.Api.Route;
 /// <summary>
 /// HTTP method type
 /// </summary>
-public enum ApiHttpMethod
+public enum EApiHttpMethod
 {
     Get,
     Post,
@@ -22,7 +22,7 @@ public enum ApiHttpMethod
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public class ApiHttpRoute : ApiRoute
 {
-    public readonly ApiHttpMethod HttpMethod;
+    public readonly EApiHttpMethod HttpMethod;
     public readonly string HttpEndpoint;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -34,7 +34,7 @@ public class ApiHttpRoute : ApiRoute
     /// <param name="method">HTTP Method</param>
     /// <param name="endpoint">HTTP path</param>
     /// <param name="asyncTimeoutStr">Timeout for async</param>
-    public ApiHttpRoute(ApiHttpMethod method, string endpoint, string? asyncTimeoutStr = null)
+    public ApiHttpRoute(EApiHttpMethod method, string endpoint, string? asyncTimeoutStr = null)
         : base(asyncTimeoutStr)
     {
         if (string.IsNullOrEmpty(endpoint) || endpoint[0] != '/' || (endpoint.Length > 1 && endpoint[^1] == '/'))

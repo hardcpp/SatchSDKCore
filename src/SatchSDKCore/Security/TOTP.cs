@@ -10,8 +10,8 @@ namespace SSC.Security;
 /// </summary>
 public class TOTP
 {
-    private const long c_UnixEpochTicks = 621355968000000000L;
-    private const long c_TicksToSeconds = 10000000L;
+    private const long UNIX_EPOCH_TICKS = 621355968000000000L;
+    private const long TICKS_TO_SECONDS = 10000000L;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -69,7 +69,7 @@ public class TOTP
     /// <returns></returns>
     private static long CalculateTimeStepFromTimestamp(DateTime dateTime, int period)
     {
-        var unixTimestamp = (dateTime.Ticks - c_UnixEpochTicks) / c_TicksToSeconds;
+        var unixTimestamp = (dateTime.Ticks - UNIX_EPOCH_TICKS) / TICKS_TO_SECONDS;
         var window = unixTimestamp / period;
         return window;
     }

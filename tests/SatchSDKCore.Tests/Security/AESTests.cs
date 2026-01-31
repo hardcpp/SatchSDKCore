@@ -11,34 +11,34 @@ namespace SSC.Tests.Security;
 public class AESTests
 {
     // Use reflection to access internal AES class
-    private static readonly Type? _aesType;
-    private static readonly MethodInfo? _encryptMethod;
-    private static readonly MethodInfo? _decryptMethod;
+    private static readonly Type? s_AesType;
+    private static readonly MethodInfo? s_EncryptMethod;
+    private static readonly MethodInfo? s_DecryptMethod;
 
     static AESTests()
     {
         var assembly = typeof(SSC.Misc.Base32).Assembly;
-        _aesType = assembly.GetType("SSC.Security.AES");
+        s_AesType = assembly.GetType("SSC.Security.AES");
 
-        if (_aesType != null)
+        if (s_AesType != null)
         {
-            _encryptMethod = _aesType.GetMethod("EncryptCBCInlineIV",
+            s_EncryptMethod = s_AesType.GetMethod("EncryptCBCInlineIV",
                 BindingFlags.Public | BindingFlags.Static);
-            _decryptMethod = _aesType.GetMethod("DecryptCBCInlineIV",
+            s_DecryptMethod = s_AesType.GetMethod("DecryptCBCInlineIV",
                 BindingFlags.Public | BindingFlags.Static);
         }
     }
 
     private static byte[]? EncryptCBCInlineIV(byte[] key, byte[] data)
     {
-        if (_encryptMethod == null) return null;
-        return (byte[]?)_encryptMethod.Invoke(null, new object[] { key, data });
+        if (s_EncryptMethod == null) return null;
+        return (byte[]?)s_EncryptMethod.Invoke(null, new object[] { key, data });
     }
 
     private static byte[]? DecryptCBCInlineIV(byte[] key, byte[] data)
     {
-        if (_decryptMethod == null) return null;
-        return (byte[]?)_decryptMethod.Invoke(null, new object[] { key, data });
+        if (s_DecryptMethod == null) return null;
+        return (byte[]?)s_DecryptMethod.Invoke(null, new object[] { key, data });
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public class AESTests
     public void EncryptCBCInlineIV_NullKey_ThrowsArgumentException()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -70,7 +70,7 @@ public class AESTests
     public void EncryptCBCInlineIV_ShortKey_ThrowsArgumentException()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -93,7 +93,7 @@ public class AESTests
     public void EncryptCBCInlineIV_NullData_ThrowsArgumentException()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -116,7 +116,7 @@ public class AESTests
     public void EncryptCBCInlineIV_EmptyData_ThrowsArgumentException()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -140,7 +140,7 @@ public class AESTests
     public void EncryptCBCInlineIV_128BitKey_EncryptsSuccessfully()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -168,7 +168,7 @@ public class AESTests
     public void EncryptCBCInlineIV_256BitKey_EncryptsSuccessfully()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -197,7 +197,7 @@ public class AESTests
     public void DecryptCBCInlineIV_NullKey_ThrowsArgumentException()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _decryptMethod == null)
+        if (s_AesType == null || s_DecryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -219,7 +219,7 @@ public class AESTests
     public void DecryptCBCInlineIV_ShortKey_ThrowsArgumentException()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _decryptMethod == null)
+        if (s_AesType == null || s_DecryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -242,7 +242,7 @@ public class AESTests
     public void DecryptCBCInlineIV_NullData_ThrowsArgumentException()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _decryptMethod == null)
+        if (s_AesType == null || s_DecryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -264,7 +264,7 @@ public class AESTests
     public void DecryptCBCInlineIV_ShortData_ThrowsArgumentException()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _decryptMethod == null)
+        if (s_AesType == null || s_DecryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -287,7 +287,7 @@ public class AESTests
     public void RoundTrip_EncryptThenDecrypt_RestoresOriginalData()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null || _decryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null || s_DecryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -314,7 +314,7 @@ public class AESTests
     public void EncryptCBCInlineIV_SameDataTwice_ProducesDifferentCiphertext()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -342,7 +342,7 @@ public class AESTests
     public void RoundTrip_SingleByte_WorksCorrectly()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null || _decryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null || s_DecryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -370,7 +370,7 @@ public class AESTests
     public void RoundTrip_LargeData_WorksCorrectly()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null || _decryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null || s_DecryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -401,7 +401,7 @@ public class AESTests
     public void RoundTrip_SpecialCharacters_WorksCorrectly()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null || _decryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null || s_DecryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;
@@ -431,7 +431,7 @@ public class AESTests
     public void EncryptCBCInlineIV_EncryptedData_ContainsIVAtStart()
     {
         // Skip if AES type not accessible
-        if (_aesType == null || _encryptMethod == null)
+        if (s_AesType == null || s_EncryptMethod == null)
         {
             Assert.Fail("AES class is not accessible for testing");
             return;

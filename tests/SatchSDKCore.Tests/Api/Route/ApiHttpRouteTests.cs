@@ -29,25 +29,25 @@ public class ApiHttpRouteTests
     /// </summary>
     private static class SampleRoutes
     {
-        [ApiHttpRoute(ApiHttpMethod.Get, "/test")]
+        [ApiHttpRoute(EApiHttpMethod.Get, "/test")]
         public static ApiResponse SimpleRoute(ApiHttpRouteContext context)
         {
             return ApiHttpResponse.Result(context, HttpStatusCode.OK, "test");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Post, "/test-params")]
+        [ApiHttpRoute(EApiHttpMethod.Post, "/test-params")]
         public static ApiResponse RouteWithParams(ApiHttpRouteContext context, int id, string name)
         {
             return ApiHttpResponse.Result(context, HttpStatusCode.OK, $"{id}:{name}");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Get, "/test-optional")]
+        [ApiHttpRoute(EApiHttpMethod.Get, "/test-optional")]
         public static ApiResponse RouteWithOptionalParams(ApiHttpRouteContext context, int id, string? name = null)
         {
             return ApiHttpResponse.Result(context, HttpStatusCode.OK, $"{id}:{name ?? "default"}");
         }
 
-        [ApiHttpRoute(ApiHttpMethod.Get, "/test-async", "0:30.000")]
+        [ApiHttpRoute(EApiHttpMethod.Get, "/test-async", "0:30.000")]
         public static Task<ApiResponse> AsyncRoute(CancellationToken ct, ApiHttpRouteContext context)
         {
             return Task.FromResult<ApiResponse>(ApiHttpResponse.Result(context, HttpStatusCode.OK, "async"));
@@ -66,10 +66,10 @@ public class ApiHttpRouteTests
     public void Constructor_WithValidEndpoint_CreatesRoute()
     {
         // Act
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
 
         // Assert
-        Assert.Equal(ApiHttpMethod.Get, route.HttpMethod);
+        Assert.Equal(EApiHttpMethod.Get, route.HttpMethod);
         Assert.Equal("/test", route.HttpEndpoint);
     }
 
@@ -80,7 +80,7 @@ public class ApiHttpRouteTests
     public void Constructor_WithoutLeadingSlash_ThrowsException()
     {
         // Act & Assert
-        var exception = Assert.Throws<Exception>(() => new ApiHttpRoute(ApiHttpMethod.Get, "test"));
+        var exception = Assert.Throws<Exception>(() => new ApiHttpRoute(EApiHttpMethod.Get, "test"));
         Assert.Contains("Malformated route path", exception.Message);
     }
 
@@ -91,7 +91,7 @@ public class ApiHttpRouteTests
     public void Constructor_WithTrailingSlash_ThrowsException()
     {
         // Act & Assert
-        var exception = Assert.Throws<Exception>(() => new ApiHttpRoute(ApiHttpMethod.Get, "/test/"));
+        var exception = Assert.Throws<Exception>(() => new ApiHttpRoute(EApiHttpMethod.Get, "/test/"));
         Assert.Contains("Malformated route path", exception.Message);
     }
 
@@ -102,7 +102,7 @@ public class ApiHttpRouteTests
     public void Constructor_WithEmptyString_ThrowsException()
     {
         // Act & Assert
-        var exception = Assert.Throws<Exception>(() => new ApiHttpRoute(ApiHttpMethod.Get, ""));
+        var exception = Assert.Throws<Exception>(() => new ApiHttpRoute(EApiHttpMethod.Get, ""));
         Assert.Contains("Malformated route path", exception.Message);
     }
 
@@ -113,7 +113,7 @@ public class ApiHttpRouteTests
     public void Constructor_WithRootEndpoint_CreatesRoute()
     {
         // Act
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/");
 
         // Assert
         Assert.Equal("/", route.HttpEndpoint);
@@ -123,12 +123,12 @@ public class ApiHttpRouteTests
     /// Verifies all REST methods can be used.
     /// </summary>
     [Theory]
-    [InlineData(ApiHttpMethod.Get)]
-    [InlineData(ApiHttpMethod.Post)]
-    [InlineData(ApiHttpMethod.Put)]
-    [InlineData(ApiHttpMethod.Patch)]
-    [InlineData(ApiHttpMethod.Delete)]
-    public void Constructor_WithDifferentMethods_CreatesRoute(ApiHttpMethod method)
+    [InlineData(EApiHttpMethod.Get)]
+    [InlineData(EApiHttpMethod.Post)]
+    [InlineData(EApiHttpMethod.Put)]
+    [InlineData(EApiHttpMethod.Patch)]
+    [InlineData(EApiHttpMethod.Delete)]
+    public void Constructor_WithDifferentMethods_CreatesRoute(EApiHttpMethod method)
     {
         // Act
         var route = new ApiHttpRoute(method, "/test");
@@ -148,7 +148,7 @@ public class ApiHttpRouteTests
     public void Constructor_WithComplexEndpoints_CreatesRoute(string endpoint)
     {
         // Act
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, endpoint);
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, endpoint);
 
         // Assert
         Assert.Equal(endpoint, route.HttpEndpoint);
@@ -161,7 +161,7 @@ public class ApiHttpRouteTests
     public void Constructor_WithAsyncTimeout_CreatesRoute()
     {
         // Act
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test", "1:30.000");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test", "1:30.000");
 
         // Assert
         Assert.NotNull(route);
@@ -174,7 +174,7 @@ public class ApiHttpRouteTests
     public void Init_WithValidMethod_InitializesRoute()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.SimpleRoute))!;
 
         // Act
@@ -194,7 +194,7 @@ public class ApiHttpRouteTests
     public void Init_CalledTwice_IgnoresSecondCall()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var method1 = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.SimpleRoute))!;
         var method2 = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.RouteWithParams))!;
 
@@ -213,7 +213,7 @@ public class ApiHttpRouteTests
     public void Init_WithNullMethod_ThrowsArgumentNullException()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => route.Init(null!));
@@ -226,7 +226,7 @@ public class ApiHttpRouteTests
     public void Init_WithContextParameter_SetsHasContextParameter()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.SimpleRoute))!;
 
         // Act
@@ -244,9 +244,9 @@ public class ApiHttpRouteTests
     public void GetResponseForException_ReturnsInternalServerError()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.SimpleRoute))!;
         route.Init(method);
 
@@ -271,9 +271,9 @@ public class ApiHttpRouteTests
     public void GetResponseForBadRequest_ReturnsBadRequest()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.SimpleRoute))!;
         route.Init(method);
 
@@ -299,11 +299,11 @@ public class ApiHttpRouteTests
     public void TryInvoke_WithSimpleRoute_ReturnsSuccess()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.SimpleRoute))!;
         route.Init(method);
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Post);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Post);
         var parameters = new JArray();
 
         // Act
@@ -322,11 +322,11 @@ public class ApiHttpRouteTests
     public void TryInvoke_WithMissingRequiredParams_ReturnsFalse()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Post, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Post, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.RouteWithParams))!;
         route.Init(method);
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Post);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Post);
         var parameters = new JArray();
 
         // Act
@@ -345,11 +345,11 @@ public class ApiHttpRouteTests
     public void TryInvoke_WithValidParams_ReturnsSuccess()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Post, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Post, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.RouteWithParams))!;
         route.Init(method);
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Post);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Post);
         var parameters = new JArray { 123, "test" };
 
         // Act
@@ -368,11 +368,11 @@ public class ApiHttpRouteTests
     public void TryInvoke_WithJObjectParams_ReturnsSuccess()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Post, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Post, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.RouteWithParams))!;
         route.Init(method);
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JObject
         {
             ["id"] = 123,
@@ -395,11 +395,11 @@ public class ApiHttpRouteTests
     public void TryInvoke_WithDictionaryParams_ReturnsSuccess()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Post, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Post, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.RouteWithParams))!;
         route.Init(method);
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new Dictionary<string, string>
         {
             ["id"] = "123",
@@ -422,7 +422,7 @@ public class ApiHttpRouteTests
     public void TryInvoke_WithNullContext_ThrowsArgumentNullException()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.SimpleRoute))!;
         route.Init(method);
         var parameters = new JArray();
@@ -439,11 +439,11 @@ public class ApiHttpRouteTests
     public void TryInvoke_WithNullJArrayParameters_ThrowsArgumentNullException()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.SimpleRoute))!;
         route.Init(method);
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
@@ -505,11 +505,11 @@ public class ApiHttpRouteTests
     public void ERestMethod_HasAllExpectedValues()
     {
         // Assert
-        Assert.True(Enum.IsDefined(typeof(ApiHttpMethod), ApiHttpMethod.Get));
-        Assert.True(Enum.IsDefined(typeof(ApiHttpMethod), ApiHttpMethod.Post));
-        Assert.True(Enum.IsDefined(typeof(ApiHttpMethod), ApiHttpMethod.Put));
-        Assert.True(Enum.IsDefined(typeof(ApiHttpMethod), ApiHttpMethod.Patch));
-        Assert.True(Enum.IsDefined(typeof(ApiHttpMethod), ApiHttpMethod.Delete));
+        Assert.True(Enum.IsDefined(typeof(EApiHttpMethod), EApiHttpMethod.Get));
+        Assert.True(Enum.IsDefined(typeof(EApiHttpMethod), EApiHttpMethod.Post));
+        Assert.True(Enum.IsDefined(typeof(EApiHttpMethod), EApiHttpMethod.Put));
+        Assert.True(Enum.IsDefined(typeof(EApiHttpMethod), EApiHttpMethod.Patch));
+        Assert.True(Enum.IsDefined(typeof(EApiHttpMethod), EApiHttpMethod.Delete));
     }
 
     /// <summary>
@@ -519,9 +519,9 @@ public class ApiHttpRouteTests
     public void GetResponseForAsyncTimeout_ReturnsRequestTimeout()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.SimpleRoute))!;
         route.Init(method);
 
@@ -546,7 +546,7 @@ public class ApiHttpRouteTests
     public void Constructor_WithNullEndpoint_ThrowsException()
     {
         // Act & Assert
-        Assert.Throws<Exception>(() => new ApiHttpRoute(ApiHttpMethod.Get, null!));
+        Assert.Throws<Exception>(() => new ApiHttpRoute(EApiHttpMethod.Get, null!));
     }
 
     /// <summary>
@@ -556,11 +556,11 @@ public class ApiHttpRouteTests
     public void TryInvoke_JObject_WithMissingOptionalParam_Succeeds()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.RouteWithOptionalParams))!;
         route.Init(method);
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JObject
         {
             ["id"] = 123
@@ -582,11 +582,11 @@ public class ApiHttpRouteTests
     public void TryInvoke_Dictionary_WithMissingOptionalParam_Succeeds()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.RouteWithOptionalParams))!;
         route.Init(method);
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new Dictionary<string, string>
         {
             ["id"] = "123"
@@ -608,11 +608,11 @@ public class ApiHttpRouteTests
     public void TryInvoke_WithAsyncRoute_Succeeds()
     {
         // Arrange
-        var route = new ApiHttpRoute(ApiHttpMethod.Get, "/test-async", "0:30.000");
+        var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test-async", "0:30.000");
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.AsyncRoute))!;
         route.Init(method);
         var mockRequest = new MockRequest();
-        var mockContext = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JArray();
 
         // Act

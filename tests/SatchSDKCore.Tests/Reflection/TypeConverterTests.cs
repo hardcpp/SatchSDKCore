@@ -12,7 +12,7 @@ public class TypeConverterTests
     /// <summary>
     /// Test enum for enum conversion tests
     /// </summary>
-    private enum TestEnum
+    private enum ETestEnum
     {
         Value1,
         Value2,
@@ -292,12 +292,12 @@ public class TypeConverterTests
         object outValue = null!;
 
         // Act
-        var result = TypeConverter.TryGetValueAsFromJToken(typeof(TestEnum), token, "test", out var error, ref outValue);
+        var result = TypeConverter.TryGetValueAsFromJToken(typeof(ETestEnum), token, "test", out var error, ref outValue);
 
         // Assert
         Assert.True(result);
         Assert.Null(error);
-        Assert.Equal(TestEnum.Value2, outValue);
+        Assert.Equal(ETestEnum.Value2, outValue);
     }
 
     /// <summary>
@@ -311,12 +311,12 @@ public class TypeConverterTests
         object outValue = null!;
 
         // Act
-        var result = TypeConverter.TryGetValueAsFromJToken(typeof(TestEnum), token, "test", out var error, ref outValue);
+        var result = TypeConverter.TryGetValueAsFromJToken(typeof(ETestEnum), token, "test", out var error, ref outValue);
 
         // Assert
         Assert.True(result);
         Assert.Null(error);
-        Assert.Equal(TestEnum.Value1, outValue);
+        Assert.Equal(ETestEnum.Value1, outValue);
     }
 
     /// <summary>
@@ -330,7 +330,7 @@ public class TypeConverterTests
         object outValue = null!;
 
         // Act
-        var result = TypeConverter.TryGetValueAsFromJToken(typeof(TestEnum), token, "testParam", out var error, ref outValue);
+        var result = TypeConverter.TryGetValueAsFromJToken(typeof(ETestEnum), token, "testParam", out var error, ref outValue);
 
         // Assert
         Assert.False(result);
@@ -639,12 +639,12 @@ public class TypeConverterTests
         object outValue = null!;
 
         // Act
-        var result = TypeConverter.TryGetValueAsFromString(typeof(TestEnum), "Value2", "test", out var error, ref outValue);
+        var result = TypeConverter.TryGetValueAsFromString(typeof(ETestEnum), "Value2", "test", out var error, ref outValue);
 
         // Assert
         Assert.True(result);
         Assert.Null(error);
-        Assert.Equal(TestEnum.Value2, outValue);
+        Assert.Equal(ETestEnum.Value2, outValue);
     }
 
     /// <summary>
@@ -657,12 +657,12 @@ public class TypeConverterTests
         object outValue = null!;
 
         // Act
-        var result = TypeConverter.TryGetValueAsFromString(typeof(TestEnum), "value1", "test", out var error, ref outValue);
+        var result = TypeConverter.TryGetValueAsFromString(typeof(ETestEnum), "value1", "test", out var error, ref outValue);
 
         // Assert
         Assert.True(result);
         Assert.Null(error);
-        Assert.Equal(TestEnum.Value1, outValue);
+        Assert.Equal(ETestEnum.Value1, outValue);
     }
 
     /// <summary>
@@ -675,7 +675,7 @@ public class TypeConverterTests
         object outValue = null!;
 
         // Act
-        var result = TypeConverter.TryGetValueAsFromString(typeof(TestEnum), "InvalidValue", "testParam", out var error, ref outValue);
+        var result = TypeConverter.TryGetValueAsFromString(typeof(ETestEnum), "InvalidValue", "testParam", out var error, ref outValue);
 
         // Assert
         Assert.False(result);

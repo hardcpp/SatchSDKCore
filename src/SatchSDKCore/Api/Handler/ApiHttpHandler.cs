@@ -73,14 +73,14 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
     /// <param name="originalRequest">Original request</param>
     /// <returns>Equivalent ApiHttpMethod</returns>
     /// <exception cref="Exception">If no corresponding ApiHttpMethod was found</exception>
-    private static Route.ApiHttpMethod GetHttpMethodFromHttpMethod(HttpListenerRequest originalRequest)
+    private static Route.EApiHttpMethod GetHttpMethodFromHttpMethod(HttpListenerRequest originalRequest)
         => originalRequest.HttpMethod switch
         {
-            "GET" => Route.ApiHttpMethod.Get,
-            "DELETE" => Route.ApiHttpMethod.Delete,
-            "POST" => Route.ApiHttpMethod.Post,
-            "PUT" => Route.ApiHttpMethod.Put,
-            "PATCH" => Route.ApiHttpMethod.Patch,
+            "GET" => Route.EApiHttpMethod.Get,
+            "DELETE" => Route.EApiHttpMethod.Delete,
+            "POST" => Route.EApiHttpMethod.Post,
+            "PUT" => Route.EApiHttpMethod.Put,
+            "PATCH" => Route.EApiHttpMethod.Patch,
             _ => throw new Exception($"Unhandled HTTP method {originalRequest.HttpMethod}")
         };
     /// <summary>

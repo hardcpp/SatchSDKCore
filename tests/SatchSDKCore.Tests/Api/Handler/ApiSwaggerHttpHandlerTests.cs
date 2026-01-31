@@ -230,7 +230,7 @@ public class SwaggerHTTPServerHandlerTests
         // Verify blueprint still has its routes
         var args = new System.Collections.Generic.Dictionary<string, string>();
         var found = blueprint.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api", "test" },
             args,
             out var route
@@ -326,7 +326,7 @@ public class SwaggerHTTPServerHandlerTests
         var args = new System.Collections.Generic.Dictionary<string, string>();
         var restBlueprint = handler.MainBlueprint as ApiHttpBlueprint;
         var found = restBlueprint!.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "api", "test" },
             args,
             out var route
@@ -357,7 +357,7 @@ public class SwaggerHTTPServerHandlerTests
         var args = new System.Collections.Generic.Dictionary<string, string>();
         var restBlueprint = handler.MainBlueprint as ApiHttpBlueprint;
         var found = restBlueprint!.TryFindRoute(
-            ApiHttpMethod.Get,
+            EApiHttpMethod.Get,
             new[] { "v1", "api", "test" },
             args,
             out var route

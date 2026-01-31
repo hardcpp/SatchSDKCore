@@ -1,7 +1,7 @@
+root = true
 # EditorConfig is awesome: https://EditorConfig.org
 
 # top-most EditorConfig file
-root = true
 
 # All files
 [*]
@@ -9,6 +9,8 @@ charset = utf-8
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
 
 # Code files
 [*.{cs,csx,vb,vbx}]
@@ -172,14 +174,23 @@ dotnet_naming_symbols.constant_fields.applicable_kinds = field
 dotnet_naming_symbols.constant_fields.applicable_accessibilities = *
 dotnet_naming_symbols.constant_fields.required_modifiers = const
 
-# Static fields start with s_ and be in PascalCase
-dotnet_naming_rule.static_fields_should_have_s_prefix.severity = warning
-dotnet_naming_rule.static_fields_should_have_s_prefix.symbols = static_fields
-dotnet_naming_rule.static_fields_should_have_s_prefix.style = static_field_style
+# Public/Internal/Protected static fields are PascalCase (no prefix)
+dotnet_naming_rule.public_static_fields_should_be_pascal_case.severity = warning
+dotnet_naming_rule.public_static_fields_should_be_pascal_case.symbols = public_static_fields
+dotnet_naming_rule.public_static_fields_should_be_pascal_case.style = pascal_case_style
 
-dotnet_naming_symbols.static_fields.applicable_kinds = field
-dotnet_naming_symbols.static_fields.applicable_accessibilities = *
-dotnet_naming_symbols.static_fields.required_modifiers = static
+dotnet_naming_symbols.public_static_fields.applicable_kinds = field
+dotnet_naming_symbols.public_static_fields.applicable_accessibilities = public, internal, protected, protected_internal, private_protected
+dotnet_naming_symbols.public_static_fields.required_modifiers = static
+
+# Private static fields start with s_ and be in PascalCase
+dotnet_naming_rule.private_static_fields_should_have_s_prefix.severity = warning
+dotnet_naming_rule.private_static_fields_should_have_s_prefix.symbols = private_static_fields
+dotnet_naming_rule.private_static_fields_should_have_s_prefix.style = static_field_style
+
+dotnet_naming_symbols.private_static_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_static_fields.required_modifiers = static
 
 dotnet_naming_style.static_field_style.required_prefix = s_
 dotnet_naming_style.static_field_style.capitalization = pascal_case
@@ -216,8 +227,8 @@ dotnet_naming_rule.type_parameters_should_have_t_prefix.style = T_prefix_style
 
 dotnet_naming_symbols.type_parameters.applicable_kinds = type_parameter
 
-dotnet_naming_style.T_prefix_style.required_prefix = T
-dotnet_naming_style.T_prefix_style.capitalization = pascal_case
+dotnet_naming_style.t_prefix_style.required_prefix = T
+dotnet_naming_style.t_prefix_style.capitalization = pascal_case
 
 # Interfaces start with I
 dotnet_naming_rule.interfaces_should_start_with_i.severity = warning

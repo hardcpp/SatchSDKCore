@@ -33,19 +33,19 @@ public class IRouteTests
 
         protected override ApiResponse GetResponseForException(ApiRouteContext routeContext, Exception p_Exception)
         {
-            var restContext = routeContext as ApiHttpRouteContext ?? new ApiHttpRouteContext(new MockRequest(), ApiHttpMethod.Get);
+            var restContext = routeContext as ApiHttpRouteContext ?? new ApiHttpRouteContext(new MockRequest(), EApiHttpMethod.Get);
             return ApiHttpResponse.Result(restContext, System.Net.HttpStatusCode.InternalServerError, "exception");
         }
 
         protected override ApiResponse GetResponseForBadRequest(ApiRouteContext routeContext, string error)
         {
-            var restContext = routeContext as ApiHttpRouteContext ?? new ApiHttpRouteContext(new MockRequest(), ApiHttpMethod.Get);
+            var restContext = routeContext as ApiHttpRouteContext ?? new ApiHttpRouteContext(new MockRequest(), EApiHttpMethod.Get);
             return ApiHttpResponse.Result(restContext, System.Net.HttpStatusCode.BadRequest, error);
         }
 
         protected override ApiResponse GetResponseForAsyncTimeout(ApiRouteContext routeContext)
         {
-            var restContext = routeContext as ApiHttpRouteContext ?? new ApiHttpRouteContext(new MockRequest(), ApiHttpMethod.Get);
+            var restContext = routeContext as ApiHttpRouteContext ?? new ApiHttpRouteContext(new MockRequest(), EApiHttpMethod.Get);
             return ApiHttpResponse.Result(restContext, System.Net.HttpStatusCode.RequestTimeout, "timeout");
         }
     }
@@ -78,7 +78,7 @@ public class IRouteTests
         public static ApiResponse SyncNoContext()
         {
             var mockRequest = new MockRequest();
-            var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+            var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
             return ApiHttpResponse.Result(context, HttpStatusCode.OK, "no context");
         }
 
@@ -110,7 +110,7 @@ public class IRouteTests
         public static Task<ApiResponse> AsyncNoContext(CancellationToken ct)
         {
             var mockRequest = new MockRequest();
-            var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+            var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
             return Task.FromResult<ApiResponse>(ApiHttpResponse.Result(context, HttpStatusCode.OK, "async no context"));
         }
 
@@ -315,7 +315,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JArray();
 
         var result = route.TryInvoke(context, parameters, out var error, out var response);
@@ -336,7 +336,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JArray { 123, "test" };
 
         var result = route.TryInvoke(context, parameters, out var error, out var response);
@@ -357,7 +357,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JArray();
 
         var result = route.TryInvoke(context, parameters, out var error, out var response);
@@ -379,7 +379,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JArray();
 
         var result = route.TryInvoke(context, parameters, out var error, out var response);
@@ -400,7 +400,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JObject
         {
             ["id"] = 123,
@@ -425,7 +425,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new Dictionary<string, string>
         {
             ["id"] = "123",
@@ -464,7 +464,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         Assert.Throws<ArgumentNullException>(() =>
             route.TryInvoke(context, (JArray)null!, out _, out _));
@@ -481,7 +481,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         Assert.Throws<ArgumentNullException>(() =>
             route.TryInvoke(context, (JObject)null!, out _, out _));
@@ -498,7 +498,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         Assert.Throws<ArgumentNullException>(() =>
             route.TryInvoke(context, (IReadOnlyDictionary<string, string>)null!, out _, out _));
@@ -515,7 +515,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JArray();
 
         var result = route.TryInvoke(context, parameters, out var error, out var response);
@@ -536,7 +536,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JArray();
 
         var result = route.TryInvoke(context, parameters, out var error, out var response);
@@ -557,7 +557,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JArray();
 
         var result = route.TryInvoke(context, parameters, out var error, out var response);
@@ -578,7 +578,7 @@ public class IRouteTests
         route.Init(method);
 
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var parameters = new JArray();
 
         var result = route.TryInvoke(context, parameters, out var error, out var response);

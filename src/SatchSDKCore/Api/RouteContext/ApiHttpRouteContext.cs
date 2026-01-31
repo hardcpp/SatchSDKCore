@@ -8,7 +8,7 @@ namespace SSC.Api.RouteContext;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public sealed class ApiHttpRouteContext : ApiRouteContext
 {
-    public readonly Route.ApiHttpMethod HttpMethod;
+    public readonly Route.EApiHttpMethod HttpMethod;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -17,7 +17,7 @@ public sealed class ApiHttpRouteContext : ApiRouteContext
     /// Constructor
     /// </summary>
     /// <param name="request">Origin request</param>
-    public ApiHttpRouteContext(Request.ApiRequest request, Route.ApiHttpMethod httpMethod)
+    public ApiHttpRouteContext(Request.ApiRequest request, Route.EApiHttpMethod httpMethod)
         : base(request)
     {
         HttpMethod = httpMethod;

@@ -9,7 +9,7 @@ namespace SSC.Security;
 /// </summary>
 internal class AES
 {
-    private const int c_IVSize = 16;
+    private const int IV_SIZE = 16;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -75,16 +75,16 @@ internal class AES
         if (key == null || key.Length < 6)
             throw new ArgumentException("Invalid key");
 
-        if (data == null || data.Length < (c_IVSize + 1))
+        if (data == null || data.Length < (IV_SIZE + 1))
             throw new ArgumentException("Invalid data");
 
         try
         {
-            var iv = new byte[c_IVSize];
-            var cipherData = new byte[data.Length - c_IVSize];
+            var iv = new byte[IV_SIZE];
+            var cipherData = new byte[data.Length - IV_SIZE];
 
-            Array.Copy(data, 0, iv, 0, c_IVSize);
-            Array.Copy(data, c_IVSize, cipherData, 0, cipherData.Length);
+            Array.Copy(data, 0, iv, 0, IV_SIZE);
+            Array.Copy(data, IV_SIZE, cipherData, 0, cipherData.Length);
 
             var aes = Aes.Create();
             aes.Key = key;

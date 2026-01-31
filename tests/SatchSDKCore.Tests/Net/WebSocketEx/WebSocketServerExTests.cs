@@ -121,7 +121,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         // Act
@@ -144,7 +144,7 @@ public class WebSocketServerExTests
     public void Constructor_WithNullHttpServer_ThrowsException()
     {
         // Arrange
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         // Act & Assert
@@ -174,7 +174,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         // Act & Assert
@@ -190,7 +190,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         // Act & Assert
@@ -209,7 +209,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         // Act & Assert
@@ -230,7 +230,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         using var wsServer = new WebSocketServerEx<TestSession, string>(
@@ -255,7 +255,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         using var wsServer = new WebSocketServerEx<TestSession, string>(
@@ -282,7 +282,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         using var wsServer = new WebSocketServerEx<TestSession, string>(
@@ -302,7 +302,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         var wsServer = new WebSocketServerEx<TestSession, string>(
@@ -327,7 +327,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         using var wsServer = new WebSocketServerEx<TestSession, string>(
@@ -350,7 +350,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         using var wsServer = new WebSocketServerEx<TestSession, string>(
@@ -376,7 +376,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         var maxReceiveQueueSize = 100;
@@ -409,7 +409,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         // Act
@@ -435,7 +435,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         using var wsServer = new WebSocketServerEx<TestSession, string>(
@@ -460,7 +460,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         // Act
@@ -482,7 +482,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         // Act
@@ -506,7 +506,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         // Act
@@ -531,7 +531,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         using var wsServer = new WebSocketServerEx<TestSession, string>(
@@ -552,7 +552,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         using var wsServer = new WebSocketServerEx<TestSession, string>(
@@ -576,7 +576,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         var wsServer = new WebSocketServerEx<TestSession, string>(
@@ -599,7 +599,7 @@ public class WebSocketServerExTests
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
-        var sessionFactory = new WebSocketServerEx<TestSession, string>.d_MakeSession(
+        var sessionFactory = new WebSocketServerEx<TestSession, string>.MakeSessionCallback(
             (server, webSocket) => new TestSession(server, webSocket, Guid.NewGuid().ToString()));
 
         using var wsServer = new WebSocketServerEx<TestSession, string>(

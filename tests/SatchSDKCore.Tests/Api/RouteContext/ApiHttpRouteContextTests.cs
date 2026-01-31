@@ -27,7 +27,7 @@ public class ApiHttpRouteContextTests
     public void Constructor_WithNullRequest_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ApiHttpRouteContext(null!, ApiHttpMethod.Get));
+        Assert.Throws<ArgumentNullException>(() => new ApiHttpRouteContext(null!, EApiHttpMethod.Get));
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var httpMethod = ApiHttpMethod.Post;
+        var httpMethod = EApiHttpMethod.Post;
 
         // Act
         var context = new ApiHttpRouteContext(mockRequest, httpMethod);
@@ -53,12 +53,12 @@ public class ApiHttpRouteContextTests
     /// Verifies that constructor works with all REST method types.
     /// </summary>
     [Theory]
-    [InlineData(ApiHttpMethod.Get)]
-    [InlineData(ApiHttpMethod.Post)]
-    [InlineData(ApiHttpMethod.Put)]
-    [InlineData(ApiHttpMethod.Patch)]
-    [InlineData(ApiHttpMethod.Delete)]
-    public void Constructor_WithAllRestMethods_StoresMethodCorrectly(ApiHttpMethod method)
+    [InlineData(EApiHttpMethod.Get)]
+    [InlineData(EApiHttpMethod.Post)]
+    [InlineData(EApiHttpMethod.Put)]
+    [InlineData(EApiHttpMethod.Patch)]
+    [InlineData(EApiHttpMethod.Delete)]
+    public void Constructor_WithAllRestMethods_StoresMethodCorrectly(EApiHttpMethod method)
     {
         // Arrange
         var mockRequest = new MockRequest();
@@ -78,7 +78,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act
         var asHttp = context.AsHttpRouteContext;
@@ -96,7 +96,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act
         var asJsonRpc = context.AsJsonRpcRouteContext;
@@ -113,7 +113,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         var testObject = "TestValue";
 
         // Act
@@ -133,7 +133,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act
         var result = context.TryGetObject<string>("nonExistentKey", out var retrievedObject);
@@ -151,7 +151,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act
         context.AddObject<string?>("nullKey", null);
@@ -170,7 +170,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act
         context.AddObject("key1", "value1");
@@ -196,7 +196,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         context.AddObject("duplicateKey", "originalValue");
 
         // Act - Try to add with same key
@@ -216,7 +216,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
         context.AddObject("stringKey", "stringValue");
 
         // Act - Try to get as wrong type
@@ -235,7 +235,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act & Assert
         Assert.IsAssignableFrom<ApiRouteContext>(context);
@@ -250,7 +250,7 @@ public class ApiHttpRouteContextTests
         // Arrange
         var mockRequest1 = new MockRequest();
         var mockRequest2 = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest1, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest1, EApiHttpMethod.Get);
 
         // Assert - Request should be the original one and readonly
         Assert.Same(mockRequest1, context.Request);
@@ -265,10 +265,10 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Assert - RestMethod should remain the original value
-        Assert.Equal(ApiHttpMethod.Get, context.HttpMethod);
+        Assert.Equal(EApiHttpMethod.Get, context.HttpMethod);
     }
 
     /// <summary>
@@ -279,8 +279,8 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context1 = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
-        var context2 = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Post);
+        var context1 = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
+        var context2 = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Post);
 
         // Act
         context1.AddObject("sharedKey", "value1");
@@ -302,7 +302,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act
         var result = context.TryGetObject<string>("anyKey", out var retrievedObject);
@@ -320,7 +320,7 @@ public class ApiHttpRouteContextTests
     {
         // Arrange
         var mockRequest = new MockRequest();
-        var context = new ApiHttpRouteContext(mockRequest, ApiHttpMethod.Get);
+        var context = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act
         context.AddObject("intKey", 123);

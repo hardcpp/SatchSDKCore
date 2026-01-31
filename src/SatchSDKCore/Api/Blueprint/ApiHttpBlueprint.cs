@@ -12,7 +12,7 @@ namespace SSC.Api.Blueprint;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public class ApiHttpBlueprint : ApiBlueprint
 {
-    public static readonly int HTTP_METHOD_COUNT = Enum.GetValues<Route.ApiHttpMethod>().Length;
+    public static readonly int HTTP_METHOD_COUNT = Enum.GetValues<Route.EApiHttpMethod>().Length;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -159,7 +159,7 @@ public class ApiHttpBlueprint : ApiBlueprint
     /// <param name="httpRoute">Output found ApiHttpRoute</param>
     /// <returns>True if a route is found</returns>
     public bool TryFindRoute(
-        Route.ApiHttpMethod httpMethod,
+        Route.EApiHttpMethod httpMethod,
         ReadOnlySpan<string> segments,
         Dictionary<string, string> argumentsCollector,
         [NotNullWhen(true)] out Route.ApiHttpRoute? httpRoute)

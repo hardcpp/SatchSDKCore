@@ -18,12 +18,12 @@ public class WebSocketServerEx<TSession, TSessionID> : IWebSocketServerEx<TSessi
     where TSession : WebSocketServerExSession<TSession, TSessionID>
     where TSessionID : notnull
 {
-    public delegate TSession d_MakeSession(WebSocketServerEx<TSession, TSessionID> server, WebSocket webSocket);
+    public delegate TSession MakeSessionCallback(WebSocketServerEx<TSession, TSessionID> server, WebSocket webSocket);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly d_MakeSession _sessionFactory;
+    private readonly MakeSessionCallback _sessionFactory;
     private readonly List<TSession> _sessions = new(100);
     private readonly Thread[] _workers;
     private readonly List<TSession>[] _workerSessions;
@@ -60,7 +60,7 @@ public class WebSocketServerEx<TSession, TSessionID> : IWebSocketServerEx<TSessi
     public WebSocketServerEx(
         IHttpServerEx httpServer,
         string absolutePath,
-        d_MakeSession makeSession,
+        MakeSessionCallback makeSession,
         int workerCount = 4,
         int minConcurentSessions = 500,
         int maxReceiveQueueSize = 50,
