@@ -1,12 +1,12 @@
 # SatchSDKCore
 
-[![.NET](https://github.com/hardcpp/SatchSDKCore/workflows/.NET/badge.svg)](https://github.com/hardcpp/SatchSDKCore/actions/workflows/dotnet.yml)
+[![Build Publish](https://github.com/hardcpp/SatchSDKCore/workflows/Build%20Publish/badge.svg)](https://github.com/hardcpp/SatchSDKCore/actions/workflows/build-publish.yml)
 [![Security](https://github.com/hardcpp/SatchSDKCore/workflows/Security%20Scanning/badge.svg)](https://github.com/hardcpp/SatchSDKCore/actions/workflows/security.yml)
 [![Code Quality](https://github.com/hardcpp/SatchSDKCore/workflows/Code%20Quality/badge.svg)](https://github.com/hardcpp/SatchSDKCore/actions/workflows/code-quality.yml)
 [![Documentation](https://github.com/hardcpp/SatchSDKCore/workflows/Documentation/badge.svg)](https://github.com/hardcpp/SatchSDKCore/actions/workflows/documentation.yml)
 
 
-SatchSDKCore is a high-performance .NET SDK for building REST APIs and network applications. Built with .NET 9.0, it offers a robust foundation for creating scalable server applications with features optimized for speed and efficiency.
+SatchSDKCore is a high-performance .NET SDK for building REST APIs and network applications. Built with .NET 10.0, it offers a robust foundation for creating scalable server applications with features optimized for speed and efficiency.
 
 ## Features
 
@@ -37,7 +37,7 @@ SatchSDKCore is a high-performance .NET SDK for building REST APIs and network a
 
 ## Installation
 
-SatchSDKCore targets .NET 9.0. To install the package, use the following command in your project directory:
+SatchSDKCore targets .NET 10.0. To install the package, use the following command in your project directory:
 
 ```bash
 dotnet add package SatchSDKCore
