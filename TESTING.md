@@ -185,7 +185,7 @@ Our GitHub Actions workflow runs automatically on:
 ```yaml
 Triggers: All PRs and pushes to stable/dev
 Steps:
-  1. Setup .NET 9.0
+  1. Setup .NET 10.0
   2. Restore dependencies
   3. Build project
   4. Run tests with coverage
@@ -353,7 +353,7 @@ open ./coverage-report/index.html
 **Solution**:
 ```bash
 # Ensure you're using the same .NET version
-dotnet --version  # Should be 9.0.x
+dotnet --version  # Should be 10.0.x
 
 # Clean and rebuild
 dotnet clean
