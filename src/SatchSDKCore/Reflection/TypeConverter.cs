@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Globalization;
+using Newtonsoft.Json.Linq;
 
 namespace SSC.Reflection;
 
@@ -89,8 +89,8 @@ public static class TypeConverter
         {
             if (token.Type == JTokenType.String)
             {
-                if (Enum.TryParse(type, token.Value<string>(), true, out var l_EnumValue))
-                    outValue = l_EnumValue;
+                if (Enum.TryParse(type, token.Value<string>(), true, out var enumValue))
+                    outValue = enumValue;
                 else
                 {
                     outError = $"Unrecognized constant \"{token.Value<string>()}\" for parameter {hint}, candidates are: "
@@ -122,47 +122,47 @@ public static class TypeConverter
 
         if (type == typeof(ulong))
         {
-            if (ulong.TryParse(input, out var l_Parsed)) outValue = l_Parsed;
+            if (ulong.TryParse(input, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be ulong";
         }
         else if (type == typeof(long))
         {
-            if (long.TryParse(input, out var l_Parsed)) outValue = l_Parsed;
+            if (long.TryParse(input, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be long";
         }
         else if (type == typeof(uint))
         {
-            if (uint.TryParse(input, out var l_Parsed)) outValue = l_Parsed;
+            if (uint.TryParse(input, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be uint";
         }
         else if (type == typeof(int))
         {
-            if (int.TryParse(input, out var l_Parsed)) outValue = l_Parsed;
+            if (int.TryParse(input, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be int";
         }
         else if (type == typeof(ushort))
         {
-            if (ushort.TryParse(input, out var l_Parsed)) outValue = l_Parsed;
+            if (ushort.TryParse(input, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be ushort";
         }
         else if (type == typeof(short))
         {
-            if (short.TryParse(input, out var l_Parsed)) outValue = l_Parsed;
+            if (short.TryParse(input, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be short";
         }
         else if (type == typeof(byte))
         {
-            if (byte.TryParse(input, out var l_Parsed)) outValue = l_Parsed;
+            if (byte.TryParse(input, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be byte";
         }
         else if (type == typeof(sbyte))
         {
-            if (sbyte.TryParse(input, out var l_Parsed)) outValue = l_Parsed;
+            if (sbyte.TryParse(input, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be sbyte";
         }
         else if (type == typeof(bool))
         {
-            if (bool.TryParse(input, out var l_Parsed)) outValue = l_Parsed;
+            if (bool.TryParse(input, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be bool";
         }
         else if (type == typeof(string))
@@ -171,18 +171,18 @@ public static class TypeConverter
         }
         else if (type == typeof(float))
         {
-            if (float.TryParse(input, CultureInfo.InvariantCulture, out var l_Parsed)) outValue = l_Parsed;
+            if (float.TryParse(input, CultureInfo.InvariantCulture, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be float";
         }
         else if (type == typeof(double))
         {
-            if (double.TryParse(input, CultureInfo.InvariantCulture, out var l_Parsed)) outValue = l_Parsed;
+            if (double.TryParse(input, CultureInfo.InvariantCulture, out var parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be double";
         }
         else if (type.BaseType == typeof(Enum))
         {
-            if (Enum.TryParse(type, input, true, out var l_Parsed))
-                outValue = l_Parsed;
+            if (Enum.TryParse(type, input, true, out var parsed))
+                outValue = parsed;
             else
             {
                 outError = $"Unrecognized constant \"{input}\" for parameter {hint ?? string.Empty}, candidates are: "

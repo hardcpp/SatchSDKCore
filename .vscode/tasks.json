@@ -1,0 +1,226 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "test",
+            "command": "dotnet",
+            "type": "process",
+            "hide": true,
+            "args": [
+                "test",
+                "${workspaceFolder}/SatchSDKCore.sln"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "test with coverage",
+            "command": "dotnet",
+            "type": "process",
+            "hide": true,
+            "args": [
+                "test",
+                "${workspaceFolder}/SatchSDKCore.sln",
+                "--collect:XPlat Code Coverage",
+                "--results-directory",
+                "${workspaceFolder}/coverage"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "test with coverage (verbose)",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "test",
+                "${workspaceFolder}/SatchSDKCore.sln",
+                "--collect:XPlat Code Coverage",
+                "--results-directory",
+                "${workspaceFolder}/coverage",
+                "--verbosity",
+                "normal"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "install reportgenerator",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "tool",
+                "install",
+                "-g",
+                "dotnet-reportgenerator-globaltool"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "generate coverage report",
+            "command": "reportgenerator",
+            "type": "shell",
+            "args": [
+                "-reports:${workspaceFolder}/coverage/**/coverage.cobertura.xml",
+                "-targetdir:${workspaceFolder}/coverage-report",
+                "-reporttypes:Html"
+            ],
+            "problemMatcher": [],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "dependsOn": [
+                "test with coverage"
+            ]
+        },
+        {
+            "label": "generate and open coverage report",
+            "dependsOn": [
+                "generate coverage report",
+                "open coverage report"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "test with coverage and report",
+            "dependsOn": [
+                "test with coverage",
+                "generate coverage report"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "test with HTML coverage (auto-open)",
+            "dependsOn": [
+                "test with coverage",
+                "generate coverage report",
+                "open coverage report (browser)"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "open coverage report (browser)",
+            "command": "open",
+            "type": "shell",
+            "linux": {
+                "command": "xdg-open"
+            },
+            "windows": {
+                "command": "start"
+            },
+            "args": [
+                "${workspaceFolder}/coverage-report/index.html"
+            ],
+            "problemMatcher": [],
+            "group": "test",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "clean coverage",
+            "command": "rm",
+            "type": "shell",
+            "linux": {
+                "command": "rm"
+            },
+            "windows": {
+                "command": "rmdir"
+            },
+            "args": [
+                "-rf",
+                "${workspaceFolder}/coverage",
+                "${workspaceFolder}/coverage-report"
+            ],
+            "windows": {
+                "args": [
+                    "/S",
+                    "/Q",
+                    "${workspaceFolder}\\coverage",
+                    "${workspaceFolder}\\coverage-report"
+                ]
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/SatchSDKCore.sln",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "restore",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "restore",
+                "${workspaceFolder}/SatchSDKCore.sln"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "clean",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "clean",
+                "${workspaceFolder}/SatchSDKCore.sln"
+            ],
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}

@@ -1,7 +1,7 @@
-﻿using SSC.Misc;
 using System;
 using System.Security.Cryptography;
 using System.Web;
+using SSC.Misc;
 
 namespace SSC.Security;
 
@@ -10,8 +10,8 @@ namespace SSC.Security;
 /// </summary>
 public class TOTP
 {
-    private const long c_UnixEpochTicks = 621355968000000000L;
-    private const long c_TicksToSeconds = 10000000L;
+    private const long UNIX_EPOCH_TICKS = 621355968000000000L;
+    private const long TICKS_TO_SECONDS = 10000000L;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -25,20 +25,23 @@ public class TOTP
     /// <returns></returns>
     public static string ComputeCode(byte[] secret, int digits = 6, int period = 30, int windowOffset = 0)
     {
-        var l_Window = CalculateTimeStepFromTimestamp(DateTime.UtcNow, period) + windowOffset;
-        var l_Data = GetBigEndianBytes(l_Window);
+        var window = CalculateTimeStepFromTimestamp(DateTime.UtcNow, period) + windowOffset;
+        var data = GetBigEndianBytes(window);
 
-        var l_HMAC = new HMACSHA1();
-        l_HMAC.Key = secret;
-        var l_HMACComputedHash = l_HMAC.ComputeHash(l_Data);
+        byte[] hMACComputedHash;
+        using (var hmacSha1 = new HMACSHA1())
+        {
+            hmacSha1.Key = secret;
+            hMACComputedHash = hmacSha1.ComputeHash(data);
+        }
 
-        var l_Offset = l_HMACComputedHash[l_HMACComputedHash.Length - 1] & 0x0F;
-        var l_OTP = (l_HMACComputedHash[l_Offset + 0] & 0x7F) << 24
-                     | (l_HMACComputedHash[l_Offset + 1] & 0xFF) << 16
-                     | (l_HMACComputedHash[l_Offset + 2] & 0xFF) << 8
-                     | (l_HMACComputedHash[l_Offset + 3] & 0xFF);
+        var offset = hMACComputedHash[hMACComputedHash.Length - 1] & 0x0F;
+        var otp = ((hMACComputedHash[offset + 0] & 0x7F) << 24)
+                     | ((hMACComputedHash[offset + 1] & 0xFF) << 16)
+                     | ((hMACComputedHash[offset + 2] & 0xFF) << 8)
+                     | (hMACComputedHash[offset + 3] & 0xFF);
 
-        return OTPToDigits(l_OTP, digits);
+        return OTPToDigits(otp, digits);
     }
     /// <summary>
     /// Forge an OTPAuth url
@@ -69,9 +72,9 @@ public class TOTP
     /// <returns></returns>
     private static long CalculateTimeStepFromTimestamp(DateTime dateTime, int period)
     {
-        var l_UnixTimestamp = (dateTime.Ticks - c_UnixEpochTicks) / c_TicksToSeconds;
-        var l_Window = l_UnixTimestamp / (long)period;
-        return l_Window;
+        var unixTimestamp = (dateTime.Ticks - UNIX_EPOCH_TICKS) / TICKS_TO_SECONDS;
+        var window = unixTimestamp / period;
+        return window;
     }
     /// <summary>
     /// Convert OTP to digits
@@ -81,8 +84,8 @@ public class TOTP
     /// <returns></returns>
     private static string OTPToDigits(long otp, int digits)
     {
-        var l_TruncatedValue = ((int)otp % (int)Math.Pow(10, digits));
-        return l_TruncatedValue.ToString().PadLeft(digits, '0');
+        var truncatedValue = ((int)otp % (int)Math.Pow(10, digits));
+        return truncatedValue.ToString().PadLeft(digits, '0');
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -95,8 +98,8 @@ public class TOTP
     /// <returns></returns>
     private static byte[] GetBigEndianBytes(long input)
     {
-        var l_Data = BitConverter.GetBytes(input);
-        Array.Reverse(l_Data);
-        return l_Data;
+        var data = BitConverter.GetBytes(input);
+        Array.Reverse(data);
+        return data;
     }
 }

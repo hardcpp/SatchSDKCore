@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -9,7 +9,7 @@ namespace SSC.Security;
 /// </summary>
 internal class AES
 {
-    private const int c_IVSize = 16;
+    private const int IV_SIZE = 16;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -31,34 +31,36 @@ internal class AES
 
         try
         {
-            byte[] l_CipherData;
-            var l_AES = Aes.Create();
-            l_AES.Key = key;
-            l_AES.GenerateIV();
-            l_AES.Mode = CipherMode.CBC;
-
-            var l_Cipher = l_AES.CreateEncryptor(l_AES.Key, l_AES.IV);
-
-            using (MemoryStream l_MemoryStream = new MemoryStream())
+            byte[] cipherData;
+            using (var aes = Aes.Create())
             {
-                using (CryptoStream l_CryptoStream = new CryptoStream(l_MemoryStream, l_Cipher, CryptoStreamMode.Write))
+                aes.Key = key;
+                aes.GenerateIV();
+                aes.Mode = CipherMode.CBC;
+
+                var cipher = aes.CreateEncryptor(aes.Key, aes.IV);
+
+                using (MemoryStream memoryStream = new MemoryStream())
                 {
-                    l_CryptoStream.Write(data);
+                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, cipher, CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(data);
+                    }
+
+                    cipherData = memoryStream.ToArray();
                 }
 
-                l_CipherData = l_MemoryStream.ToArray();
+                var resultBytes = new byte[aes.IV.Length + cipherData.Length];
+                Array.Copy(aes.IV, 0, resultBytes, 0, aes.IV.Length);
+                Array.Copy(cipherData, 0, resultBytes, aes.IV.Length, cipherData.Length);
+
+                return resultBytes;
             }
-
-            var l_ResultBytes = new byte[l_AES.IV.Length + l_CipherData.Length];
-            Array.Copy(l_AES.IV, 0, l_ResultBytes, 0, l_AES.IV.Length);
-            Array.Copy(l_CipherData, 0, l_ResultBytes, l_AES.IV.Length, l_CipherData.Length);
-
-            return l_ResultBytes;
         }
-        catch (Exception l_Exception)
+        catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[CP_API_SDK.Security][EasyAES.EasyCBCEncrypt] Error:");
-            Logging.Log(ELogSeverity.Error, l_Exception);
+            Logging.Log(ELogSeverity.Error, "[CP_API_SDK.Security][EasyAES.EasyCBCEncrypt] Error:");
+            Logging.Log(ELogSeverity.Error, exception);
 
             throw;
         }
@@ -75,36 +77,38 @@ internal class AES
         if (key == null || key.Length < 6)
             throw new ArgumentException("Invalid key");
 
-        if (data == null || data.Length < (c_IVSize + 1))
+        if (data == null || data.Length < (IV_SIZE + 1))
             throw new ArgumentException("Invalid data");
 
         try
         {
-            var l_IV = new byte[c_IVSize];
-            var l_CipherData = new byte[data.Length - c_IVSize];
+            var iv = new byte[IV_SIZE];
+            var cipherData = new byte[data.Length - IV_SIZE];
 
-            Array.Copy(data, 0, l_IV, 0, c_IVSize);
-            Array.Copy(data, c_IVSize, l_CipherData, 0, l_CipherData.Length);
+            Array.Copy(data, 0, iv, 0, IV_SIZE);
+            Array.Copy(data, IV_SIZE, cipherData, 0, cipherData.Length);
 
-            var l_AES = Aes.Create();
-            l_AES.Key = key;
-            l_AES.IV = l_IV;
-            l_AES.Mode = CipherMode.CBC;
-
-            using (MemoryStream l_MemoryStream = new MemoryStream())
+            using (var aes = Aes.Create())
             {
-                using (CryptoStream l_CryptoStream = new CryptoStream(l_MemoryStream, l_AES.CreateDecryptor(), CryptoStreamMode.Write))
-                {
-                    l_CryptoStream.Write(l_CipherData, 0, l_CipherData.Length);
-                }
+                aes.Key = key;
+                aes.IV = iv;
+                aes.Mode = CipherMode.CBC;
 
-                return l_MemoryStream.ToArray();
+                using (MemoryStream memoryStream = new MemoryStream())
+                {
+                    using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(cipherData, 0, cipherData.Length);
+                    }
+
+                    return memoryStream.ToArray();
+                }
             }
         }
-        catch (Exception l_Exception)
+        catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[CP_API_SDK.Security][EasyAES.EasyCBCDecrypt] Error:");
-            Logging.Log(ELogSeverity.Error, l_Exception);
+            Logging.Log(ELogSeverity.Error, "[CP_API_SDK.Security][EasyAES.EasyCBCDecrypt] Error:");
+            Logging.Log(ELogSeverity.Error, exception);
 
             throw;
         }
