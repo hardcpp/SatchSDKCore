@@ -16,12 +16,48 @@ env:
     DOTNET_VERSION: "10.0.x"
 
 jobs:
-    build:
+    discover-packages:
         runs-on: ubuntu-latest
         if: ${{ github.event.workflow_run.conclusion == 'success' && (github.event.workflow_run.head_branch == 'stable' || github.event.workflow_run.head_branch == 'dev') }}
+        outputs:
+            packages: ${{ steps.discover.outputs.packages }}
+            version-suffix: ${{ steps.discover.outputs.version-suffix }}
 
         steps:
             - uses: actions/checkout@v7
+              with:
+                  ref: ${{ github.event.workflow_run.head_sha }}
+            - name: Discover NuGet projects
+              id: discover
+              shell: bash
+              run: |
+                  packages='[]'
+
+                  while IFS= read -r -d '' project; do
+                      name="$(basename "${project%.csproj}")"
+                      packages="$(jq -c --arg project "$project" --arg name "$name" '. + [{project: $project, name: $name}]' <<< "$packages")"
+                  done < <(find src -mindepth 2 -maxdepth 2 -type f -name '*.csproj' -print0 | sort -z)
+
+                  if [ "$(jq 'length' <<< "$packages")" -eq 0 ]; then
+                      echo "No projects were found under src/*" >&2
+                      exit 1
+                  fi
+
+                  echo "packages=$packages" >> "$GITHUB_OUTPUT"
+                  echo "version-suffix=${{ github.event.workflow_run.head_branch }}" >> "$GITHUB_OUTPUT"
+
+    build:
+        runs-on: ubuntu-latest
+        needs: discover-packages
+        strategy:
+            fail-fast: false
+            matrix:
+                package: ${{ fromJSON(needs.discover-packages.outputs.packages) }}
+
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  ref: ${{ github.event.workflow_run.head_sha }}
             - name: Setup .NET
               uses: actions/setup-dotnet@v5
               with:
@@ -33,42 +69,36 @@ jobs:
                   key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
                   restore-keys: |
                       ${{ runner.os }}-nuget-
-            - name: Extract branch name
-              id: extract_branch
-              run: echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
             - name: Restore dependencies
-              run: dotnet restore
-            - name: Build Release
-              run: dotnet build --configuration Release --no-restore
-            - name: Create NuGet Package
-              run: dotnet pack src/SatchSDKCore/SatchSDKCore.csproj --configuration Release --no-build --output ./packages /p:VersionSuffix=${{ steps.extract_branch.outputs.branch }}
-            - name: Publish Application
-              run: dotnet publish --configuration Release --no-build --output ./publish
-            - name: Upload Build Artifacts
+              run: dotnet restore "${{ matrix.package.project }}"
+            - name: Build ${{ matrix.package.name }}
+              run: dotnet build "${{ matrix.package.project }}" --configuration Release --no-restore
+            - name: Pack ${{ matrix.package.name }}
+              run: dotnet pack "${{ matrix.package.project }}" --configuration Release --no-build --output "./packages/${{ matrix.package.name }}" /p:VersionSuffix=${{ needs.discover-packages.outputs.version-suffix }}
+            - name: Upload ${{ matrix.package.name }} NuGet package
               uses: actions/upload-artifact@v6
               with:
-                  name: build-artifacts
-                  path: ./publish
-            - name: Upload NuGet Packages
-              uses: actions/upload-artifact@v6
-              with:
-                  name: nuget-packages
-                  path: ./packages/*.nupkg
+                  name: nuget-${{ matrix.package.name }}
+                  path: ./packages/${{ matrix.package.name }}/*.nupkg
+                  if-no-files-found: error
 
     publish:
         runs-on: ubuntu-latest
-        needs: build
-        if: ${{ github.event.workflow_run.conclusion == 'success' && (github.event.workflow_run.head_branch == 'stable' || github.event.workflow_run.head_branch == 'dev') }}
+        needs: [discover-packages, build]
+        strategy:
+            fail-fast: false
+            matrix:
+                package: ${{ fromJSON(needs.discover-packages.outputs.packages) }}
         permissions:
             contents: read
             packages: write
 
         steps:
-            - name: Download NuGet Packages
+            - name: Download ${{ matrix.package.name }} NuGet package
               uses: actions/download-artifact@v7
               with:
-                  name: nuget-packages
-                  path: ./packages
+                  name: nuget-${{ matrix.package.name }}
+                  path: ./packages/${{ matrix.package.name }}
             - name: Setup .NET
               uses: actions/setup-dotnet@v5
               with:
@@ -76,4 +106,4 @@ jobs:
             - name: Publish to GitHub Packages
               run: |
                   dotnet nuget add source --username ${{ github.repository_owner }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
-                  dotnet nuget push ./packages/*.nupkg --source "github" --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+                  dotnet nuget push "./packages/${{ matrix.package.name }}/*.nupkg" --source "github" --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
