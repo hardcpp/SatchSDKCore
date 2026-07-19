@@ -8,7 +8,6 @@
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
         <RootNamespace>SSC.Db.Tests</RootNamespace>
-        <RunSettingsFilePath>$(MSBuildProjectDirectory)/coverlet.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
     <ItemGroup>
