@@ -144,11 +144,21 @@ public class HttpServerExCore : IHttpServerEx
     /// </summary>
     private void ListenerLoop()
     {
-        var callback = new AsyncCallback(OnRequestReceived);
         while (_listener.IsListening)
         {
-            var context = _listener.BeginGetContext(callback, null);
-            context.AsyncWaitHandle.WaitOne();
+            try
+            {
+                _contextQueue.Enqueue(_listener.GetContext());
+                _contextQueueEvent.Set();
+            }
+            catch (HttpListenerException) when (!_listener.IsListening)
+            {
+                break;
+            }
+            catch (ObjectDisposedException)
+            {
+                break;
+            }
         }
     }
     /// <summary>
@@ -177,18 +187,6 @@ public class HttpServerExCore : IHttpServerEx
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>
-    /// When a request is received
-    /// </summary>
-    /// <param name="result">Async callback data</param>
-    private void OnRequestReceived(IAsyncResult result)
-    {
-        if (!_listener.IsListening)
-            return;
-
-        _contextQueue.Enqueue(_listener.EndGetContext(result));
-        _contextQueueEvent.Set();
-    }
     /// <summary>
     /// Handle a single request, passing it to the first willing IHTTPRequestHandler
     /// </summary>

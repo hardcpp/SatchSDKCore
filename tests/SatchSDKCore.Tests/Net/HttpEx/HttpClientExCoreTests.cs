@@ -497,7 +497,8 @@ public class HttpClientExCoreTests : IDisposable
         var progress = new Progress<float>(p => progressReports.Add(p));
 
         // Act
-        var response = await client.DoRequestAsync("GET", "test", CancellationToken.None, null, ERequestOptions.None, null, progress);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var response = await client.DoRequestAsync("GET", "test", timeout.Token, null, ERequestOptions.None, null, progress);
 
         // Assert
         Assert.NotNull(response);

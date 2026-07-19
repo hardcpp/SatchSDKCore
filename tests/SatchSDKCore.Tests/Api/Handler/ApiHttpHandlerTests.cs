@@ -374,7 +374,10 @@ public class RESTHTTPServerHandlerTests
         server.Start();
 
         // Act
-        using var client = new HttpClient();
+        using var client = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(10)
+        };
         var response = await client.GetAsync("http://localhost:9007/nonexistent/route");
 
         // Give server time to process
