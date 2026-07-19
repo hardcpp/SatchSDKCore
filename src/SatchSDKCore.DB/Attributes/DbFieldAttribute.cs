@@ -8,7 +8,7 @@ namespace SSC.DB.Attributes;
 /// DB field attribute
 /// </summary>
 [AttributeUsage(AttributeTargets.Field, AllowMultiple = true, Inherited = false)]
-public class DBFieldAttribute : Attribute
+public class DbFieldAttribute : Attribute
 {
     public          FieldInfo   FieldInfo;
     public          Type        FieldType;
@@ -27,7 +27,7 @@ public class DBFieldAttribute : Attribute
     /// </summary>
     /// <param name="primaryKey">Is a primary key?</param>
     /// <param name="autoIncrement">Is an auto increment?</param>
-    public DBFieldAttribute(bool primaryKey = false, bool autoIncrement = false)
+    public DbFieldAttribute(bool primaryKey = false, bool autoIncrement = false)
 #pragma warning restore CS8618
     {
         PrimaryKey      = primaryKey;
@@ -44,12 +44,12 @@ public class DBFieldAttribute : Attribute
     /// <param name="fieldInfo">Field reflection info</param>
     /// <exception cref="Exception">If multi auto increment fields are present</exception>
     /// <exception cref="Exception">If the field type for autoincrement is not primitive</exception>
-    public void Init(DBModelMetadata dbModelMetadata, FieldInfo fieldInfo)
+    public void Init(DbModelMetadata dbModelMetadata, FieldInfo fieldInfo)
     {
         FieldInfo   = fieldInfo;
         FieldType   = fieldInfo.FieldType;
         Name        = fieldInfo.Name;
-        NativeEnum  = FieldType.IsEnum && fieldInfo.CustomAttributes.Count() == 0;
+        NativeEnum  = FieldType.IsEnum && !fieldInfo.CustomAttributes.Any();
         NativeFlags = FieldType.IsEnum && fieldInfo.GetCustomAttribute<FlagsAttribute>() != null;
 
         if (AutoIncrement == true)

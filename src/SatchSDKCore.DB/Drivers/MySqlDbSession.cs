@@ -5,21 +5,21 @@ using System.Data.Common;
 namespace SSC.DB.Drivers;
 
 /// <summary>
-/// MySql DBSession implementation
+/// MySql IDbSession implementation
 /// </summary>
-internal class MySQLDBSession : DBSession
+internal class MySqlDbSession : IDbSession
 {
-    private             object              m_Lock              = new object();
-    private             MySQLDBInstance     m_Instance          = null!;
-    private             string              m_ConnectionString  = string.Empty;
-    private             string              m_LogIdentifier     = string.Empty;
-    private             MySqlConnection?    m_MySqlDBConnection = null;
-    private volatile    bool                m_InUse             = false;
+    private readonly object              _lock              = new object();
+    private readonly MySqlDbInstance     _instance;
+    private readonly string              _connectionString;
+    private readonly string              _logIdentifier;
+    private          MySqlConnection?    _mySqlDbConnection = null;
+    private volatile bool                _inUse             = false;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public override DBInstance DBInstance => m_Instance;
+    public override DbInstance DbInstance => _instance;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -27,21 +27,22 @@ internal class MySQLDBSession : DBSession
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="mySqlDBInstance">Parent MySqlDBInstance</param>
+    /// <param name="mySqlDbInstance">Parent MySqlDBInstance</param>
     /// <param name="connectionString">Connection string for the driver</param>
-    internal MySQLDBSession(MySQLDBInstance mySqlDBInstance, string connectionString, string logIdentifier)
+    /// <param name="logIdentifier">Identifier for logs</param>
+    internal MySqlDbSession(MySqlDbInstance mySqlDbInstance, string connectionString, string logIdentifier)
     {
-        m_Instance          = mySqlDBInstance;
-        m_ConnectionString  = connectionString;
-        m_LogIdentifier     = logIdentifier;
+        _instance          = mySqlDbInstance;
+        _connectionString  = connectionString;
+        _logIdentifier     = logIdentifier;
 
         OpenDBConnection();
-        /*var ee = new MySqlCommand("insert into oc_accounts(uid, data) VALUES (@arg1, @arg2)", m_MySqlDBConnection);
+        /*var ee = new MySqlCommand("insert into oc_accounts(uid, data) VALUES (@arg1, @arg2)", _mySqlDbConnection);
         ee.Parameters.Add(new MySqlParameter(){ ParameterName = "@uid"});
         ee.Parameters.Add(new MySqlParameter(){ ParameterName = "@data" });
         ee.Prepare();
 
-        var reader = new MySqlCommand("SELECT\r\n    OWNER_OBJECT_TYPE, OWNER_OBJECT_SCHEMA, OWNER_OBJECT_NAME,\r\n    STATEMENT_NAME, SQL_TEXT\r\nFROM performance_schema.`prepared_statements_instances`;", m_MySqlDBConnection).ExecuteReader();
+        var reader = new MySqlCommand("SELECT\r\n    OWNER_OBJECT_TYPE, OWNER_OBJECT_SCHEMA, OWNER_OBJECT_NAME,\r\n    STATEMENT_NAME, SQL_TEXT\r\nFROM performance_schema.`prepared_statements_instances`;", _mySqlDbConnection).ExecuteReader();
         while (reader.ReadSocket())
         {
             System.Console.WriteLine(reader.GetValue(0));
@@ -55,10 +56,10 @@ internal class MySQLDBSession : DBSession
     /// <summary>
     /// Return this session into the usable pool for later uses
     /// </summary>
-    /// <param name="force">Force the dispose</param>
-    public override void Dispose(bool force = false)
+    /// <param name="force">Force to dispose</param>
+    public override void DisposeFinal(bool force = false)
     {
-        m_Instance.ReleaseSession(this);
+        _instance.ReleaseSession(this);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -70,7 +71,7 @@ internal class MySQLDBSession : DBSession
     /// <returns>New DbCommand</returns>
     public override DbCommand CreateDbCommand()
     {
-        return new MySqlCommand(m_MySqlDBConnection, null);
+        return new MySqlCommand(_mySqlDbConnection, null);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -90,22 +91,22 @@ internal class MySQLDBSession : DBSession
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Try to acquire this DBSession
+    /// Try to acquire this IDbSession
     /// </summary>
     /// <returns>True if acquired</returns>
     internal bool TryAcquire()
     {
-        if (m_InUse)
+        if (_inUse)
             return false;
 
-        lock (m_Lock)
+        lock (_lock)
         {
-            if (m_InUse)
+            if (_inUse)
                 return false;
 
             try
             {
-                switch (m_MySqlDBConnection?.State)
+                switch (_mySqlDbConnection?.State)
                 {
                     case System.Data.ConnectionState.Closed:
                     case System.Data.ConnectionState.Broken:
@@ -116,10 +117,10 @@ internal class MySQLDBSession : DBSession
             }
             catch(Exception) { }
 
-            if (m_MySqlDBConnection?.State != System.Data.ConnectionState.Open)
+            if (_mySqlDbConnection?.State != System.Data.ConnectionState.Open)
                 return false;
 
-            m_InUse = true;
+            _inUse = true;
         }
 
         return true;
@@ -129,15 +130,15 @@ internal class MySQLDBSession : DBSession
     /// </summary>
     internal void Release()
     {
-        if (!m_InUse)
+        if (!_inUse)
             return;
 
-        while (m_MySqlDBConnection!.State == System.Data.ConnectionState.Fetching
-            || m_MySqlDBConnection!.State == System.Data.ConnectionState.Executing)
+        while (_mySqlDbConnection!.State == System.Data.ConnectionState.Fetching
+            || _mySqlDbConnection!.State == System.Data.ConnectionState.Executing)
             System.Threading.Thread.Yield();
 
-        lock (m_Lock)
-            m_InUse = false;
+        lock (_lock)
+            _inUse = false;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -152,16 +153,16 @@ internal class MySQLDBSession : DBSession
     {
         try
         {
-            if (m_MySqlDBConnection != null)
+            if (_mySqlDbConnection != null)
             {
-                try { m_MySqlDBConnection.Close(); }
+                try { _mySqlDbConnection.Close(); }
                 catch (Exception) { }
             }
 
-            m_MySqlDBConnection = new MySqlConnection(m_ConnectionString);
-            m_MySqlDBConnection.Open();
+            _mySqlDbConnection = new MySqlConnection(_connectionString);
+            _mySqlDbConnection.Open();
 
-            MySqlCommand l_Query = new MySqlCommand("set net_write_timeout=99999; set net_read_timeout=99999", m_MySqlDBConnection);
+            MySqlCommand l_Query = new MySqlCommand("set net_write_timeout=99999; set net_read_timeout=99999", _mySqlDbConnection);
             l_Query.ExecuteNonQuery();
         }
         catch (MySqlException l_Exception)
@@ -169,17 +170,17 @@ internal class MySQLDBSession : DBSession
             switch (l_Exception.Number)
             {
                 case 0:
-                    Logging.Log(ELogSeverity.Error, $"[Database][MySQLDBSession.OpenDBConnection<{m_LogIdentifier}>] Can not connect to the database server");
+                    Logging.Log(ELogSeverity.Error, $"[Database][MySqlDbSession.OpenDBConnection<{_logIdentifier}>] Can not connect to the database server");
                     Logging.Log(ELogSeverity.Error, l_Exception);
 
-                    throw new Exception($"[Database][MySQLDBSession.OpenDBConnection<{m_LogIdentifier}>] Can not connect to the database server");
+                    throw new Exception($"[Database][MySqlDbSession.OpenDBConnection<{_logIdentifier}>] Can not connect to the database server");
 
                 case 1045:
                 case 1042:
-                    Logging.Log(ELogSeverity.Error, $"[Database][MySQLDBSession.OpenDBConnection<{m_LogIdentifier}>] Authentification failed");
+                    Logging.Log(ELogSeverity.Error, $"[Database][MySqlDbSession.OpenDBConnection<{_logIdentifier}>] Authentification failed");
                     Logging.Log(ELogSeverity.Error, l_Exception);
 
-                    throw new Exception($"[Database][MySQLDBSession.OpenDBConnection<{m_LogIdentifier}>] Authentification failed");
+                    throw new Exception($"[Database][MySqlDbSession.OpenDBConnection<{_logIdentifier}>] Authentification failed");
 
             }
         }

@@ -8,29 +8,29 @@ namespace SSC.DB;
 /// <summary>
 /// Generic database instance
 /// </summary>
-public abstract class DBInstance
+public abstract class DbInstance
 {
-    private static DBInstance[] m_Instances = Array.Empty<DBInstance>();
+    private static DbInstance[] _instances = Array.Empty<DbInstance>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    protected ThreadLocal<DBSession?>       m_TLSSession      = new(() => null);
-    protected ThreadLocal<StringBuilder>    m_TLSQueryBuilder = new(() => new(2048));
+    protected ThreadLocal<IDbSession?>       _tlsSession      = new(() => null);
+    protected ThreadLocal<StringBuilder>    _tlsQueryBuilder = new(() => new(2048));
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     public readonly string                  Name;
-    public abstract Expressions.IDBQueryDialect  DBDialect { get; }
+    public abstract Expressions.IDbQueryDialect  DbDialect { get; }
 
-    public static DBInstance[] Instances => m_Instances;
+    public static DbInstance[] Instances => _instances;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Create DBInstance
+    /// Create DbInstance
     /// </summary>
     /// <param name="name">Instance name</param>
     /// <param name="driver">Driver type</param>
@@ -41,7 +41,7 @@ public abstract class DBInstance
     /// <param name="databaseName">DB name</param>
     /// <param name="poolSize">Pool size</param>
     [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
-    public static DBInstance Create(
+    public static DbInstance Create(
         string  name,
         string  driver,
         string  hostname,
@@ -53,39 +53,39 @@ public abstract class DBInstance
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(poolSize, 1u, "poolSize");
 
-        var l_Instance = null as DBInstance;
+        var instance = null as DbInstance;
         if (driver.Equals("mysql", StringComparison.OrdinalIgnoreCase)
             || driver.Equals("mariadb", StringComparison.OrdinalIgnoreCase))
-            l_Instance = new Drivers.MySQLDBInstance(name, hostname, port, username, password, databaseName, poolSize);
+            instance = new Drivers.MySqlDbInstance(name, hostname, port, username, password, databaseName, poolSize);
         else if (driver.Equals("postgre", StringComparison.OrdinalIgnoreCase)
             || driver.Equals("postgres", StringComparison.OrdinalIgnoreCase)
             || driver.Equals("postgresql", StringComparison.OrdinalIgnoreCase))
-            l_Instance = new Drivers.PostgreSQLDBInstance(name, hostname, port, username, password, databaseName, poolSize);
+            instance = new Drivers.PostgreSqlDbInstance(name, hostname, port, username, password, databaseName, poolSize);
 
-        if (l_Instance == null)
+        if (instance == null)
             throw new Exception($"Unsupported database driver {driver}");
 
-        Array.Resize(ref m_Instances, m_Instances.Length + 1);
-        m_Instances[^1] = l_Instance;
+        Array.Resize(ref _instances, _instances.Length + 1);
+        _instances[^1] = instance;
 
-        DBModelMetadata.InitAll();
+        DbModelMetadata.InitAll();
 
-        return l_Instance;
+        return instance;
     }
     /// <summary>
-    /// Get DBInstance by name
+    /// Get DbInstance by name
     /// </summary>
     /// <param name="name">Lookup name</param>
-    /// <returns>Found DBInstance</returns>
+    /// <returns>Found DbInstance</returns>
     /// <exception cref="Exception">If no result found with the lookup name</exception>
-    public static DBInstance Get(string name)
+    public static DbInstance Get(string name)
     {
-        for (var l_I = 0; l_I < m_Instances.Length; l_I++)
+        for (var i = 0; i < _instances.Length; i++)
         {
-            if (m_Instances[l_I].Name != name)
+            if (_instances[i].Name != name)
                 continue;
 
-            return m_Instances[l_I];
+            return _instances[i];
         }
 
         throw new Exception($"No database instance found with name '{name}'");
@@ -98,7 +98,7 @@ public abstract class DBInstance
     /// Constructor
     /// </summary>
     /// <param name="name">Instance name</param>
-    protected DBInstance(string name)
+    protected DbInstance(string name)
     {
         Name = name;
     }
@@ -111,13 +111,13 @@ public abstract class DBInstance
     /// or using it in a using scope
     /// </summary>
     /// <returns>DB session</returns>
-    public DBSession GetTLSSession(bool skipAcquire = false)
+    public IDbSession GetTlsSession(bool skipAcquire = false)
     {
-        if (m_TLSSession.Value != null || skipAcquire)
-            return m_TLSSession.Value!;
+        if (_tlsSession.Value != null || skipAcquire)
+            return _tlsSession.Value!;
 
-        m_TLSSession.Value = AcquireSession();
-        return m_TLSSession.Value;
+        _tlsSession.Value = AcquireSession();
+        return _tlsSession.Value;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -127,12 +127,12 @@ public abstract class DBInstance
     /// Acquire a database session
     /// </summary>
     /// <returns></returns>
-    internal abstract DBSession AcquireSession();
+    internal abstract IDbSession AcquireSession();
     /// <summary>
     /// Release a database session
     /// </summary>
     /// <param name="session">Session to release</param>
-    internal abstract void ReleaseSession(DBSession session);
+    internal abstract void ReleaseSession(IDbSession session);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -141,9 +141,9 @@ public abstract class DBInstance
     /// Get thread local storage query builder
     /// </summary>
     /// <returns></returns>
-    internal StringBuilder GetTLSQueryBuilder()
+    internal StringBuilder GetTlsQueryBuilder()
     {
-        m_TLSQueryBuilder.Value!.Clear();
-        return m_TLSQueryBuilder.Value!;
+        _tlsQueryBuilder.Value!.Clear();
+        return _tlsQueryBuilder.Value!;
     }
 }

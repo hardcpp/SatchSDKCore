@@ -7,11 +7,11 @@ namespace SSC.DB.Attributes;
 /// DB table attribute
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-public class DBTableAttribute : Attribute
+public class DbTableAttribute : Attribute
 {
-    public readonly string      DBInstanceName;
-    public          string      TableName       { get; private set; }
-    public          string?     Schema          { get; private set; }
+    public readonly string DbInstanceName;
+    public string TableName { get; private set; }
+    public string? Schema { get; private set; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -22,13 +22,13 @@ public class DBTableAttribute : Attribute
     /// <param name="dbInstanceName">Name of the database instance</param>
     /// <param name="tableName">Name of the table</param>
     /// <param name="schema">Name of the schema</param>
-    public DBTableAttribute(string dbInstanceName, string? tableName = null, string? schema = null)
+    public DbTableAttribute(string dbInstanceName, string? tableName = null, string? schema = null)
     {
         ArgumentNullException.ThrowIfNull(dbInstanceName);
 
-        DBInstanceName  = dbInstanceName;
-        TableName       = tableName!;
-        Schema          = schema;
+        DbInstanceName = dbInstanceName;
+        TableName = tableName!;
+        Schema = schema;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -39,9 +39,9 @@ public class DBTableAttribute : Attribute
     /// </summary>
     /// <param name="dbModelMetadata">DB model metadata</param>
     /// <param name="type">Type reflection info</param>
-    public void Init(DBModelMetadata dbModelMetadata, Type type)
+    public void Init(DbModelMetadata dbModelMetadata, Type type)
     {
-        if (type.Name.Contains("_"))
+        if (type.Name.Contains('_'))
             throw new Exception($"Character '_' is not permitted in name of model {type.FullName}");
 
         if (!type.Name.EndsWith("Model"))
@@ -49,11 +49,11 @@ public class DBTableAttribute : Attribute
 
         if (string.IsNullOrEmpty(TableName))
         {
-            var l_ComputedName = type.Name.ToSmakeCase();
-            if (l_ComputedName.EndsWith("_model"))
-                l_ComputedName = l_ComputedName.Substring(0, l_ComputedName.IndexOf("_model"));
+            var computedName = type.Name.ToSnakeCase();
+            if (computedName.EndsWith("_model"))
+                computedName = computedName.Substring(0, computedName.IndexOf("_model"));
 
-            TableName = l_ComputedName;
+            TableName = computedName;
         }
 
         ArgumentNullException.ThrowIfNull(TableName);

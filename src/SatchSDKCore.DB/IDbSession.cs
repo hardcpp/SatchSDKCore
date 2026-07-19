@@ -6,9 +6,9 @@ namespace SSC.DB;
 /// <summary>
 /// DB session object that will handle all read/transformation for a session
 /// </summary>
-public abstract class DBSession : IDisposable
+public abstract class IDbSession : IDisposable
 {
-    public abstract DBInstance DBInstance { get; }
+    public abstract DbInstance DbInstance { get; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -16,11 +16,12 @@ public abstract class DBSession : IDisposable
     /// <summary>
     /// Return this session into the usable pool for later uses
     /// </summary>
-    public void Dispose() => Dispose(false);
+    public void Dispose() => DisposeFinal(false);
     /// <summary>
     /// Return this session into the usable pool for later uses
     /// </summary>
-    public abstract void Dispose(bool force = false);
+    /// <param name="force">Force to dispose</param>
+    public abstract void DisposeFinal(bool force = false);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////

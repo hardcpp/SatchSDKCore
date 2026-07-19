@@ -1,7 +1,6 @@
 ﻿using SSC.DB.Expressions;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Common;
 using System.Text;
 using System.Threading;
@@ -11,25 +10,25 @@ namespace SSC.DB.Querying;
 /// <summary>
 /// DB query builder
 /// </summary>
-public class DBQueryBuilder
+public class DbQueryBuilder
 {
-    private static ThreadLocal<DBQueryBuilder?> m_Instances = new(() => new());
+    private static ThreadLocal<DbQueryBuilder?> _instances = new(() => new());
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public          DBSession                   DBSession;
-    public          DBInstance                  DBInstance;
-    public          IDBQueryDialect             DBQueryDialect;
-    public          DBModelMetadata?            DBModelMetadata;
+    public          IDbSession                   DbSession;
+    public          DbInstance                  DbInstance;
+    public          IDbQueryDialect             DbQueryDialect;
+    public          DbModelMetadata?            DbModelMetadata;
     public readonly StringBuilder               Query;
     public readonly Dictionary<string, object>  Parameters = new();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private DbCommand               m_DbCommand                 = null!;
-    private Dictionary<string, int> m_ParameterNameGenerator    = new();
+    private DbCommand               _dbCommand                 = null!;
+    private Dictionary<string, int> _parameterNameGenerator    = new();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -38,8 +37,8 @@ public class DBQueryBuilder
     /// Get a thread local storage instance
     /// </summary>
     /// <returns></returns>
-    public static DBQueryBuilder GetTLSSingleton()
-        => m_Instances.Value!;
+    public static DbQueryBuilder GetTlsSingleton()
+        => _instances.Value!;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -47,11 +46,11 @@ public class DBQueryBuilder
     /// <summary>
     /// Constructor
     /// </summary>
-    public DBQueryBuilder()
+    public DbQueryBuilder()
     {
-        DBSession       = null!;
-        DBInstance      = null!;
-        DBQueryDialect  = null!;
+        DbSession       = null!;
+        DbInstance      = null!;
+        DbQueryDialect  = null!;
         Query           = new StringBuilder(2048);
     }
 
@@ -63,18 +62,18 @@ public class DBQueryBuilder
     /// </summary>
     /// <param name="dbSession">DB session</param>
     /// <param name="dBModelMetadata">DB model metadata</param>
-    public void Reset(DBSession dbSession, DBModelMetadata? dBModelMetadata)
+    public void Reset(IDbSession dbSession, DbModelMetadata? dBModelMetadata)
     {
-        if (m_DbCommand != null)
-            m_DbCommand.Cancel();
+        if (_dbCommand != null)
+            _dbCommand.Cancel();
 
-        DBSession       = dbSession;
-        DBInstance      = dbSession.DBInstance;
-        DBQueryDialect  = dbSession.DBInstance.DBDialect;
-        DBModelMetadata = dBModelMetadata;
+        DbSession       = dbSession;
+        DbInstance      = dbSession.DbInstance;
+        DbQueryDialect  = dbSession.DbInstance.DbDialect;
+        DbModelMetadata = dBModelMetadata;
 
-        m_DbCommand = dbSession.CreateDbCommand();
-        m_ParameterNameGenerator.Clear();
+        _dbCommand = dbSession.CreateDbCommand();
+        _parameterNameGenerator.Clear();
 
         Query.Clear();
         Parameters.Clear();
@@ -83,17 +82,17 @@ public class DBQueryBuilder
     public int ExecuteNonQuery()
     {
         PrepareCommand();
-        return m_DbCommand.ExecuteNonQuery();
+        return _dbCommand.ExecuteNonQuery();
     }
     public DbDataReader ExecuteReader()
     {
         PrepareCommand();
-        return m_DbCommand.ExecuteReader();
+        return _dbCommand.ExecuteReader();
     }
     public object? ExecuteScalar()
     {
         PrepareCommand();
-        return m_DbCommand.ExecuteScalar();
+        return _dbCommand.ExecuteScalar();
     }
 
     /*
@@ -125,10 +124,10 @@ public class DBQueryBuilder
         if (prefix == null)
             prefix = string.Empty;
 
-        if (!m_ParameterNameGenerator.ContainsKey(prefix))
-            m_ParameterNameGenerator.Add(prefix, 0);
+        if (!_parameterNameGenerator.ContainsKey(prefix))
+            _parameterNameGenerator.Add(prefix, 0);
 
-        var index = ++m_ParameterNameGenerator[prefix];
+        var index = ++_parameterNameGenerator[prefix];
 
         return $"@{prefix}{index}";
     }
@@ -140,19 +139,19 @@ public class DBQueryBuilder
     /// <exception cref="Exception">If a parameter with the same name already exists</exception>
     public void AddParameter(string name, object? value)
     {
-        if (m_DbCommand == null)
+        if (_dbCommand == null)
             throw new Exception("The query builder was not reset!");
 
         ArgumentNullException.ThrowIfNull(name);
 
-        if (m_DbCommand.Parameters.IndexOf(name) != -1)
+        if (_dbCommand.Parameters.IndexOf(name) != -1)
             throw new Exception($"An argument with the name '{name}' is already existing");
 
-        var l_Parameter = m_DbCommand.CreateParameter();
+        var l_Parameter = _dbCommand.CreateParameter();
         l_Parameter.ParameterName   = name;
         l_Parameter.Value           = value;
 
-        m_DbCommand.Parameters.Add(l_Parameter);
+        _dbCommand.Parameters.Add(l_Parameter);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -163,9 +162,9 @@ public class DBQueryBuilder
     /// </summary>
     private void PrepareCommand()
     {
-        ArgumentNullException.ThrowIfNull(m_DbCommand);
+        ArgumentNullException.ThrowIfNull(_dbCommand);
 
-        m_DbCommand.CommandText = Query.ToString();
-        m_DbCommand.Prepare();
+        _dbCommand.CommandText = Query.ToString();
+        _dbCommand.Prepare();
     }
 }

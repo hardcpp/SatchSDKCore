@@ -1,8 +1,8 @@
 ﻿namespace SSC.DB;
 
-public abstract class IDBModel
+public abstract class IDbModel
 {
-    public static DBModelMetadata? Metadata { get; protected set; }
+    public static DbModelMetadata? Metadata { get; protected set; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -10,7 +10,7 @@ public abstract class IDBModel
     /// <summary>
     /// Get database instance attached to this model
     /// </summary>
-    /// <returns>DBInstance</returns>
-    public static DBInstance GetDBInstance()
-        => DBInstance.Get(Metadata!.TableAttribute.DBInstanceName);
+    /// <returns>DbInstance</returns>
+    public static DbInstance GetDbInstance()
+        => DbInstance.Get(Metadata!.TableAttribute.DbInstanceName);
 }
