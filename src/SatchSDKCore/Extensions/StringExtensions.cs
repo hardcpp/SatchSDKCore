@@ -5,9 +5,12 @@ namespace SSC.Extensions;
 /// </summary>
 public static class StringExtensions
 {
-    public static string ToSnakeCase(this string instance)
-        => System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(instance);
+    extension(string instance)
+    {
+        public string ToSnakeCase()
+            => System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(instance);
 
-    public static string ToCamelCase(this string instance)
-        => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(instance);
+        public string ToCamelCase()
+            => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(instance);
+    }
 }

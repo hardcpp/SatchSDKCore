@@ -7,7 +7,7 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <RootNamespace>SSC</RootNamespace>
+        <RootNamespace>SSC.Db.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\SatchSDKCore\SatchSDKCore.csproj" />
+        <ProjectReference Include="..\..\src\SatchSDKCore.Db\SatchSDKCore.Db.csproj" />
     </ItemGroup>
 
     <ItemGroup>
