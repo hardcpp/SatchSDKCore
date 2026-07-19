@@ -150,11 +150,47 @@ public class ApiHttpBlueprint : ApiBlueprint
     /// <summary>
     /// Try to find a route
     /// </summary>
-    /// <param name="httpMethod">HTTP method</param>
     /// <param name="segments">Rule segments</param>
     /// <param name="argumentsCollector">Arguments collector</param>
-    /// <param name="httpRoute">Output found ApiHttpRoute</param>
+    /// <param name="routes">Output found ApiHttpRoute</param>
     /// <returns>True if a route is found</returns>
+    internal bool TryFindRoutes(
+        ReadOnlySpan<string> segments,
+        Dictionary<string, string> argumentsCollector,
+        [NotNullWhen(true)] out Route.ApiHttpRoute?[]? routes)
+    {
+        routes = null;
+
+        var routeTreeNode = _routeTreeNode.Walk(
+            segments,
+            0,
+            argumentsCollector);
+
+        if (routeTreeNode == null)
+            return false;
+
+        // A tree node may exist only because it is an intermediate node.
+        // Only consider the path matched when at least one route exists.
+        for (var i = 0; i < routeTreeNode.Routes.Length; i++)
+        {
+            if (routeTreeNode.Routes[i] == null)
+                continue;
+
+            routes = routeTreeNode.Routes;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Try to find a route for a specific HTTP method.
+    /// </summary>
+    /// <param name="httpMethod">HTTP method.</param>
+    /// <param name="segments">Route segments.</param>
+    /// <param name="argumentsCollector">Arguments collector.</param>
+    /// <param name="httpRoute">The matching route, when found.</param>
+    /// <returns>True when the path and method match a route.</returns>
     public bool TryFindRoute(
         Route.EApiHttpMethod httpMethod,
         ReadOnlySpan<string> segments,
@@ -163,11 +199,10 @@ public class ApiHttpBlueprint : ApiBlueprint
     {
         httpRoute = null;
 
-        var routeTreeNode = _routeTreeNode.Walk(segments, 0, argumentsCollector);
-        if (routeTreeNode == null)
+        if (!TryFindRoutes(segments, argumentsCollector, out var routes))
             return false;
 
-        httpRoute = routeTreeNode.Routes[(int)httpMethod];
+        httpRoute = routes[(int)httpMethod];
         return httpRoute != null;
     }
 

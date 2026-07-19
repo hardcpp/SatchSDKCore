@@ -150,6 +150,64 @@ public class RESTHTTPServerHandlerTests
         server.Stop();
     }
 
+    [Fact]
+    public async Task TryHandle_WithHeadRequest_FallsBackToGetWithoutBody()
+    {
+        using var server = new HttpServerExCore("http://localhost:9051/", 2);
+        var handler = new ApiHttpHandler();
+        handler.MainBlueprint.AddRoutesOf<TestHandlerRoutes>();
+
+        server.AddRequestHandler(handler);
+        server.Start();
+
+        using var client = new HttpClient();
+        using var getResponse = await client.GetAsync("http://localhost:9051/api/test");
+        using var headRequest = new HttpRequestMessage(HttpMethod.Head, "http://localhost:9051/api/test");
+        using var headResponse = await client.SendAsync(headRequest);
+
+        Assert.Equal(HttpStatusCode.OK, headResponse.StatusCode);
+        Assert.Equal(getResponse.Content.Headers.ContentLength, headResponse.Content.Headers.ContentLength);
+        Assert.Empty(await headResponse.Content.ReadAsByteArrayAsync());
+    }
+
+    [Fact]
+    public async Task TryHandle_WithOptionsRequest_ReturnsSupportedMethods()
+    {
+        using var server = new HttpServerExCore("http://localhost:9052/", 2);
+        var handler = new ApiHttpHandler();
+        handler.MainBlueprint.AddRoutesOf<TestHandlerRoutes>();
+
+        server.AddRequestHandler(handler);
+        server.Start();
+
+        using var client = new HttpClient();
+        using var request = new HttpRequestMessage(HttpMethod.Options, "http://localhost:9052/api/test");
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal("GET, HEAD, OPTIONS", string.Join(", ", response.Content.Headers.Allow));
+        Assert.Empty(await response.Content.ReadAsByteArrayAsync());
+    }
+
+    [Fact]
+    public async Task TryHandle_WithUnsupportedMethodOnKnownPath_ReturnsMethodNotAllowed()
+    {
+        using var server = new HttpServerExCore("http://localhost:9053/", 2);
+        var handler = new ApiHttpHandler();
+        handler.MainBlueprint.AddRoutesOf<TestHandlerRoutes>();
+
+        server.AddRequestHandler(handler);
+        server.Start();
+
+        using var client = new HttpClient();
+        using var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:9053/api/test");
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
+        Assert.Equal("GET, HEAD, OPTIONS", string.Join(", ", response.Content.Headers.Allow));
+        Assert.Contains("405 Method Not Allowed", await response.Content.ReadAsStringAsync());
+    }
+
     /// <summary>
     /// Test TryHandle with POST request successfully handles and returns response
     /// </summary>

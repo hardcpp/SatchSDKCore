@@ -12,7 +12,9 @@ public enum EApiHttpMethod
     Post,
     Put,
     Patch,
-    Delete
+    Delete,
+    Head,
+    Options
 }
 
 /// <summary>

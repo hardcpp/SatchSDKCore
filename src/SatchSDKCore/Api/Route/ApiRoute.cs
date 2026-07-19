@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json.Linq;
 
 namespace SSC.Api.Route;
@@ -31,6 +33,7 @@ public abstract class ApiRoute : Attribute
     ////////////////////////////////////////////////////////////////////////////
 
     private ThreadLocal<object[]>? _invokeBuffer;
+    private Func<object[], object?>? _compiledInvoker;
     private readonly string? _asyncTimeoutStr;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -61,6 +64,18 @@ public abstract class ApiRoute : Attribute
             return;
 
         ArgumentNullException.ThrowIfNull(method);
+
+        if (!method.IsStatic)
+        {
+            throw new Exception(
+                $"Route method '{method.DeclaringType?.FullName}.{method.Name}' must be static");
+        }
+
+        if (method.ContainsGenericParameters)
+        {
+            throw new Exception(
+                $"Route method '{method.DeclaringType?.FullName}.{method.Name}' cannot contain unbound generic parameters");
+        }
 
         Method = method;
         Parameters = method.GetParameters();
@@ -128,7 +143,15 @@ public abstract class ApiRoute : Attribute
         for (var i = 0; i < Parameters.Length; ++i)
         {
             var parameter = Parameters[i]!;
-            var isNullable = parameter.ParameterType.IsGenericType && parameter.ParameterType.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
+
+            if (parameter.ParameterType.IsByRef || parameter.IsOut)
+            {
+                throw new Exception(
+                    $"Route method '{method.DeclaringType?.FullName}.{method.Name}' " +
+                    $"contains unsupported ref/out parameter '{parameter.Name}'");
+            }
+
+            var isNullable = parameter.ParameterType.IsGenericType && parameter.ParameterType.GetGenericTypeDefinition() == typeof(Nullable<>);
             var hasDefaultValue = parameter.HasDefaultValue;
 
             ParametersType[i] = isNullable ? parameter.ParameterType.GenericTypeArguments[0] : parameter.ParameterType;
@@ -145,6 +168,54 @@ public abstract class ApiRoute : Attribute
         }
 
         _invokeBuffer = new ThreadLocal<object[]>(() => new object[Parameters.Length]);
+
+        if (RuntimeFeature.IsDynamicCodeCompiled)
+            _compiledInvoker = CompileInvoker(method);
+    }
+    /// <summary>
+    /// Compile a route method into a common invocation signature.
+    ///
+    /// Generated code is conceptually equivalent to:
+    ///
+    /// return RouteMethod(
+    ///     (Parameter0Type)arguments[0],
+    ///     (Parameter1Type)arguments[1],
+    ///     ...);
+    /// </summary>
+    private static Func<object[], object?> CompileInvoker(
+        MethodInfo method)
+    {
+        ArgumentNullException.ThrowIfNull(method);
+
+        if (!method.IsStatic)
+        {
+            throw new ArgumentException(
+                "Only static route methods are supported",
+                nameof(method));
+        }
+
+        var methodParameters = method.GetParameters();
+
+        var argumentsParameter = Expression.Parameter(typeof(object[]), "arguments");
+        var callArguments = new Expression[methodParameters.Length];
+
+        for (var i = 0; i < methodParameters.Length; i++)
+        {
+            var bufferAccess = Expression.ArrayIndex(
+                argumentsParameter,
+                Expression.Constant(i));
+
+            callArguments[i] = Expression.Convert(
+                bufferAccess,
+                methodParameters[i].ParameterType);
+        }
+
+        var methodCall = Expression.Call(method, callArguments);
+        var boxedResult = Expression.Convert(methodCall, typeof(object));
+
+        return Expression
+            .Lambda<Func<object[], object?>>(boxedResult, argumentsParameter)
+            .Compile();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -258,29 +329,48 @@ public abstract class ApiRoute : Attribute
             invokeBuffer[0] = cancellationTokenSource.Token;
         }
 
-        var returnValue = null as object;
+        object? returnValue;
         try
         {
-            returnValue = Method!.Invoke(null, invokeBuffer);
+            // JIT/CoreCLR fast path: invoke the compiled delegate.
+            //
+            // Native AOT fallback: retain reflection invocation until route
+            // invokers are produced by a source generator.
+            returnValue = _compiledInvoker != null
+                ? _compiledInvoker(invokeBuffer)
+                : Method!.Invoke(null, invokeBuffer);
         }
         catch (Exception exception)
         {
-            // Rethrow critical exceptions that should not be handled as regular route failures.
-            if (exception is OutOfMemoryException ||
-                exception is StackOverflowException ||
-                exception is ThreadAbortException ||
-                exception is ThreadInterruptedException)
-            {
-                throw;
-            }
+            // MethodInfo.Invoke wraps route exceptions in
+            // TargetInvocationException. The compiled delegate does not.
+            // Unwrap the reflection fallback so both paths behave identically.
+            Exception routeException =
+                exception is TargetInvocationException
+                {
+                    InnerException: not null
+                } invocationException
+                    ? invocationException.InnerException!
+                    : exception;
 
-            Logging.Log(ELogSeverity.Error, $"[ApiRoute.TryInvokeInternal] Route {Method!.GetType().FullName} failed with exception:");
-            Logging.Log(ELogSeverity.Error, exception);
+            // Rethrow critical exceptions that should not be handled as regular route failures.
+            if (routeException is OutOfMemoryException or StackOverflowException or ThreadAbortException or ThreadInterruptedException)
+                throw routeException;
+
+            Logging.Log(
+                ELogSeverity.Error,
+                $"[ApiRoute.TryInvokeInternal] Route '{Method!.DeclaringType?.FullName}.{Method.Name}' failed with exception:"
+            );
+            Logging.Log(ELogSeverity.Error, routeException);
 
             outError = "Request failed";
-            outResponse = GetResponseForException(routeContext, exception);
+            outResponse = GetResponseForException(routeContext, routeException);
 
             return false;
+        }
+        finally
+        {
+            Array.Clear(invokeBuffer);
         }
 
         if (returnValue != null)
@@ -302,7 +392,7 @@ public abstract class ApiRoute : Attribute
                     if (task.Exception?.InnerException != null || task.Exception != null)
                     {
                         var exception = task.Exception?.InnerException ?? task.Exception;
-                        Logging.Log(ELogSeverity.Error, $"[ApiRoute.TryInvokeInternal] Route {Method.GetType().FullName} failed with exception:");
+                        Logging.Log(ELogSeverity.Error, $"[ApiRoute.TryInvokeInternal] Route {Method!.GetType().FullName} failed with exception:");
                         Logging.Log(ELogSeverity.Error, exception!);
 
                         outError = "Request failed";
@@ -359,7 +449,9 @@ public abstract class ApiRoute : Attribute
                 }
 
 #pragma warning disable CS8601
-                invokeBuffer[i] = ParametersOptional![i] ? null : parameterInfo.DefaultValue!;
+                invokeBuffer[i] = parameterInfo.HasDefaultValue
+                    ? parameterInfo.DefaultValue
+                    : null;
 #pragma warning restore CS8601
             }
             else
@@ -407,7 +499,9 @@ public abstract class ApiRoute : Attribute
                 }
 
 #pragma warning disable CS8601
-                invokeBuffer[i] = ParametersOptional![i] ? null : parameterInfo.DefaultValue!;
+                invokeBuffer[i] = parameterInfo.HasDefaultValue
+                    ? parameterInfo.DefaultValue
+                    : null;
 #pragma warning restore CS8601
             }
             else
@@ -455,7 +549,9 @@ public abstract class ApiRoute : Attribute
                 }
 
 #pragma warning disable CS8601
-                invokeBuffer[i] = ParametersOptional![i] ? null : parameterInfo.DefaultValue!;
+                invokeBuffer[i] = parameterInfo.HasDefaultValue
+                    ? parameterInfo.DefaultValue
+                    : null;
 #pragma warning restore CS8601
             }
             else

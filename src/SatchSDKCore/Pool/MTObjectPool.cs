@@ -115,7 +115,10 @@ public class MTObjectPool<TObjectType>
             if (CountInactive < _maxSize)
                 _stack.Push(p_Element);
             else
+            {
                 _actionOnDestroy?.Invoke(p_Element);
+                CountAll--;
+            }
         }
     }
 

@@ -247,7 +247,9 @@ public class MTObjectPoolTests : IDisposable
         // obj3 should be destroyed, not added to pool
         Assert.True(destroyCalled);
         Assert.Same(obj3, destroyedObject);
+        Assert.Equal(2, pool.CountAll);
         Assert.Equal(2, pool.CountInactive);
+        Assert.Equal(0, pool.CountActive);
     }
 
     [Fact]

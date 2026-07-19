@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using SSC.Api.Response;
+using SSC.Api.Route;
 using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;
 
@@ -14,13 +17,15 @@ namespace SSC.Api.Handler;
 /// </summary>
 public class ApiHttpHandler : IHttpServerExRequestHandler
 {
-    public readonly Blueprint.ApiHttpBlueprint MainBlueprint = new Blueprint.ApiHttpBlueprint("Main");
+    public readonly Blueprint.ApiHttpBlueprint MainBlueprint = new("Main");
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly ThreadLocal<List<string>> _segmentBuffers = new(() => new(10));
-    private readonly ThreadLocal<Dictionary<string, string>> _argumentsCollectors = new(() => new());
+    private readonly ThreadLocal<List<string>> _segmentBuffers = new(() => new List<string>(10));
+
+    private readonly ThreadLocal<Dictionary<string, string>> _argumentsCollectors =
+        new(() => new Dictionary<string, string>());
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -39,27 +44,112 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var ogRequest = context.ListenerRequest;
-        var httpMethod = GetHttpMethodFromHttpMethod(ogRequest);
-        var segments = GetSegmentsFromAbsolutePath(ogRequest.Url!.AbsolutePath);
-        var arguments = _argumentsCollectors.Value!;
+        HttpListenerRequest originalRequest = context.ListenerRequest;
 
+        List<string> segments = GetSegmentsFromAbsolutePath(
+            originalRequest.Url!.AbsolutePath);
+
+        Dictionary<string, string>? arguments = _argumentsCollectors.Value!;
         arguments.Clear();
 
-        if (!MainBlueprint.TryFindRoute(httpMethod, CollectionsMarshal.AsSpan(segments), arguments, out var route))
+        // First match only the path. This lets us distinguish 404 from 405.
+        if (!MainBlueprint.TryFindRoutes(
+                CollectionsMarshal.AsSpan(segments),
+                arguments,
+                out ApiHttpRoute?[]? routes))
+        {
+            // The path does not exist. Let HttpServerExCore produce its
+            // normal 404 response.
             return false;
+        }
+
+        // The path exists, but the client used an extension or unsupported
+        // method such as PROPFIND.
+        if (!TryGetHttpMethod(
+                originalRequest.HttpMethod,
+                out EApiHttpMethod httpMethod))
+        {
+            context.ServerResponse =
+                CreateMethodNotAllowedResponse(routes);
+
+            return true;
+        }
+
+        // Explicitly registered OPTIONS routes take priority.
+        // Otherwise generate an automatic OPTIONS response.
+        if (httpMethod == Route.EApiHttpMethod.Options &&
+            routes[(int)Route.EApiHttpMethod.Options] == null)
+        {
+            context.ServerResponse =
+                CreateAutomaticOptionsResponse(routes);
+
+            return true;
+        }
+
+        ApiHttpRoute? route = routes[(int)httpMethod];
+
+        // Explicit HEAD route takes priority. Otherwise execute GET and
+        // suppress its response body.
+        if (httpMethod == Route.EApiHttpMethod.Head &&
+            route == null)
+        {
+            route = routes[(int)Route.EApiHttpMethod.Get];
+        }
+
+        if (route == null)
+        {
+            // The path exists, but not for this method.
+            context.ServerResponse =
+                CreateMethodNotAllowedResponse(routes);
+
+            return true;
+        }
 
         var httpRequest = new Request.ApiHttpRequest(context);
-        var httpContext = new RouteContext.ApiHttpRouteContext(httpRequest, httpMethod);
 
-        route!.TryInvoke(httpContext, arguments, out var error, out var response);
+        var httpContext = new RouteContext.ApiHttpRouteContext(
+            httpRequest,
+            httpMethod);
+
+        route.TryInvoke(
+            httpContext,
+            arguments,
+            out string? error,
+            out ApiResponse? response);
 
         if (response != null)
-            context.ServerResponse = response.AsHttpResponse()?.HttpServerExResponse ?? null;
+        {
+            HttpServerExResponse? serverResponse =
+                response.AsHttpResponse()?.HttpServerExResponse;
+
+            if (serverResponse != null &&
+                httpMethod == Route.EApiHttpMethod.Head)
+            {
+                serverResponse =
+                    serverResponse.WithSuppressedBody();
+            }
+
+            context.ServerResponse = serverResponse;
+        }
         else if (!string.IsNullOrEmpty(error))
         {
-            Logging.Log(ELogSeverity.Error, $"Failed to execute route '{route.HttpEndpoint}': {error}");
-            context.ServerResponse = Response.ApiHttpResponse.CodeResult(httpContext, HttpStatusCode.InternalServerError).HttpServerExResponse;
+            Logging.Log(
+                ELogSeverity.Error,
+                $"Failed to execute route '{route.HttpEndpoint}': {error}");
+
+            HttpServerExResponse serverResponse = ApiHttpResponse.CodeResult(
+                httpContext,
+                HttpStatusCode.InternalServerError
+            ).HttpServerExResponse;
+
+            // HEAD responses must not contain a body, including error
+            // responses.
+            if (httpMethod == Route.EApiHttpMethod.Head)
+            {
+                serverResponse = serverResponse.WithSuppressedBody();
+            }
+
+            context.ServerResponse = serverResponse;
         }
 
         return true;
@@ -67,23 +157,141 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
+    /// <summary>
+    /// Try to convert an HTTP method string to an API HTTP method.
+    /// </summary>
+    private static bool TryGetHttpMethod(
+        string originalMethod,
+        out Route.EApiHttpMethod method)
+    {
+        switch (originalMethod)
+        {
+            case "GET":
+                method = Route.EApiHttpMethod.Get;
+                return true;
+
+            case "HEAD":
+                method = Route.EApiHttpMethod.Head;
+                return true;
+
+            case "POST":
+                method = Route.EApiHttpMethod.Post;
+                return true;
+
+            case "PUT":
+                method = Route.EApiHttpMethod.Put;
+                return true;
+
+            case "PATCH":
+                method = Route.EApiHttpMethod.Patch;
+                return true;
+
+            case "DELETE":
+                method = Route.EApiHttpMethod.Delete;
+                return true;
+
+            case "OPTIONS":
+                method = Route.EApiHttpMethod.Options;
+                return true;
+
+            default:
+                method = default;
+                return false;
+        }
+    }
 
     /// <summary>
-    /// Get a ApiHttpMethod from HttpMethod
+    /// Create a 405 Method Not Allowed response.
     /// </summary>
-    /// <param name="originalRequest">Original request</param>
-    /// <returns>Equivalent ApiHttpMethod</returns>
-    /// <exception cref="Exception">If no corresponding ApiHttpMethod was found</exception>
-    private static Route.EApiHttpMethod GetHttpMethodFromHttpMethod(HttpListenerRequest originalRequest)
-        => originalRequest.HttpMethod switch
+    private static HttpServerExResponse CreateMethodNotAllowedResponse(
+        Route.ApiHttpRoute?[] routes)
+    {
+        var headers = new Dictionary<string, string>(1) { ["Allow"] = BuildAllowHeader(routes) };
+
+        return new HttpServerExResponse(
+            HttpStatusCode.MethodNotAllowed,
+            new StringContent(
+                "405 Method Not Allowed",
+                Encoding.UTF8,
+                "text/plain"),
+            Encoding.UTF8,
+            headers);
+    }
+
+    /// <summary>
+    /// Create an automatic OPTIONS response.
+    /// </summary>
+    private static HttpServerExResponse CreateAutomaticOptionsResponse(
+        Route.ApiHttpRoute?[] routes)
+    {
+        var headers = new Dictionary<string, string>(1) { ["Allow"] = BuildAllowHeader(routes) };
+
+        return new HttpServerExResponse(
+            HttpStatusCode.NoContent,
+            null,
+            null,
+            headers);
+    }
+
+    /// <summary>
+    /// Build the Allow header for a matched route path.
+    /// </summary>
+    private static string BuildAllowHeader(
+        Route.ApiHttpRoute?[] routes)
+    {
+        var result = new StringBuilder(48);
+
+        bool HasRoute(Route.EApiHttpMethod method)
+            => routes[(int)method] != null;
+
+        void Append(string method)
         {
-            "GET" => Route.EApiHttpMethod.Get,
-            "DELETE" => Route.EApiHttpMethod.Delete,
-            "POST" => Route.EApiHttpMethod.Post,
-            "PUT" => Route.EApiHttpMethod.Put,
-            "PATCH" => Route.EApiHttpMethod.Patch,
-            _ => throw new Exception($"Unhandled HTTP method {originalRequest.HttpMethod}")
-        };
+            if (result.Length > 0)
+            {
+                result.Append(", ");
+            }
+
+            result.Append(method);
+        }
+
+        if (HasRoute(Route.EApiHttpMethod.Get))
+        {
+            Append("GET");
+        }
+
+        // HEAD is automatically supported when GET exists.
+        if (HasRoute(Route.EApiHttpMethod.Head) ||
+            HasRoute(Route.EApiHttpMethod.Get))
+        {
+            Append("HEAD");
+        }
+
+        if (HasRoute(Route.EApiHttpMethod.Post))
+        {
+            Append("POST");
+        }
+
+        if (HasRoute(Route.EApiHttpMethod.Put))
+        {
+            Append("PUT");
+        }
+
+        if (HasRoute(Route.EApiHttpMethod.Patch))
+        {
+            Append("PATCH");
+        }
+
+        if (HasRoute(Route.EApiHttpMethod.Delete))
+        {
+            Append("DELETE");
+        }
+
+        // OPTIONS is automatically available for every matched path.
+        Append("OPTIONS");
+
+        return result.ToString();
+    }
+
     /// <summary>
     /// Get splitted segment from an absolute Url
     /// </summary>
@@ -91,15 +299,17 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
     /// <returns>List of segments</returns>
     protected List<string> GetSegmentsFromAbsolutePath(string absolutePath)
     {
-        var result = _segmentBuffers.Value!;
+        List<string>? result = _segmentBuffers.Value!;
         result.Clear();
 
-        for (var i = 0; i < absolutePath.Length; ++i)
+        for (int i = 0; i < absolutePath.Length; ++i)
         {
             if (absolutePath[i] == '/')
+            {
                 continue;
+            }
 
-            var nextSeparator = absolutePath.IndexOf('/', i);
+            int nextSeparator = absolutePath.IndexOf('/', i);
             if (nextSeparator == -1)
             {
                 result.Add(absolutePath[i..]);
@@ -115,4 +325,3 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
         return result;
     }
 }
-

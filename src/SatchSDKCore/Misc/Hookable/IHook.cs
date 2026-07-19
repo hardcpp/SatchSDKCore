@@ -7,9 +7,9 @@ namespace SSC.Misc.Hookable;
 public interface IHook<T>
 {
     /// <summary>
-    /// intercept
+    /// Intercept
     /// </summary>
     /// <param name="context">Context</param>
-    /// <returns>True if should interupt context</returns>
+    /// <returns>True if should interrupt context</returns>
     bool Intercept(T context);
 }

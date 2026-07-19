@@ -66,7 +66,7 @@ public class IRouteTests
     /// <summary>
     /// Sample route methods for testing various scenarios.
     /// </summary>
-    private static class SampleRoutes
+    private class SampleRoutes
     {
         // Simple synchronous route
         public static ApiResponse SimpleSync(ApiHttpRouteContext context)
@@ -163,6 +163,16 @@ public class IRouteTests
         {
             return ApiHttpResponse.Result(context, HttpStatusCode.OK, $"{p_id?.ToString() ?? "null"}");
         }
+
+        public ApiResponse InstanceRoute(ApiHttpRouteContext context)
+        {
+            return ApiHttpResponse.Result(context, HttpStatusCode.OK, "instance");
+        }
+
+        public static ApiResponse RouteWithRefParameter(ApiHttpRouteContext context, ref int id)
+        {
+            return ApiHttpResponse.Result(context, HttpStatusCode.OK, id.ToString());
+        }
     }
 
 
@@ -194,6 +204,28 @@ public class IRouteTests
     {
         var route = new TestRoute();
         Assert.Throws<ArgumentNullException>(() => route.Init(null!));
+    }
+
+    [Fact]
+    public void Init_WithInstanceMethod_ThrowsException()
+    {
+        var route = new TestRoute();
+        var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.InstanceRoute))!;
+
+        var exception = Assert.Throws<Exception>(() => route.Init(method));
+
+        Assert.Contains("must be static", exception.Message);
+    }
+
+    [Fact]
+    public void Init_WithRefParameter_ThrowsException()
+    {
+        var route = new TestRoute();
+        var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.RouteWithRefParameter))!;
+
+        var exception = Assert.Throws<Exception>(() => route.Init(method));
+
+        Assert.Contains("unsupported ref/out parameter 'id'", exception.Message);
     }
 
     /// <summary>
@@ -372,7 +404,7 @@ public class IRouteTests
     /// Verifies that TryInvoke with JArray uses default values for optional parameters.
     /// </summary>
     [Fact]
-    public void TryInvoke_JArray_WithOptionalParams_UsesDefaults()
+    public async Task TryInvoke_JArray_WithOptionalParams_UsesDefaults()
     {
         var route = new TestRoute();
         var method = typeof(SampleRoutes).GetMethod(nameof(SampleRoutes.SyncWithDefault))!;
@@ -387,6 +419,9 @@ public class IRouteTests
         Assert.True(result);
         Assert.Null(error);
         Assert.NotNull(response);
+        Assert.Equal(
+            "42",
+            await response.AsHttpResponse()!.HttpServerExResponse.Content!.ReadAsStringAsync());
     }
 
     /// <summary>
