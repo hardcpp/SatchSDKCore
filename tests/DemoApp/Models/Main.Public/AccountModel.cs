@@ -1,5 +1,5 @@
-using SSC.DB;
-using SSC.DB.Attributes;
+using SSC.Db;
+using SSC.Db.Attributes;
 
 namespace DemoApp.Models.Main.Public;
 

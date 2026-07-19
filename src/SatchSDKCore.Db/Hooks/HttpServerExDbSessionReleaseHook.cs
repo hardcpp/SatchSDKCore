@@ -1,7 +1,7 @@
 using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;
 
-namespace SSC.DB.Hooks;
+namespace SSC.Db.Hooks;
 
 /// <summary>
 /// Hook for HTTPServer that force the release of any IDbSession open

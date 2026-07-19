@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reflection;
 using SSC.Extensions;
 
-namespace SSC.DB.Attributes;
+namespace SSC.Db.Attributes;
 
 /// <summary>
 ///     DB field attribute

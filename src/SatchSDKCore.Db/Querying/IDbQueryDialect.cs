@@ -1,7 +1,7 @@
-using SSC.DB.Attributes;
-using SSC.DB.Querying;
+using SSC.Db.Attributes;
+using SSC.Db.Querying;
 
-namespace SSC.DB.Expressions;
+namespace SSC.Db.Expressions;
 
 /// <summary>
 /// DB dialect interface

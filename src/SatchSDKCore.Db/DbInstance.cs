@@ -2,10 +2,10 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Threading;
-using SSC.DB.Drivers;
-using SSC.DB.Expressions;
+using SSC.Db.Drivers;
+using SSC.Db.Expressions;
 
-namespace SSC.DB;
+namespace SSC.Db;
 
 /// <summary>
 /// Generic database instance

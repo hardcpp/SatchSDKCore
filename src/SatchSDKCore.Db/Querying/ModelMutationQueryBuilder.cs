@@ -1,7 +1,7 @@
 using System;
-using SSC.DB.Attributes;
+using SSC.Db.Attributes;
 
-namespace SSC.DB.Querying;
+namespace SSC.Db.Querying;
 
 /// <summary>
 /// Shared query generation for model mutations.

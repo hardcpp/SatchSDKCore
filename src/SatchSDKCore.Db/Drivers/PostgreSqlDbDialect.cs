@@ -1,8 +1,8 @@
-using SSC.DB.Attributes;
-using SSC.DB.Expressions;
-using SSC.DB.Querying;
+using SSC.Db.Attributes;
+using SSC.Db.Expressions;
+using SSC.Db.Querying;
 
-namespace SSC.DB.Drivers;
+namespace SSC.Db.Drivers;
 
 /// <summary>
 /// PostgreSQL database dialect implementation.

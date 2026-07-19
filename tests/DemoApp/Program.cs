@@ -1,9 +1,9 @@
 using System.Text;
 using SSC;
 using SSC.Api.Handler;
-using SSC.DB;
-using SSC.DB.Attributes;
-using SSC.DB.Hooks;
+using SSC.Db;
+using SSC.Db.Attributes;
+using SSC.Db.Hooks;
 using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;
 
@@ -11,7 +11,7 @@ namespace DemoApp;
 
 internal class TestHook : IHook<HttpServerExRequestContext>
 {
-    private static readonly byte[] l_Data = Encoding.UTF8.GetBytes("toto");
+    private static readonly byte[] s_Data = Encoding.UTF8.GetBytes("toto");
     public bool Intercept(HttpServerExRequestContext context)
     {
         context.ListenerResponse.AddHeader("toto", "toto");

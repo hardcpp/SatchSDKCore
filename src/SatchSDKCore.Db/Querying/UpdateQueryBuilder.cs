@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using SSC.DB.Attributes;
-using SSC.DB.Expressions;
+using SSC.Db.Attributes;
+using SSC.Db.Expressions;
 
-namespace SSC.DB.Querying;
+namespace SSC.Db.Querying;
 
 /// <summary>
 /// Builds UPDATE statements for models.

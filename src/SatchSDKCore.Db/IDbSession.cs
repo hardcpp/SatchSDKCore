@@ -1,7 +1,7 @@
 using System;
 using System.Data.Common;
 
-namespace SSC.DB;
+namespace SSC.Db;
 
 /// <summary>
 /// DB session object that will handle all read/transformation for a session

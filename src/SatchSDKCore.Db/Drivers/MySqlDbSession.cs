@@ -2,21 +2,21 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Threading;
-using Npgsql;
+using MySqlConnector;
 
-namespace SSC.DB.Drivers;
+namespace SSC.Db.Drivers;
 
 /// <summary>
-/// PostgreSQL IDbSession implementation
+/// MySql IDbSession implementation
 /// </summary>
-internal class PostgreSqlDbSession : IDbSession
+internal class MySqlDbSession : IDbSession
 {
     private readonly string _connectionString;
-    private readonly PostgreSqlDbInstance _instance;
+    private readonly MySqlDbInstance _instance;
     private readonly object _lock = new();
     private readonly string _logIdentifier;
     private volatile bool _inUse;
-    private NpgsqlConnection? _postgreSqlDbConnection;
+    private MySqlConnection? _mySqlDbConnection;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -24,13 +24,12 @@ internal class PostgreSqlDbSession : IDbSession
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="postgreSqlDbInstance">Parent PostgreSqlDbInstance</param>
+    /// <param name="mySqlDbInstance">Parent MySqlDBInstance</param>
     /// <param name="connectionString">Connection string for the driver</param>
     /// <param name="logIdentifier">Identifier for logs</param>
-    internal PostgreSqlDbSession(PostgreSqlDbInstance postgreSqlDbInstance, string connectionString,
-        string logIdentifier)
+    internal MySqlDbSession(MySqlDbInstance mySqlDbInstance, string connectionString, string logIdentifier)
     {
-        _instance = postgreSqlDbInstance;
+        _instance = mySqlDbInstance;
         _connectionString = connectionString;
         _logIdentifier = logIdentifier;
 
@@ -40,7 +39,6 @@ internal class PostgreSqlDbSession : IDbSession
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <inheritdoc />
     public override DbInstance DbInstance => _instance;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -53,13 +51,14 @@ internal class PostgreSqlDbSession : IDbSession
     ////////////////////////////////////////////////////////////////////////////
 
     /// <inheritdoc />
-    public override DbCommand CreateDbCommand() => new NpgsqlCommand(null, _postgreSqlDbConnection, null);
+    public override DbCommand CreateDbCommand() => new MySqlCommand(_mySqlDbConnection, null);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     /// <inheritdoc />
     public override void Commit() => throw new NotImplementedException();
+
     /// <inheritdoc />
     public override void Rollback() => throw new NotImplementedException();
 
@@ -86,28 +85,19 @@ internal class PostgreSqlDbSession : IDbSession
 
             try
             {
-                switch (_postgreSqlDbConnection?.State)
+                switch (_mySqlDbConnection?.State)
                 {
-                    case ConnectionState.Open:
-                    case ConnectionState.Connecting:
-                    case ConnectionState.Executing:
-                    case ConnectionState.Fetching:
-                        break;
-
                     case ConnectionState.Closed:
                     case ConnectionState.Broken:
                         OpenDbConnection();
                         break;
-
-                    default:
-                        throw new ArgumentOutOfRangeException();
                 }
             }
             catch (Exception)
             {
             }
 
-            if (_postgreSqlDbConnection?.State != ConnectionState.Open)
+            if (_mySqlDbConnection?.State != ConnectionState.Open)
             {
                 return false;
             }
@@ -128,8 +118,8 @@ internal class PostgreSqlDbSession : IDbSession
             return;
         }
 
-        while (_postgreSqlDbConnection!.State == ConnectionState.Fetching
-               || _postgreSqlDbConnection!.State == ConnectionState.Executing)
+        while (_mySqlDbConnection!.State == ConnectionState.Fetching
+               || _mySqlDbConnection!.State == ConnectionState.Executing)
         {
             Thread.Yield();
         }
@@ -144,36 +134,52 @@ internal class PostgreSqlDbSession : IDbSession
     ////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Open this DB Connection
+    /// Open a DB Connection
     /// </summary>
-    /// <exception cref="Exception">If the connection failed</exception>
+    /// <exception cref="Exception">The connection cannot be opened or authentication fails.</exception>
     private void OpenDbConnection()
     {
         try
         {
-            if (_postgreSqlDbConnection != null)
+            if (_mySqlDbConnection != null)
             {
                 try
                 {
-                    _postgreSqlDbConnection.Close();
+                    _mySqlDbConnection.Close();
                 }
-                // ReSharper disable once EmptyGeneralCatchClause
                 catch (Exception)
                 {
                 }
             }
 
-            _postgreSqlDbConnection = new NpgsqlConnection(_connectionString);
-            _postgreSqlDbConnection.Open();
-        }
-        catch (Exception exception)
-        {
-            Logging.Log(ELogSeverity.Error,
-                $"[Database][PostgreSqlDbSession.OpenDbConnection<{_logIdentifier}>] Can not connect to the database server");
-            Logging.Log(ELogSeverity.Error, exception);
+            _mySqlDbConnection = new MySqlConnection(_connectionString);
+            _mySqlDbConnection.Open();
 
-            throw new Exception(
-                $"[Database][PostgreSqlDbSession.OpenDbConnection<{_logIdentifier}>] Can not connect to the database server");
+            var query = new MySqlCommand("set net_write_timeout=99999; set net_read_timeout=99999",
+                _mySqlDbConnection);
+            query.ExecuteNonQuery();
+        }
+        catch (MySqlException exception)
+        {
+            switch (exception.Number)
+            {
+                case 0:
+                    Logging.Log(ELogSeverity.Error,
+                        $"[Database][MySqlDbSession.OpenDbConnection<{_logIdentifier}>] Can not connect to the database server");
+                    Logging.Log(ELogSeverity.Error, exception);
+
+                    throw new Exception(
+                        $"[Database][MySqlDbSession.OpenDbConnection<{_logIdentifier}>] Can not connect to the database server");
+
+                case 1045:
+                case 1042:
+                    Logging.Log(ELogSeverity.Error,
+                        $"[Database][MySqlDbSession.OpenDbConnection<{_logIdentifier}>] Authentification failed");
+                    Logging.Log(ELogSeverity.Error, exception);
+
+                    throw new Exception(
+                        $"[Database][MySqlDbSession.OpenDbConnection<{_logIdentifier}>] Authentification failed");
+            }
         }
     }
 }

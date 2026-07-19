@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
-using SSC.DB.Attributes;
+using SSC.Db.Attributes;
 
-namespace SSC.DB;
+namespace SSC.Db;
 
 /// <summary>
 /// Strongly typed field assignments for a batch model update.

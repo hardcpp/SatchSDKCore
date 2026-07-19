@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Text;
 using System.Threading;
-using SSC.DB.Expressions;
+using SSC.Db.Expressions;
 
-namespace SSC.DB.Querying;
+namespace SSC.Db.Querying;
 
 /// <summary>
 /// DB query builder

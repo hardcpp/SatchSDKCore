@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using SSC.DB.Attributes;
+using SSC.Db.Attributes;
 
-namespace SSC.DB;
+namespace SSC.Db;
 
 /// <summary>
 /// Describes the table and field mappings for a database model.

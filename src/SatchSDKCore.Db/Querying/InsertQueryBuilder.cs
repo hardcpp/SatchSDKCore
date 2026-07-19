@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using SSC.DB.Attributes;
+using SSC.Db.Attributes;
 
-namespace SSC.DB.Querying;
+namespace SSC.Db.Querying;
 
 /// <summary>
 /// Builds an INSERT statement for a model.

@@ -7,11 +7,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Text;
-using SSC.DB.Attributes;
-using SSC.DB.Expressions;
-using SSC.DB.Querying;
+using SSC.Db.Attributes;
+using SSC.Db.Expressions;
+using SSC.Db.Querying;
 
-namespace SSC.DB;
+namespace SSC.Db;
 
 /// <summary>
 /// DB model base specialized class

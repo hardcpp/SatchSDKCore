@@ -1,17 +1,21 @@
 using System;
 using System.Threading;
-using Npgsql;
-using SSC.DB.Expressions;
+using MySqlConnector;
+using SSC.Db.Expressions;
 
-namespace SSC.DB.Drivers;
+namespace SSC.Db.Drivers;
 
 /// <summary>
-/// PostgreSQL DB Instance implementation
+/// MySQL DB Instance implementation
 /// </summary>
-public class PostgreSqlDbInstance : DbInstance
+public class MySqlDbInstance : DbInstance
 {
-    private static readonly PostgreSqlDbDialect s_Dialect = new();
-    private readonly PostgreSqlDbSession[] _connections;
+    private static readonly MySqlDbDialect s_Dialect = new();
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private readonly MySqlDbSession[] _connections;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -26,7 +30,7 @@ public class PostgreSqlDbInstance : DbInstance
     /// <param name="password">Password</param>
     /// <param name="databaseName">DB name</param>
     /// <param name="poolSize">Pool size</param>
-    public PostgreSqlDbInstance(
+    public MySqlDbInstance(
         string name,
         string hostname,
         uint port,
@@ -36,28 +40,27 @@ public class PostgreSqlDbInstance : DbInstance
         uint poolSize = 5)
         : base(name)
     {
-        var connectionStringBuilder = new NpgsqlConnectionStringBuilder
+        var connectionStringBuilder = new MySqlConnectionStringBuilder
         {
-            KeepAlive = 5,
-            Timeout = 10,
-            MaxPoolSize = 0,
+            Keepalive = 5,
+            ConnectionTimeout = 10,
+            MaximumPoolSize = 0,
             Pooling = false,
-            Host = hostname,
-            Port = (int)port,
-            Username = username,
+            Server = hostname,
+            Port = port,
+            UserID = username,
             Password = password,
             Database = databaseName,
-            ClientEncoding = "UTF8",
-            Encoding = "UTF8"
+            CharacterSet = "utf8mb4"
         };
 
         string connectionString = connectionStringBuilder.ConnectionString;
 
-        _connections = new PostgreSqlDbSession[poolSize];
+        _connections = new MySqlDbSession[poolSize];
         for (int i = 0; i < poolSize; ++i)
         {
             _connections[i] =
-                new PostgreSqlDbSession(this, connectionString, $"{username}:{databaseName}@{hostname}:{port}");
+                new MySqlDbSession(this, connectionString, $"{username}:{databaseName}@{hostname}:{port}");
         }
     }
 
@@ -94,13 +97,13 @@ public class PostgreSqlDbInstance : DbInstance
     {
         ArgumentNullException.ThrowIfNull(session);
 
-        if (session is not PostgreSqlDbSession postgreSqlDbSession
-            || Array.IndexOf(_connections, postgreSqlDbSession) == -1)
+        if (session is not MySqlDbSession mySqlDbSession
+            || Array.IndexOf(_connections, mySqlDbSession) == -1)
         {
             throw new Exception("The provided session if not from this driver");
         }
 
-        postgreSqlDbSession.Release();
+        mySqlDbSession.Release();
 
         if (_tlsSession.Value == session)
         {

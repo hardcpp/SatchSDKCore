@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
-using SSC.DB.Expressions;
+using SSC.Db.Expressions;
 
-namespace SSC.DB.Querying;
+namespace SSC.Db.Querying;
 
 /// <summary>
 /// Builds DELETE statements for models.

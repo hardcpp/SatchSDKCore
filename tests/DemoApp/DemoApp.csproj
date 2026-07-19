@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\SatchSDKCore.DB\SatchSDKCore.DB.csproj" />
+      <ProjectReference Include="..\..\src\SatchSDKCore.Db\SatchSDKCore.Db.csproj" />
       <ProjectReference Include="..\..\src\SatchSDKCore\SatchSDKCore.csproj" />
     </ItemGroup>
 

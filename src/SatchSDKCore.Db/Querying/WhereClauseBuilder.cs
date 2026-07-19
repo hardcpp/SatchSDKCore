@@ -3,10 +3,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using SSC.DB.Attributes;
-using SSC.DB.Querying;
+using SSC.Db.Attributes;
+using SSC.Db.Querying;
 
-namespace SSC.DB.Expressions;
+namespace SSC.Db.Expressions;
 
 internal class WhereClauseBuilder
 {

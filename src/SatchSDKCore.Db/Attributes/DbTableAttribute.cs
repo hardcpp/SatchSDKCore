@@ -1,7 +1,7 @@
 using System;
 using SSC.Extensions;
 
-namespace SSC.DB.Attributes;
+namespace SSC.Db.Attributes;
 
 /// <summary>
 /// DB table attribute
