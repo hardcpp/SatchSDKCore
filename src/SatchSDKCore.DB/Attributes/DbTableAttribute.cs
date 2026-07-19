@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using SSC.Extensions;
 
 namespace SSC.DB.Attributes;

@@ -1,4 +1,4 @@
-﻿using SSC.Misc.Hookable;
+using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;
 
 namespace SSC.DB.Hooks;

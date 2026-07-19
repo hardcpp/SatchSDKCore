@@ -1,4 +1,4 @@
-﻿using SSC.DB.Attributes;
+using SSC.DB.Attributes;
 using SSC.DB.Expressions;
 using SSC.DB.Querying;
 

@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using SSC.Api.Blueprint;
 using SSC.Api.Response;
 using SSC.Api.Route;
@@ -19,6 +19,6 @@ internal abstract class Status
     [ApiHttpRoute(EApiHttpMethod.Get, "/")]
     public static ApiHttpResponse GetStatus(ApiHttpRouteContext context)
     {
-        return ApiHttpResponse.Result(context, HttpStatusCode.OK,"all good");
+        return ApiHttpResponse.Result(context, HttpStatusCode.OK, "all good");
     }
 }

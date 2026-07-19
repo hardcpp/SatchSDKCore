@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using MySqlConnector;
 using SSC.DB.Expressions;

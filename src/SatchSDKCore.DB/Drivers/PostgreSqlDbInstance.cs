@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using Npgsql;
 using SSC.DB.Expressions;

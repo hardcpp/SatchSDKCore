@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using SSC.Api.Blueprint;
 using SSC.Api.Response;
 using SSC.Api.Route;
@@ -22,7 +22,7 @@ internal abstract class Book
     {
         //DBInstance.Get("Main").GetSession();
 
-        return ApiHttpResponse.Result(context,HttpStatusCode.OK, $"{id} {tt} {(aay.ToString())} chapterId {chapterId}");
+        return ApiHttpResponse.Result(context, HttpStatusCode.OK, $"{id} {tt} {(aay.ToString())} chapterId {chapterId}");
     }
 
 

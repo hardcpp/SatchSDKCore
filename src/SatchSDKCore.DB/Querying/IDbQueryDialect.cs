@@ -1,4 +1,4 @@
-﻿using SSC.DB.Attributes;
+using SSC.DB.Attributes;
 using SSC.DB.Querying;
 
 namespace SSC.DB.Expressions;

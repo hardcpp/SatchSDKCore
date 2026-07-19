@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using SSC.DB.Expressions;
 
 namespace SSC.DB.Querying;

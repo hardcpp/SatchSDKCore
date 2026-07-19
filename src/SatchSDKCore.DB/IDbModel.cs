@@ -1,4 +1,4 @@
-﻿namespace SSC.DB;
+namespace SSC.DB;
 
 /// <summary>
 /// Defines persistence operations and metadata exposed by a database model.

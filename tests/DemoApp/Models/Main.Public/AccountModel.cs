@@ -1,4 +1,4 @@
-﻿using SSC.DB;
+using SSC.DB;
 using SSC.DB.Attributes;
 
 namespace DemoApp.Models.Main.Public;
@@ -7,5 +7,5 @@ namespace DemoApp.Models.Main.Public;
 internal class AccountModel : DbModel<AccountModel>
 {
     [DbField]
-    public Int64 ID;
+    public long ID;
 }

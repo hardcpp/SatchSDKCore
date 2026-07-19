@@ -1,5 +1,5 @@
-﻿using SSC;
 using System.Text;
+using SSC;
 using SSC.Api.Handler;
 using SSC.DB;
 using SSC.DB.Attributes;
@@ -9,9 +9,9 @@ using SSC.Net.HttpEx;
 
 namespace DemoApp;
 
-class TestHook : IHook<HttpServerExRequestContext>
+internal class TestHook : IHook<HttpServerExRequestContext>
 {
-    static byte[] l_Data = Encoding.UTF8.GetBytes("toto");
+    private static readonly byte[] l_Data = Encoding.UTF8.GetBytes("toto");
     public bool Intercept(HttpServerExRequestContext context)
     {
         context.ListenerResponse.AddHeader("toto", "toto");
@@ -20,19 +20,19 @@ class TestHook : IHook<HttpServerExRequestContext>
     }
 }
 
-[DbTable(dbInstanceName:"Main", tableName:"toto")]
-class TestModel : DbModel<TestModel>
+[DbTable(dbInstanceName: "Main", tableName: "toto")]
+internal class TestModel : DbModel<TestModel>
 {
-    [DbField(primaryKey:true)]
+    [DbField(primaryKey: true)]
     public string name;
     [DbField]
     public int age;
 }
 
-static class Program
+internal static class Program
 {
 
-    static void Main()
+    private static void Main()
     {
         Config.Database.Instance.Warmup();
         var cfg = Config.Database.Instance;
@@ -66,7 +66,7 @@ static class Program
         var minAge = 18;
         TestModel.Select((x) => (x.name.ToLower() != "bob" && x.age > minAge && x.age < 16) || (x.age * 2) < 21 || (x.name + "ppp" == "bobppp"));
         TestModel.Select((x) => (x.name != null && x.age > minAge && x.age < 16) || x.age < 21);
-        TestModel.Select((x) => (null != x.name  && x.age > minAge && x.age < 16) || x.age < 21);
+        TestModel.Select((x) => (null != x.name && x.age > minAge && x.age < 16) || x.age < 21);
         TestModel.Select((x) => ("bob" != x.name.ToLower() && x.age > 18 && x.age < 16) || x.age < 21);
 
         var t = TestModel.Select();
