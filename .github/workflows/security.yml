@@ -53,8 +53,20 @@ jobs:
             - name: Restore dependencies
               run: dotnet restore
 
-            - name: Build main project
-              run: dotnet build src/SatchSDKCore/SatchSDKCore.csproj --configuration Release --no-restore
+            - name: Build source projects
+              shell: bash
+              run: |
+                  found=false
+
+                  while IFS= read -r -d '' project; do
+                      found=true
+                      dotnet build "$project" --configuration Release --no-restore
+                  done < <(find src -mindepth 2 -maxdepth 2 -type f -name '*.csproj' -print0 | sort -z)
+
+                  if [ "$found" = false ]; then
+                      echo "No projects were found under src/*" >&2
+                      exit 1
+                  fi
 
             - name: Perform CodeQL Analysis
               uses: github/codeql-action/analyze@v4
