@@ -151,8 +151,19 @@ public class HttpServerExCore : IHttpServerEx
                 _contextQueue.Enqueue(_listener.GetContext());
                 _contextQueueEvent.Set();
             }
-            catch (HttpListenerException) when (!_listener.IsListening)
+            catch (HttpListenerException exception)
             {
+                // HttpListener reports shutdown as an exception. Depending on
+                // the platform, IsListening may still briefly be true here,
+                // so never let the listener thread terminate the process.
+                if (_listener.IsListening)
+                {
+                    Logging.Log(
+                        ELogSeverity.Error,
+                        "HTTP listener stopped after an unexpected error:");
+                    Logging.Log(ELogSeverity.Error, exception);
+                }
+
                 break;
             }
             catch (ObjectDisposedException)
