@@ -1,30 +1,31 @@
-﻿using SSC.DB.Querying;
-using System;
+﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using SSC.DB.Attributes;
+using SSC.DB.Querying;
 
 namespace SSC.DB.Expressions;
 
 internal class WhereClauseBuilder
 {
     /// <summary>
-    /// Build a WHERE query clause from expression
+    /// BuildSingle a WHERE query clause from expression
     /// </summary>
-    /// <param name="queryBuilder">Query builder instance</param>
+    /// <param name="query">Query builder instance</param>
     /// <param name="expression">Expression root</param>
-    public static void Build(DbQueryBuilder queryBuilder, Expression expression)
+    public static void Build(DbQuery query, Expression expression)
     {
-        queryBuilder.Query.Append(" WHERE ");
+        query.Query.Append(" WHERE ");
 
-        var startPosition = queryBuilder.Query.Length;
-        VisitNode(queryBuilder, expression);
+        int startPosition = query.Query.Length;
+        VisitNode(query, expression);
 
-        if (queryBuilder.Query[startPosition] == '(' && queryBuilder.Query[^1] == ')')
+        if (query.Query[startPosition] == '(' && query.Query[^1] == ')')
         {
-            queryBuilder.Query.Remove(startPosition, 1);
-            queryBuilder.Query.Remove(queryBuilder.Query.Length - 1, 1);
+            query.Query.Remove(startPosition, 1);
+            query.Query.Remove(query.Query.Length - 1, 1);
         }
     }
 
@@ -34,10 +35,10 @@ internal class WhereClauseBuilder
     /// <summary>
     /// Visit an expression node
     /// </summary>
-    /// <param name="queryBuilder">Query builder instance</param>
+    /// <param name="query">Query builder instance</param>
     /// <param name="node">Current node</param>
     /// <exception cref="ArgumentException">If the expression type is not supported</exception>
-    private static void VisitNode(DbQueryBuilder queryBuilder, Expression? node)
+    private static void VisitNode(DbQuery query, Expression? node)
     {
         switch (node)
         {
@@ -45,16 +46,16 @@ internal class WhereClauseBuilder
                 return;
 
             case BinaryExpression binaryNode:
-                VisitBinaryNode(queryBuilder, binaryNode);
+                VisitBinaryNode(query, binaryNode);
                 break;
             case ConstantExpression constantNode:
-                VisitConstantNode(queryBuilder, constantNode);
+                VisitConstantNode(query, constantNode);
                 break;
             case MemberExpression memberNode:
-                VisitMemberNode(queryBuilder, memberNode);
+                VisitMemberNode(query, memberNode);
                 break;
             case MethodCallExpression methodCallNode:
-                VisitMethodCallNode(queryBuilder, methodCallNode);
+                VisitMethodCallNode(query, methodCallNode);
                 break;
 
             default:
@@ -68,13 +69,23 @@ internal class WhereClauseBuilder
     /// <summary>
     /// Visit a binary node
     /// </summary>
-    /// <param name="queryBuilder">Query builder instance</param>
+    /// <param name="query">Query builder instance</param>
     /// <param name="node">Current node</param>
     /// <exception cref="ArgumentException">If the expression type is not supported</exception>
-    private static void VisitBinaryNode(DbQueryBuilder queryBuilder, BinaryExpression node)
+    private static void VisitBinaryNode(DbQuery query, BinaryExpression node)
     {
-        var leftNode = node.Left;
-        var rightNode = node.Right;
+        Expression leftNode = node.Left;
+        Expression rightNode = node.Right;
+
+        if (node.NodeType == ExpressionType.Add && node.Type == typeof(string))
+        {
+            query.DbQueryDialect.StringConcatStart(query);
+            VisitNode(query, leftNode);
+            query.DbQueryDialect.StringConcatSeparator(query);
+            VisitNode(query, rightNode);
+            query.DbQueryDialect.StringConcatEnd(query);
+            return;
+        }
 
         if (IsNullConstant(leftNode))
         {
@@ -82,172 +93,202 @@ internal class WhereClauseBuilder
             leftNode = node.Right;
         }
 
-        var needParenthesis = leftNode is BinaryExpression || rightNode is BinaryExpression;
-        var startPosition = queryBuilder.Query.Length;
+        bool needParenthesis = leftNode is BinaryExpression || rightNode is BinaryExpression;
+        int startPosition = query.Query.Length;
 
-        VisitNode(queryBuilder, leftNode);
+        VisitNode(query, leftNode);
 
         // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
         switch (node.NodeType)
         {
             case ExpressionType.And:
             case ExpressionType.AndAlso:
-                queryBuilder.Query.Append(" AND ");
+                query.Query.Append(" AND ");
                 break;
 
             case ExpressionType.Or:
             case ExpressionType.OrElse:
-                queryBuilder.Query.Append(" OR ");
+                query.Query.Append(" OR ");
                 break;
 
             case ExpressionType.Equal:
-                queryBuilder.Query.Append(IsNullConstant(rightNode) ? " IS " : " = ");
+                query.Query.Append(IsNullConstant(rightNode) ? " IS " : " = ");
                 break;
 
             case ExpressionType.NotEqual:
-                queryBuilder.Query.Append(IsNullConstant(rightNode) ? " IS NOT " : " != ");
+                query.Query.Append(IsNullConstant(rightNode) ? " IS NOT " : " != ");
                 break;
 
             case ExpressionType.LessThan:
-                queryBuilder.Query.Append(" < ");
+                query.Query.Append(" < ");
                 break;
 
             case ExpressionType.LessThanOrEqual:
-                queryBuilder.Query.Append(" <= ");
+                query.Query.Append(" <= ");
                 break;
 
             case ExpressionType.GreaterThan:
-                queryBuilder.Query.Append(" > ");
+                query.Query.Append(" > ");
                 break;
 
             case ExpressionType.GreaterThanOrEqual:
-                queryBuilder.Query.Append(" >= ");
+                query.Query.Append(" >= ");
                 break;
 
             case ExpressionType.Add:
                 needParenthesis = true;
-                queryBuilder.Query.Append(" + ");
+                query.Query.Append(" + ");
                 break;
 
             case ExpressionType.Subtract:
                 needParenthesis = true;
-                queryBuilder.Query.Append(" - ");
+                query.Query.Append(" - ");
                 break;
 
             case ExpressionType.Multiply:
                 needParenthesis = true;
-                queryBuilder.Query.Append(" * ");
+                query.Query.Append(" * ");
                 break;
 
             case ExpressionType.Divide:
                 needParenthesis = true;
-                queryBuilder.Query.Append(" / ");
+                query.Query.Append(" / ");
                 break;
 
             default:
                 throw new ArgumentException($"Unsupported expression type {node.NodeType}");
         }
 
-        VisitNode(queryBuilder, rightNode);
+        VisitNode(query, rightNode);
 
         if (!needParenthesis)
+        {
             return;
+        }
 
-        queryBuilder.Query.Insert(startPosition, '(');
-        queryBuilder.Query.Append(')');
+        query.Query.Insert(startPosition, '(');
+        query.Query.Append(')');
     }
+
     /// <summary>
-    /// Visist a constant node
+    /// Visits a constant node.
     /// </summary>
-    /// <param name="queryBuilder">Query builder instance</param>
+    /// <param name="query">Query builder instance</param>
     /// <param name="node">Current node</param>
-    private static void VisitConstantNode(DbQueryBuilder queryBuilder, ConstantExpression node)
+    private static void VisitConstantNode(DbQuery query, ConstantExpression node)
     {
         if (node.Value == null)
-            queryBuilder.Query.Append("NULL");
+        {
+            query.Query.Append("NULL");
+        }
         else if (node.Type.IsPrimitive && node.Type != typeof(char))
         {
-            var parameterName = queryBuilder.GenerateParameterName("Where");
-            queryBuilder.AddParameter(parameterName, node.Value);
-            queryBuilder.Query.Append(parameterName);
+            string parameterName = query.GenerateParameterName("Where");
+            query.AddParameter(parameterName, node.Value);
+            query.Query.Append(parameterName);
         }
         else if (node.Type == typeof(string))
         {
-            var parameterName = queryBuilder.GenerateParameterName("Where");
-            queryBuilder.AddParameter(parameterName, node.Value);
-            queryBuilder.Query.Append(parameterName);
+            string parameterName = query.GenerateParameterName("Where");
+            query.AddParameter(parameterName, node.Value);
+            query.Query.Append(parameterName);
         }
         else
+        {
             throw new ArgumentException($"Unsupported constant '{node.Value}' of type {node.Type.Name}");
+        }
     }
+
     /// <summary>
     /// Visit a member node
     /// </summary>
-    /// <param name="queryBuilder">Query builder instance</param>
+    /// <param name="query">Query builder instance</param>
     /// <param name="node">Current node</param>
     /// <exception cref="ArgumentException">If the expression type is not supported</exception>
-    private static void VisitMemberNode(DbQueryBuilder queryBuilder, MemberExpression node)
+    private static void VisitMemberNode(DbQuery query, MemberExpression node)
     {
-        var toAnalyse = node.Expression ?? node;
+        Expression toAnalyse = node.Expression ?? node;
 
         // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
         switch (toAnalyse.NodeType)
         {
             case ExpressionType.Parameter:
-                if (node.Member.DeclaringType != queryBuilder.DbModelMetadata!.ModelType)
-                    throw new Exception($"Field {node.Member} is not part of model {queryBuilder.DbModelMetadata!.Identifier}!");
+                if (node.Member.DeclaringType != query.DbModelMetadata!.ModelType)
+                {
+                    throw new Exception(
+                        $"Field {node.Member} is not part of model {query.DbModelMetadata!.Identifier}!");
+                }
 
-                var fieldMetadata = queryBuilder.DbModelMetadata!.FieldAttributes.FirstOrDefault(x => x.Name == node.Member.Name);
+                DbFieldAttribute? fieldMetadata =
+                    query.DbModelMetadata!.FieldAttributes.FirstOrDefault(x => x.FieldInfo.Name == node.Member.Name);
                 if (fieldMetadata == null)
-                    throw new Exception($"Can not find field {node.Member} in model {queryBuilder.DbModelMetadata!.Identifier}!");
+                {
+                    throw new Exception(
+                        $"Can not find field {node.Member} in model {query.DbModelMetadata!.Identifier}!");
+                }
 
-                queryBuilder.DbQueryDialect.Field(queryBuilder, fieldMetadata);
+                query.DbQueryDialect.Field(query, fieldMetadata);
                 break;
 
             case ExpressionType.Constant:
             case ExpressionType.MemberAccess:
-                var value = ResolveExpressionValue(node);
-                var parameterName = queryBuilder.GenerateParameterName("Where");
-                queryBuilder.AddParameter(parameterName, value);
-                queryBuilder.Query.Append(parameterName);
+                object? value = ResolveExpressionValue(node);
+                string parameterName = query.GenerateParameterName("Where");
+                query.AddParameter(parameterName, value);
+                query.Query.Append(parameterName);
                 break;
 
             default:
                 throw new NotSupportedException($"The member '{node.Member.Name}' is not supported");
         }
     }
+
     /// <summary>
     /// Visit a method call node
     /// </summary>
-    /// <param name="queryBuilder">Query builder instance</param>
+    /// <param name="query">Query builder instance</param>
     /// <param name="node">Current node</param>
     /// <exception cref="ArgumentException">If the expression type is not supported</exception>
-    private static void VisitMethodCallNode(DbQueryBuilder queryBuilder, MethodCallExpression node)
+    private static void VisitMethodCallNode(DbQuery query, MethodCallExpression node)
     {
         if (node.Object is not MemberExpression memberExpression)
+        {
             throw new Exception("Unsupported!");
+        }
 
-        if (memberExpression.Member.DeclaringType != queryBuilder.DbModelMetadata!.ModelType)
-            throw new Exception($"Field {memberExpression.Member} is not part of model {queryBuilder.DbModelMetadata!.Identifier}!");
+        if (memberExpression.Member.DeclaringType != query.DbModelMetadata!.ModelType)
+        {
+            throw new Exception(
+                $"Field {memberExpression.Member} is not part of model {query.DbModelMetadata!.Identifier}!");
+        }
 
-        var fieldMetadata = queryBuilder.DbModelMetadata!.FieldAttributes.FirstOrDefault(x => x.Name == memberExpression.Member.Name);
+        DbFieldAttribute? fieldMetadata =
+            query.DbModelMetadata!.FieldAttributes.FirstOrDefault(x =>
+                x.FieldInfo.Name == memberExpression.Member.Name);
         if (fieldMetadata == null)
-            throw new Exception($"Can not find field {memberExpression.Member} in model {queryBuilder.DbModelMetadata!.Identifier}!");
+        {
+            throw new Exception(
+                $"Can not find field {memberExpression.Member} in model {query.DbModelMetadata!.Identifier}!");
+        }
 
         if (node.Method.DeclaringType == typeof(string))
         {
             if (fieldMetadata.FieldType != typeof(string))
+            {
                 throw new Exception($"Can not apply {node.Method.Name} transform on field {memberExpression.Member}!");
+            }
 
             switch (node.Method.Name)
             {
                 case "ToLower":
-                    queryBuilder.DbQueryDialect.FieldValueLower(queryBuilder, fieldMetadata);
+                    query.DbQueryDialect.FieldValueLower(query, fieldMetadata);
                     break;
             }
         }
         else
+        {
             throw new Exception($"Unsupported method call {node.Method.DeclaringType!.Name}{node.Method.Name}!");
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -259,7 +300,9 @@ internal class WhereClauseBuilder
     /// <param name="node">Current node</param>
     /// <returns>Resolved value or null</returns>
     /// <exception cref="NotSupportedException">If the current expression is not supported</exception>
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
+    [UnconditionalSuppressMessage("AOT",
+        "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.",
+        Justification = "<Pending>")]
     private static object? ResolveExpressionValue(Expression node)
     {
         switch (node)
@@ -278,6 +321,7 @@ internal class WhereClauseBuilder
                             return propertyInfo.GetValue(subConstantExpression.Value);
                     }
                 }
+
                 break;
 
             case MethodCallExpression methodCallExpression:

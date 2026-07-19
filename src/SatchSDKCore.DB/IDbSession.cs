@@ -8,6 +8,7 @@ namespace SSC.DB;
 /// </summary>
 public abstract class IDbSession : IDisposable
 {
+    /// <summary>Gets the database instance that owns this session.</summary>
     public abstract DbInstance DbInstance { get; }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -16,7 +17,8 @@ public abstract class IDbSession : IDisposable
     /// <summary>
     /// Return this session into the usable pool for later uses
     /// </summary>
-    public void Dispose() => DisposeFinal(false);
+    public void Dispose() => DisposeFinal();
+
     /// <summary>
     /// Return this session into the usable pool for later uses
     /// </summary>
@@ -35,6 +37,9 @@ public abstract class IDbSession : IDisposable
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
+    /// <summary>Commits the current transaction.</summary>
     public abstract void Commit();
+
+    /// <summary>Rolls back the current transaction.</summary>
     public abstract void Rollback();
 }

@@ -6,25 +6,18 @@ namespace SSC.DB.Hooks;
 /// <summary>
 /// Hook for HTTPServer that force the release of any IDbSession open
 /// </summary>
-public class HttpServerExDbSessionReleaseHook : Net.HttpEx.IHttpServerExRequestHandler
+public class HttpServerExDbSessionReleaseHook : IHook<HttpServerExRequestContext>
 {
-    public IHookable<HttpServerExRequestContext> Hooks { get; } = new Hookable<HttpServerExRequestContext>();
-
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-
-    /// <summary>
-    /// Try handle the request
-    /// </summary>
-    /// <param name="context">Request context</param>
-    /// <returns>True if the request was handled</returns>
-    public bool TryHandle(HttpServerExRequestContext context)
+    /// <inheritdoc />
+    public bool Intercept(HttpServerExRequestContext context)
     {
         for (int i = 0; i < DbInstance.Instances.Length; ++i)
         {
-            var existingSession = DbInstance.Instances[i].GetTlsSession(skipAcquire: true);
+            IDbSession? existingSession = DbInstance.Instances[i].GetTlsSession(true);
             if (existingSession != null)
-                existingSession.DisposeFinal(force: true);
+            {
+                existingSession.DisposeFinal(true);
+            }
         }
 
         return false;

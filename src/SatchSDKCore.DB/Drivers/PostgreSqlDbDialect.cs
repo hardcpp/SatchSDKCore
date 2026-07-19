@@ -5,16 +5,16 @@ using SSC.DB.Querying;
 namespace SSC.DB.Drivers;
 
 /// <summary>
-/// MySql database dialect implementation
+/// PostgreSQL database dialect implementation.
 /// </summary>
-internal class MySqlDbDialect : IDbQueryDialect
+internal sealed class PostgreSqlDbDialect : IDbQueryDialect
 {
-    private const string OBJECT_QUOTE = "`";
+    private const char ObjectQuote = '"';
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public override bool AutoIncrementResultIsSeparateQuery => true;
+    public override bool AutoIncrementResultIsSeparateQuery => false;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -24,13 +24,12 @@ internal class MySqlDbDialect : IDbQueryDialect
         query.Query.Append("SELECT ");
         for (int i = 0; i < query.DbModelMetadata!.FieldAttributes.Length; ++i)
         {
-            DbFieldAttribute field = query.DbModelMetadata!.FieldAttributes[i];
             if (i > 0)
             {
                 query.Query.Append(", ");
             }
 
-            Field(query, field);
+            Field(query, query.DbModelMetadata.FieldAttributes[i]);
         }
 
         query.Query.Append(" FROM ");
@@ -45,10 +44,10 @@ internal class MySqlDbDialect : IDbQueryDialect
         DbTableAttribute table = query.DbModelMetadata!.TableAttribute;
         if (!string.IsNullOrEmpty(table.Schema))
         {
-            query.Query.AppendFormat("{0}{1}{0}.", OBJECT_QUOTE, table.Schema);
+            query.Query.Append(ObjectQuote).Append(table.Schema).Append(ObjectQuote).Append('.');
         }
 
-        query.Query.AppendFormat("{0}{1}{0}", OBJECT_QUOTE, table.TableName);
+        query.Query.Append(ObjectQuote).Append(table.TableName).Append(ObjectQuote);
     }
 
     public override void Field(DbQuery query, DbFieldAttribute field)
@@ -59,22 +58,25 @@ internal class MySqlDbDialect : IDbQueryDialect
     }
 
     public override void FieldName(DbQuery query, DbFieldAttribute field)
-        => query.Query.AppendFormat("{0}{1}{0}", OBJECT_QUOTE, field.FieldName);
+        => query.Query.Append(ObjectQuote).Append(field.FieldName).Append(ObjectQuote);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     public override void DefaultValues(DbQuery query)
-        => query.Query.Append(" () VALUES ()");
+        => query.Query.Append(" DEFAULT VALUES");
 
     public override void AutoIncrementResult(DbQuery query, DbFieldAttribute field)
-        => query.Query.Append("SELECT LAST_INSERT_ID()");
+    {
+        query.Query.Append(" RETURNING ");
+        FieldName(query, field);
+    }
 
     public override void FieldValueLower(DbQuery query, DbFieldAttribute field)
     {
         query.Query.Append("LOWER(");
         Field(query, field);
-        query.Query.Append(")");
+        query.Query.Append(')');
     }
 
     ////////////////////////////////////////////////////////////////////////////
