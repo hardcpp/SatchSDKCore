@@ -26,12 +26,12 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
               with:
                   fetch-depth: 0
 
             - name: Setup .NET
-              uses: actions/setup-dotnet@v4
+              uses: actions/setup-dotnet@v5
               with:
                   dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -165,7 +165,7 @@ jobs:
               uses: actions/configure-pages@v5
 
             - name: Upload to GitHub Pages
-              uses: actions/upload-pages-artifact@v4
+              uses: actions/upload-pages-artifact@v5
               with:
                   path: _site
 
@@ -179,7 +179,7 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
 
             - name: Check for broken links in README
               uses: gaurav-nelson/github-action-markdown-link-check@v1
