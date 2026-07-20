@@ -134,13 +134,13 @@ jobs:
             - name: Write to Job Summary
               run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
             - name: Upload Test Results
-              uses: actions/upload-artifact@v6
+              uses: actions/upload-artifact@v7
               if: always()
               with:
                   name: test-results
                   path: "**/test-results.trx"
             - name: Upload Coverage Reports
-              uses: actions/upload-artifact@v6
+              uses: actions/upload-artifact@v7
               if: always()
               with:
                   name: coverage-reports
@@ -166,7 +166,7 @@ jobs:
                   jscpd src/ --min-lines 10 --min-tokens 50 --format "csharp" --reporters "console,json" --output ./jscpd-report || true
 
             - name: Upload duplicate code report
-              uses: actions/upload-artifact@v6
+              uses: actions/upload-artifact@v7
               if: always()
               with:
                   name: duplicate-code-report
@@ -217,7 +217,7 @@ jobs:
                   find tests -name "*.cs" -exec wc -l {} + 2>/dev/null | tail -1 | awk '{print "Total test lines: " $1}' >> metrics-report.md || echo "Total test lines: 0" >> metrics-report.md
 
             - name: Upload metrics report
-              uses: actions/upload-artifact@v6
+              uses: actions/upload-artifact@v7
               if: always()
               with:
                   name: code-metrics
