@@ -73,6 +73,8 @@ public class WebSocketServerExTests
         public void Start() { }
         public void Stop() { }
         public void Wait() { }
+        public Task WaitAsync() => Task.CompletedTask;
+        public ValueTask StopAsync() => ValueTask.CompletedTask;
         public void Dispose() { }
     }
 
@@ -431,7 +433,7 @@ public class WebSocketServerExTests
     /// This is a real test that validates the argument validation in TryHandle.
     /// </summary>
     [Fact]
-    public void TryHandle_WithNullContext_ThrowsException()
+    public async Task TryHandle_WithNullContext_ThrowsException()
     {
         // Arrange
         var mockHttpServer = new MockHttpServer();
@@ -446,7 +448,7 @@ public class WebSocketServerExTests
         wsServer.Start();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => wsServer.TryHandle(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await wsServer.TryHandleAsync(null!));
 
         // Cleanup
         wsServer.Stop();

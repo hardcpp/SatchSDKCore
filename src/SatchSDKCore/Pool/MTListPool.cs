@@ -8,5 +8,4 @@ namespace SSC.Pool;
 public class MTListPool<TValueType>
     : MTCollectionPool<List<TValueType>, TValueType>
 {
-
 }

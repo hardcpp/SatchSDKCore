@@ -8,5 +8,4 @@ namespace SSC.Pool;
 public class MTHashSetPool<TValueType>
     : MTCollectionPool<HashSet<TValueType>, TValueType>
 {
-
 }

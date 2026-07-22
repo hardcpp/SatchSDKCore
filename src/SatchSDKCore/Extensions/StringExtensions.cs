@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace SSC.Extensions;
 
 /// <summary>
@@ -6,8 +8,8 @@ namespace SSC.Extensions;
 public static class StringExtensions
 {
     public static string ToSnakeCase(this string instance)
-        => System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(instance);
+        => JsonNamingPolicy.SnakeCaseLower.ConvertName(instance);
 
     public static string ToCamelCase(this string instance)
-        => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(instance);
+        => JsonNamingPolicy.CamelCase.ConvertName(instance);
 }

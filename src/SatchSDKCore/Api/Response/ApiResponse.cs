@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using SSC.Api.Request;
 
 namespace SSC.Api.Response;
 
@@ -9,7 +10,7 @@ namespace SSC.Api.Response;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public abstract class ApiResponse
 {
-    public readonly Request.ApiRequest Request;
+    public readonly ApiRequest Request;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -18,7 +19,7 @@ public abstract class ApiResponse
     /// Constructor
     /// </summary>
     /// <param name="request">Request</param>
-    public ApiResponse(Request.ApiRequest request)
+    public ApiResponse(ApiRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 

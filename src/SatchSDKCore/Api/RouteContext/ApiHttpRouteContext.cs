@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using SSC.Api.Request;
+using SSC.Api.Route;
 
 namespace SSC.Api.RouteContext;
 
@@ -8,7 +10,7 @@ namespace SSC.Api.RouteContext;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public sealed class ApiHttpRouteContext : ApiRouteContext
 {
-    public readonly Route.EApiHttpMethod HttpMethod;
+    public readonly EApiHttpMethod HttpMethod;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -17,7 +19,7 @@ public sealed class ApiHttpRouteContext : ApiRouteContext
     /// Constructor
     /// </summary>
     /// <param name="request">Origin request</param>
-    public ApiHttpRouteContext(Request.ApiRequest request, Route.EApiHttpMethod httpMethod)
+    public ApiHttpRouteContext(ApiRequest request, EApiHttpMethod httpMethod)
         : base(request)
     {
         HttpMethod = httpMethod;

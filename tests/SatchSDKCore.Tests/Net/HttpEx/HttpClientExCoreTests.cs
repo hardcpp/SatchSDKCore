@@ -55,7 +55,7 @@ public class HttpClientExCoreTests : IDisposable
         public int DelayMs { get; set; }
         public Action<HttpServerExRequestContext>? OnRequest { get; set; }
 
-        public bool TryHandle(HttpServerExRequestContext context)
+        public async ValueTask<bool> TryHandleAsync(HttpServerExRequestContext context, CancellationToken cancellationToken = default)
         {
             CallCount++;
             OnRequest?.Invoke(context);
@@ -822,7 +822,7 @@ public class HttpClientExCoreTests : IDisposable
         public int RateLimitResetSeconds { get; set; } = 1;
         public Action<HttpServerExRequestContext>? OnRequest { get; set; }
 
-        public bool TryHandle(HttpServerExRequestContext context)
+        public async ValueTask<bool> TryHandleAsync(HttpServerExRequestContext context, CancellationToken cancellationToken = default)
         {
             CallCount++;
             OnRequest?.Invoke(context);

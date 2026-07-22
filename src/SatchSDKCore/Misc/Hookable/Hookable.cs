@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace SSC.Misc.Hookable;
 
@@ -9,88 +10,105 @@ namespace SSC.Misc.Hookable;
 /// <typeparam name="T">Context type</typeparam>
 public class Hookable<T> : IHookable<T>
 {
-    private IHook<T>[] _earlyHooks = Array.Empty<IHook<T>>();
-    private IHook<T>[] _lateHooks = Array.Empty<IHook<T>>();
+    private readonly object     _configurationLock = new();
+    private          IHook<T>[] _earlyHooks        = Array.Empty<IHook<T>>();
+    private          IHook<T>[] _lateHooks         = Array.Empty<IHook<T>>();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public void AddEarlyRequestHook(IHook<T> earlyHook)
     {
         ArgumentNullException.ThrowIfNull(earlyHook);
 
-        var existingIdx = Array.IndexOf(_earlyHooks, earlyHook);
-        if (existingIdx != -1)
-            return;
+        lock (_configurationLock)
+        {
+            int existingIdx = Array.IndexOf(_earlyHooks, earlyHook);
+            if (existingIdx != -1)
+                return;
 
-        var newEarlyHooks = new IHook<T>[_earlyHooks.Length + 1];
-        Array.Copy(_earlyHooks, newEarlyHooks, _earlyHooks.Length);
-        newEarlyHooks[^1] = earlyHook;
+            var newEarlyHooks = new IHook<T>[_earlyHooks.Length + 1];
+            Array.Copy(_earlyHooks, newEarlyHooks, _earlyHooks.Length);
+            newEarlyHooks[^1] = earlyHook;
 
-        _earlyHooks = newEarlyHooks;
+            Volatile.Write(ref _earlyHooks, newEarlyHooks);
+        }
     }
-    /// <inheritdoc/>
+
+    /// <inheritdoc />
     public void RemoveEarlyRequestHook(IHook<T> earlyHook)
     {
         ArgumentNullException.ThrowIfNull(earlyHook);
 
-        var oldEarlyHooks = _earlyHooks;
-        var existingIdx = Array.IndexOf(oldEarlyHooks, earlyHook);
-        if (existingIdx == -1)
-            return;
+        lock (_configurationLock)
+        {
+            IHook<T>[] oldEarlyHooks = _earlyHooks;
+            int        existingIdx   = Array.IndexOf(oldEarlyHooks, earlyHook);
+            if (existingIdx == -1)
+                return;
 
-        var newEarlyHooks = new IHook<T>[oldEarlyHooks.Length - 1];
-        Array.Copy(oldEarlyHooks, 0, newEarlyHooks, 0, existingIdx);
-        Array.Copy(oldEarlyHooks, existingIdx + 1, newEarlyHooks, existingIdx, oldEarlyHooks.Length - existingIdx - 1);
+            var newEarlyHooks = new IHook<T>[oldEarlyHooks.Length - 1];
+            Array.Copy(oldEarlyHooks, 0, newEarlyHooks, 0, existingIdx);
+            Array.Copy(oldEarlyHooks, existingIdx + 1, newEarlyHooks, existingIdx,
+                       oldEarlyHooks.Length       - existingIdx - 1);
 
-        _earlyHooks = newEarlyHooks;
+            Volatile.Write(ref _earlyHooks, newEarlyHooks);
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public void AddLateRequestHook(IHook<T> lateHook)
     {
         ArgumentNullException.ThrowIfNull(lateHook);
 
-        var existingIdx = Array.IndexOf(_lateHooks, lateHook);
-        if (existingIdx != -1)
-            return;
+        lock (_configurationLock)
+        {
+            int existingIdx = Array.IndexOf(_lateHooks, lateHook);
+            if (existingIdx != -1)
+                return;
 
-        var newLateHooks = new IHook<T>[_lateHooks.Length + 1];
-        Array.Copy(_lateHooks, newLateHooks, _lateHooks.Length);
-        newLateHooks[^1] = lateHook;
+            var newLateHooks = new IHook<T>[_lateHooks.Length + 1];
+            Array.Copy(_lateHooks, newLateHooks, _lateHooks.Length);
+            newLateHooks[^1] = lateHook;
 
-        _lateHooks = newLateHooks;
+            Volatile.Write(ref _lateHooks, newLateHooks);
+        }
     }
-    /// <inheritdoc/>
+
+    /// <inheritdoc />
     public void RemoveLateRequestHook(IHook<T> lateHook)
     {
         ArgumentNullException.ThrowIfNull(lateHook);
 
-        var oldLateHooks = _lateHooks;
-        var existingIdx = Array.IndexOf(oldLateHooks, lateHook);
-        if (existingIdx == -1)
-            return;
+        lock (_configurationLock)
+        {
+            IHook<T>[] oldLateHooks = _lateHooks;
+            int        existingIdx  = Array.IndexOf(oldLateHooks, lateHook);
+            if (existingIdx == -1)
+                return;
 
-        var newLateHooks = new IHook<T>[oldLateHooks.Length - 1];
-        Array.Copy(oldLateHooks, 0, newLateHooks, 0, existingIdx);
-        Array.Copy(oldLateHooks, existingIdx + 1, newLateHooks, existingIdx, oldLateHooks.Length - existingIdx - 1);
+            var newLateHooks = new IHook<T>[oldLateHooks.Length - 1];
+            Array.Copy(oldLateHooks, 0,               newLateHooks, 0,           existingIdx);
+            Array.Copy(oldLateHooks, existingIdx + 1, newLateHooks, existingIdx, oldLateHooks.Length - existingIdx - 1);
 
-        _lateHooks = newLateHooks;
+            Volatile.Write(ref _lateHooks, newLateHooks);
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public bool InterceptEarly(T context)
-        => InterceptImpl(_earlyHooks, context);
-    /// <inheritdoc/>
+        => InterceptImpl(Volatile.Read(ref _earlyHooks), context);
+
+    /// <inheritdoc />
     public bool InterceptLate(T context)
-        => InterceptImpl(_lateHooks, context);
+        => InterceptImpl(Volatile.Read(ref _lateHooks), context);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -104,7 +122,7 @@ public class Hookable<T> : IHookable<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected bool InterceptImpl(IHook<T>[] hooks, T context)
     {
-        for (var i = 0; i < hooks.Length; i++)
+        for (int i = 0; i < hooks.Length; i++)
         {
             if (!hooks[i].Intercept(context))
                 continue;

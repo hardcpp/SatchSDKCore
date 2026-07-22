@@ -11,6 +11,7 @@ public interface IHookable<T>
     /// </summary>
     /// <param name="earlyHook">Early hook to add</param>
     void AddEarlyRequestHook(IHook<T> earlyHook);
+
     /// <summary>
     /// Remove a early Hook
     /// </summary>
@@ -25,6 +26,7 @@ public interface IHookable<T>
     /// </summary>
     /// <param name="lateHook">Late hook to add</param>
     void AddLateRequestHook(IHook<T> lateHook);
+
     /// <summary>
     /// Remove a late Hook
     /// </summary>
@@ -40,6 +42,7 @@ public interface IHookable<T>
     /// <param name="context">Current context</param>
     /// <returns>True if should interupt context</returns>
     bool InterceptEarly(T context);
+
     /// <summary>
     /// Try to run late hooks against the context
     /// </summary>

@@ -13,13 +13,13 @@ namespace SSC.Net.HttpEx;
 /// </summary>
 public class HttpClientExPayload
 {
-    private static readonly JsonSerializerOptions s_RegularSerialize = new() { WriteIndented = false };
+    private static readonly JsonSerializerOptions s_RegularSerialize  = new() { WriteIndented = false };
     private static readonly JsonSerializerOptions s_IndentedSerialize = new() { WriteIndented = true };
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public static HttpClientExPayload Empty = new HttpClientExPayload(Array.Empty<byte>(), "");
+    public static HttpClientExPayload Empty = new(Array.Empty<byte>(), "");
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ public class HttpClientExPayload
     private HttpClientExPayload(byte[] bytes, string type)
     {
         Bytes = bytes;
-        Type = type;
+        Type  = type;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -52,12 +52,13 @@ public class HttpClientExPayload
     public static HttpClientExPayload FromForm(IReadOnlyDictionary<string, string> formFields)
     {
         var content = new StringBuilder(1024);
-        foreach ((var key, var value) in formFields)
+        foreach ((string key, string value) in formFields)
         {
             if (content.Length != 0)
                 content.Append('&');
 
-            content.Append(string.Format(CultureInfo.InvariantCulture, "{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value)));
+            content.Append(string.Format(CultureInfo.InvariantCulture, "{0}={1}", HttpUtility.UrlEncode(key),
+                                         HttpUtility.UrlEncode(value)));
         }
 
         return new HttpClientExPayload(Encoding.UTF8.GetBytes(content.ToString()), "application/x-www-form-urlencoded");
@@ -72,7 +73,8 @@ public class HttpClientExPayload
     /// <param name="content">Json content</param>
     /// <returns></returns>
     public static HttpClientExPayload FromJsonString(string content)
-        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content), "application/json; charset=utf-8");
+        => new(Encoding.UTF8.GetBytes(content), "application/json; charset=utf-8");
+
     /// <summary>
     /// Constructor from Json
     /// </summary>
@@ -80,5 +82,6 @@ public class HttpClientExPayload
     /// <param name="indent">Should indent?</param>
     /// <returns></returns>
     public static HttpClientExPayload FromJson(JsonNode content)
-        => new HttpClientExPayload(Encoding.UTF8.GetBytes(content.ToJsonString(SDKConfig.JsonSerializerOptions)), "application/json; charset=utf-8");
+        => new(Encoding.UTF8.GetBytes(content.ToJsonString(SDKConfig.JsonSerializerOptions)),
+               "application/json; charset=utf-8");
 }

@@ -9,5 +9,4 @@ public class MTDictionaryPool<TKeyType, TValueType>
     : MTCollectionPool<Dictionary<TKeyType, TValueType>, KeyValuePair<TKeyType, TValueType>>
     where TKeyType : notnull
 {
-
 }

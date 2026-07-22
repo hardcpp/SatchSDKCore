@@ -20,31 +20,31 @@ public class ApiHttpBlueprintTests
         [ApiHttpRoute(EApiHttpMethod.Get, "/test")]
         public static ApiResponse GetTest(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, System.Net.HttpStatusCode.OK, "Test response");
+            return ApiHttpResponse.ContentResult(context, System.Net.HttpStatusCode.OK, "Test response");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Post, "/users")]
         public static ApiResponse PostUser(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, System.Net.HttpStatusCode.Created, "User created");
+            return ApiHttpResponse.ContentResult(context, System.Net.HttpStatusCode.Created, "User created");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Get, "/users/<id>")]
         public static ApiResponse GetUserById(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, System.Net.HttpStatusCode.OK, "User found");
+            return ApiHttpResponse.ContentResult(context, System.Net.HttpStatusCode.OK, "User found");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Delete, "/users/<id>")]
         public static ApiResponse DeleteUser(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, System.Net.HttpStatusCode.NoContent, "");
+            return ApiHttpResponse.ContentResult(context, System.Net.HttpStatusCode.NoContent, "");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Put, "/users/<id>/settings/<settingId>")]
         public static ApiResponse UpdateUserSetting(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, System.Net.HttpStatusCode.OK, "Setting updated");
+            return ApiHttpResponse.ContentResult(context, System.Net.HttpStatusCode.OK, "Setting updated");
         }
     }
 

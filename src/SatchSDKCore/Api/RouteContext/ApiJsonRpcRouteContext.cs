@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using SSC.Api.Request;
 
 namespace SSC.Api.RouteContext;
 
@@ -12,13 +13,11 @@ public sealed class ApiJsonRpcRouteContext : ApiRouteContext
     /// Constructor
     /// </summary>
     /// <param name="request">Origin request</param>
-    public ApiJsonRpcRouteContext(Request.ApiRequest request)
+    public ApiJsonRpcRouteContext(ApiRequest request)
         : base(request)
     {
-
     }
 }
-
 
 public static class ApiJsonRpcRouteContextExtensions
 {

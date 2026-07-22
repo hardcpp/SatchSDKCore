@@ -10,32 +10,33 @@ public class STObjectPool<TObjectType>
     : IDisposable, IObjectPool<TObjectType>
     where TObjectType : class
 {
-    public int CountAll { get; private set; }
-    public int CountActive => CountAll - CountInactive;
-    public int CountInactive => _stack.Count;
-
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-
-    private readonly Stack<TObjectType> _stack;
-    private readonly Func<TObjectType> _createFunc;
+    private readonly Action<TObjectType>? _actionOnDestroy;
     private readonly Action<TObjectType>? _actionOnGet;
     private readonly Action<TObjectType>? _actionOnRelease;
-    private readonly Action<TObjectType>? _actionOnDestroy;
-    private readonly int _maxSize;
-    private readonly bool _collectionCheck;
+    private readonly bool                 _collectionCheck;
+    private readonly Func<TObjectType>    _createFunc;
+    private readonly int                  _maxSize;
+    private readonly Stack<TObjectType>   _stack;
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    public int CountAll      { get; private set; }
+    public int CountActive   => CountAll - CountInactive;
+    public int CountInactive => _stack.Count;
+
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     public STObjectPool(
-        Func<TObjectType> createFunc,
-        Action<TObjectType>? actionOnGet = null,
+        Func<TObjectType>    createFunc,
+        Action<TObjectType>? actionOnGet     = null,
         Action<TObjectType>? actionOnRelease = null,
         Action<TObjectType>? actionOnDestroy = null,
-        bool collectionCheck = true,
-        int defaultCapacity = 10,
-        int maxSize = 100)
+        bool                 collectionCheck = true,
+        int                  defaultCapacity = 10,
+        int                  maxSize         = 100)
     {
         if (createFunc == null)
             throw new ArgumentNullException(nameof(createFunc));
@@ -43,10 +44,10 @@ public class STObjectPool<TObjectType>
         if (maxSize <= 0)
             throw new ArgumentException("Max Size must be greater than 0", nameof(maxSize));
 
-        _stack = new Stack<TObjectType>(defaultCapacity);
-        _createFunc = createFunc;
-        _maxSize = maxSize;
-        _actionOnGet = actionOnGet;
+        _stack           = new Stack<TObjectType>(defaultCapacity);
+        _createFunc      = createFunc;
+        _maxSize         = maxSize;
+        _actionOnGet     = actionOnGet;
         _actionOnRelease = actionOnRelease;
         _actionOnDestroy = actionOnDestroy;
         _collectionCheck = collectionCheck;
@@ -66,6 +67,7 @@ public class STObjectPool<TObjectType>
     /// </summary>
     public void Dispose()
         => Clear();
+
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -89,13 +91,15 @@ public class STObjectPool<TObjectType>
         _actionOnGet?.Invoke(result);
         return result;
     }
+
     /// <summary>
     /// Managed object get
     /// </summary>
     /// <param name="p_Element">Result value</param>
     /// <returns></returns>
     public PooledObject<TObjectType> Get(out TObjectType p_Element)
-        => new PooledObject<TObjectType>(this, p_Element = Get());
+        => new(this, p_Element = Get());
+
     /// <summary>
     /// Release an element
     /// </summary>
@@ -103,7 +107,10 @@ public class STObjectPool<TObjectType>
     public void Release(TObjectType p_Element)
     {
         if (_collectionCheck && _stack.Count > 0 && _stack.Contains(p_Element))
-            throw new InvalidOperationException("Trying to release an object that has already been released to the pool.");
+        {
+            throw new InvalidOperationException(
+                "Trying to release an object that has already been released to the pool.");
+        }
 
         _actionOnRelease?.Invoke(p_Element);
 

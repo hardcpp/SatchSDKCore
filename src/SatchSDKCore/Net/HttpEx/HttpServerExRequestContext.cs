@@ -7,14 +7,11 @@ namespace SSC.Net.HttpEx;
 /// </summary>
 public class HttpServerExRequestContext
 {
-    public readonly HttpListenerContext ListenerContext;
+    public readonly HttpListenerContext   ListenerContext;
+    public          HttpListenerRequest   ListenerRequest  => ListenerContext.Request;
+    public          HttpListenerResponse  ListenerResponse => ListenerContext.Response;
+    public          HttpServerExResponse? ServerResponse;
 
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-
-    public HttpListenerRequest ListenerRequest => ListenerContext.Request;
-    public HttpListenerResponse ListenerResponse => ListenerContext.Response;
-    public HttpServerExResponse? ServerResponse;
     public bool ConnectionUpgraded { get; internal set; } = false;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -28,6 +25,7 @@ public class HttpServerExRequestContext
     {
         ListenerContext = listenerContext;
     }
+
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////

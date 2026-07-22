@@ -10,9 +10,10 @@ public class PooledObject<TObjectType>
     : IDisposable
     where TObjectType : class
 {
-    private bool _disposed;
     private readonly IObjectPool<TObjectType> _pool;
-    private readonly TObjectType _value;
+    private readonly TObjectType              _value;
+    private          bool                     _disposed;
+
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -38,11 +39,12 @@ public class PooledObject<TObjectType>
     /// <param name="element">Element instance to guard</param>
     internal PooledObject(IObjectPool<TObjectType> pool, TObjectType element)
     {
-        _pool = pool;
+        _pool  = pool;
         _value = element;
 
         _disposed = false;
     }
+
     /// <summary>
     /// Destructor
     /// </summary>
@@ -50,6 +52,7 @@ public class PooledObject<TObjectType>
     {
         (this as IDisposable).Dispose();
     }
+
     /// <summary>
     /// Dispose the object
     /// </summary>

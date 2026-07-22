@@ -24,41 +24,171 @@ public class RESTHTTPServerHandlerTests
         [ApiHttpRoute(EApiHttpMethod.Get, "/api/test")]
         public static ApiResponse GetTest(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, HttpStatusCode.OK, "Test response");
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.OK, "Test response");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Post, "/api/users")]
         public static ApiResponse PostUser(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, HttpStatusCode.Created, "User created");
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.Created, "User created");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Get, "/api/users/<id>")]
         public static ApiResponse GetUserById(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, HttpStatusCode.OK, "User found");
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.OK, "User found");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Delete, "/api/users/<id>")]
         public static ApiResponse DeleteUser(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, HttpStatusCode.NoContent, "");
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.NoContent, "");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Put, "/api/users/<id>")]
         public static ApiResponse PutUser(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, HttpStatusCode.OK, "User updated");
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.OK, "User updated");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Patch, "/api/users/<id>")]
         public static ApiResponse PatchUser(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, HttpStatusCode.OK, "User patched");
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.OK, "User patched");
+        }
+
+        [ApiHttpRoute(EApiHttpMethod.Get, "/api/async-delay")]
+        public static async Task<ApiResponse> AsyncDelay(
+            CancellationToken cancellationToken,
+            ApiHttpRouteContext context)
+        {
+            await Task.Delay(25, cancellationToken);
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.OK, "Async response");
+        }
+
+        [ApiHttpRoute(EApiHttpMethod.Get, "/api/async-echo/<id>")]
+        public static async Task<ApiResponse> AsyncEcho(
+            CancellationToken cancellationToken,
+            ApiHttpRouteContext context,
+            string id)
+        {
+            await Task.Delay(10, cancellationToken);
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.OK, id);
+        }
+
+        [ApiHttpRoute(EApiHttpMethod.Get, "/api/async-failure")]
+        public static async Task<ApiResponse> AsyncFailureAfterAwait(
+            CancellationToken cancellationToken,
+            ApiHttpRouteContext context)
+        {
+            await Task.Delay(10, cancellationToken);
+            throw new InvalidOperationException("Failure after await");
         }
     }
 
+    private sealed class TestApiHttpHook : IHook<HttpServerExRequestContext>
+    {
+        public bool Intercept(HttpServerExRequestContext context) => false;
+    }
+
     #endregion
+
+    [Fact]
+    public async Task AsyncRouteFailureAfterAwait_ReturnsInternalServerError()
+    {
+        using var server = new HttpServerExCore(
+            "http://localhost:9120/",
+            maxConcurrentRequests: 8);
+        var handler = new ApiHttpHandler();
+        handler.MainBlueprint.AddRoutesOf<TestHandlerRoutes>();
+        server.AddRequestHandler(handler);
+        server.Start();
+
+        using var client = new HttpClient();
+        using HttpResponseMessage response = await client.GetAsync(
+            "http://localhost:9120/api/async-failure");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        await server.StopAsync();
+    }
+
+    [Fact]
+    public async Task AsyncRoutes_AreNotLimitedByDedicatedThreads()
+    {
+        using var server = new HttpServerExCore(
+            "http://localhost:9121/",
+            maxConcurrentRequests: 64);
+        var handler = new ApiHttpHandler();
+        handler.MainBlueprint.AddRoutesOf<TestHandlerRoutes>();
+        server.AddRequestHandler(handler);
+        server.Start();
+
+        using var client = new HttpClient();
+        Task<HttpResponseMessage>[] requests = Enumerable
+            .Range(0, 32)
+            .Select(_ => client.GetAsync("http://localhost:9121/api/async-delay"))
+            .ToArray();
+
+        HttpResponseMessage[] responses = await Task.WhenAll(requests);
+        Assert.All(
+            responses,
+            response => Assert.Equal(HttpStatusCode.OK, response.StatusCode));
+
+        foreach (HttpResponseMessage response in responses)
+            response.Dispose();
+
+        await server.StopAsync();
+    }
+
+    [Fact]
+    public async Task ConcurrentAsyncRoutes_KeepArgumentsIsolated()
+    {
+        using var server = new HttpServerExCore(
+            "http://localhost:9122/",
+            maxConcurrentRequests: 64);
+        var handler = new ApiHttpHandler();
+        handler.MainBlueprint.AddRoutesOf<TestHandlerRoutes>();
+        server.AddRequestHandler(handler);
+        server.Start();
+
+        using var client = new HttpClient();
+        Task<string>[] requests = Enumerable
+            .Range(0, 64)
+            .Select(async id =>
+            {
+                using HttpResponseMessage response = await client.GetAsync(
+                    $"http://localhost:9122/api/async-echo/{id}");
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadAsStringAsync();
+            })
+            .ToArray();
+
+        string[] responses = await Task.WhenAll(requests);
+        for (var id = 0; id < responses.Length; id++)
+            Assert.Contains(id.ToString(), responses[id]);
+
+        await server.StopAsync();
+    }
+
+    [Fact]
+    public async Task Start_FreezesBlueprintAndHandlerRegistration_ButKeepsHooksMutable()
+    {
+        using var server = new HttpServerExCore("http://localhost:9123/", 1);
+        var handler = new ApiHttpHandler();
+        server.AddRequestHandler(handler);
+        server.Start();
+
+        Assert.True(handler.IsFrozen);
+        Assert.Throws<InvalidOperationException>(
+            handler.MainBlueprint.AddRoutesOf<TestHandlerRoutes>);
+        var hook = new TestApiHttpHook();
+        handler.Hooks.AddEarlyRequestHook(hook);
+        handler.Hooks.RemoveEarlyRequestHook(hook);
+        Assert.Throws<InvalidOperationException>(() =>
+            server.AddRequestHandler(new ApiHttpHandler()));
+
+        await server.StopAsync();
+    }
 
     #region Constructor Tests
 
@@ -111,13 +241,13 @@ public class RESTHTTPServerHandlerTests
     /// Test TryHandle with null context throws
     /// </summary>
     [Fact]
-    public void TryHandle_WithNullContext_ShouldThrow()
+    public async Task TryHandle_WithNullContext_ShouldThrow()
     {
         // Arrange
         var handler = new ApiHttpHandler();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => handler.TryHandle(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await handler.TryHandleAsync(null!));
     }
 
     /// <summary>
@@ -734,30 +864,32 @@ public class RESTHTTPServerHandlerTests
 
     #endregion
 
-    #region GetSegmentsFromAbsolutePath Tests
+    #region FillSegmentsFromAbsolutePath Tests
 
     /// <summary>
-    /// Helper class to expose protected method for testing
+    /// Test helper for the allocation-free path parser.
     /// </summary>
-    private class TestableRESTHTTPServerHandler : ApiHttpHandler
+    private class TestableApiHttpHandler : ApiHttpHandler
     {
-        public List<string> TestGetSegmentsFromAbsolutePath(string absolutePath)
+        public List<string> TestFillSegmentsFromAbsolutePath(string absolutePath)
         {
-            return GetSegmentsFromAbsolutePath(absolutePath);
+            var segments = new List<string>(10);
+            FillSegmentsFromAbsolutePath(absolutePath, segments);
+            return segments;
         }
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with simple path
+    /// Test FillSegmentsFromAbsolutePath with simple path
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithSimplePath_ShouldReturnSegments()
+    public void FillSegmentsFromAbsolutePath_WithSimplePath_ShouldReturnSegments()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("/api/users");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("/api/users");
 
         // Assert
         Assert.Equal(2, segments.Count);
@@ -766,48 +898,48 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with root path
+    /// Test FillSegmentsFromAbsolutePath with root path
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithRootPath_ShouldReturnEmpty()
+    public void FillSegmentsFromAbsolutePath_WithRootPath_ShouldReturnEmpty()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("/");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("/");
 
         // Assert
         Assert.Empty(segments);
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with empty path
+    /// Test FillSegmentsFromAbsolutePath with empty path
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithEmptyPath_ShouldReturnEmpty()
+    public void FillSegmentsFromAbsolutePath_WithEmptyPath_ShouldReturnEmpty()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("");
 
         // Assert
         Assert.Empty(segments);
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with trailing slash
+    /// Test FillSegmentsFromAbsolutePath with trailing slash
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithTrailingSlash_ShouldIgnoreTrailingSlash()
+    public void FillSegmentsFromAbsolutePath_WithTrailingSlash_ShouldIgnoreTrailingSlash()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("/api/users/");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("/api/users/");
 
         // Assert
         Assert.Equal(2, segments.Count);
@@ -816,16 +948,16 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with multiple slashes
+    /// Test FillSegmentsFromAbsolutePath with multiple slashes
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithMultipleSlashes_ShouldIgnoreEmptySegments()
+    public void FillSegmentsFromAbsolutePath_WithMultipleSlashes_ShouldIgnoreEmptySegments()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("///api///users///");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("///api///users///");
 
         // Assert
         Assert.Equal(2, segments.Count);
@@ -834,16 +966,16 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with single segment
+    /// Test FillSegmentsFromAbsolutePath with single segment
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithSingleSegment_ShouldReturnOne()
+    public void FillSegmentsFromAbsolutePath_WithSingleSegment_ShouldReturnOne()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("/api");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("/api");
 
         // Assert
         Assert.Single(segments);
@@ -851,16 +983,16 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with complex path
+    /// Test FillSegmentsFromAbsolutePath with complex path
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithComplexPath_ShouldReturnAllSegments()
+    public void FillSegmentsFromAbsolutePath_WithComplexPath_ShouldReturnAllSegments()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("/api/v1/users/123/profile");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("/api/v1/users/123/profile");
 
         // Assert
         Assert.Equal(5, segments.Count);
@@ -872,16 +1004,16 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with path containing special characters
+    /// Test FillSegmentsFromAbsolutePath with path containing special characters
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithSpecialCharacters_ShouldPreserveCharacters()
+    public void FillSegmentsFromAbsolutePath_WithSpecialCharacters_ShouldPreserveCharacters()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("/api/users-test/user_id");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("/api/users-test/user_id");
 
         // Assert
         Assert.Equal(3, segments.Count);
@@ -891,16 +1023,16 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with path containing numbers
+    /// Test FillSegmentsFromAbsolutePath with path containing numbers
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithNumbers_ShouldPreserveNumbers()
+    public void FillSegmentsFromAbsolutePath_WithNumbers_ShouldPreserveNumbers()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("/api/v2/users/12345");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("/api/v2/users/12345");
 
         // Assert
         Assert.Equal(4, segments.Count);
@@ -911,36 +1043,33 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath reuses buffer across calls
+    /// Test separate fill operations return independent results.
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_MultipleCalls_ShouldReuseBuffer()
+    public void FillSegmentsFromAbsolutePath_MultipleCalls_ShouldReturnIndependentResults()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments1 = handler.TestGetSegmentsFromAbsolutePath("/api/users");
-        var segments2 = handler.TestGetSegmentsFromAbsolutePath("/api/posts/123");
+        var userSegments = handler.TestFillSegmentsFromAbsolutePath("/api/users");
+        var postSegments = handler.TestFillSegmentsFromAbsolutePath("/api/posts/123");
 
-        // Assert - Second call should have overwritten buffer
-        Assert.Equal(3, segments2.Count);
-        Assert.Equal("api", segments2[0]);
-        Assert.Equal("posts", segments2[1]);
-        Assert.Equal("123", segments2[2]);
+        Assert.Equal(new[] { "api", "users" }, userSegments);
+        Assert.Equal(new[] { "api", "posts", "123" }, postSegments);
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with query string (should be stripped by URL parsing)
+    /// Test FillSegmentsFromAbsolutePath with query string (should be stripped by URL parsing)
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithQueryString_ShouldOnlyParsePathPart()
+    public void FillSegmentsFromAbsolutePath_WithQueryString_ShouldOnlyParsePathPart()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act - Note: In real scenarios, AbsolutePath doesn't include query string
-        var segments = handler.TestGetSegmentsFromAbsolutePath("/api/users");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("/api/users");
 
         // Assert
         Assert.Equal(2, segments.Count);
@@ -949,16 +1078,16 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with path containing dots
+    /// Test FillSegmentsFromAbsolutePath with path containing dots
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithDotsInPath_ShouldPreserveDots()
+    public void FillSegmentsFromAbsolutePath_WithDotsInPath_ShouldPreserveDots()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("/api/file.json");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("/api/file.json");
 
         // Assert
         Assert.Equal(2, segments.Count);
@@ -967,16 +1096,16 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with encoded characters in path
+    /// Test FillSegmentsFromAbsolutePath with encoded characters in path
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithEncodedChars_ShouldPreserveEncoding()
+    public void FillSegmentsFromAbsolutePath_WithEncodedChars_ShouldPreserveEncoding()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("/api/users/%20test");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("/api/users/%20test");
 
         // Assert
         Assert.Equal(3, segments.Count);
@@ -986,22 +1115,22 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with consecutive calls on same thread
+    /// Test FillSegmentsFromAbsolutePath with consecutive calls on same thread
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_ConsecutiveCalls_ShouldClearPreviousData()
+    public void FillSegmentsFromAbsolutePath_ConsecutiveCalls_ShouldClearPreviousData()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act - First call with longer path
-        var segments1 = handler.TestGetSegmentsFromAbsolutePath("/api/users/123/profile/settings");
+        var longPathSegments = handler.TestFillSegmentsFromAbsolutePath("/api/users/123/profile/settings");
         // Second call with shorter path
-        var segments2 = handler.TestGetSegmentsFromAbsolutePath("/api");
+        var shortPathSegments = handler.TestFillSegmentsFromAbsolutePath("/api");
 
-        // Assert - Should only have data from second call
-        Assert.Single(segments2);
-        Assert.Equal("api", segments2[0]);
+        Assert.Equal(5, longPathSegments.Count);
+        Assert.Single(shortPathSegments);
+        Assert.Equal("api", shortPathSegments[0]);
     }
 
     #endregion
@@ -1015,7 +1144,7 @@ public class RESTHTTPServerHandlerTests
     public async Task Handler_ConcurrentAccess_ShouldBeSafe()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
         handler.MainBlueprint.AddRoutesOf<TestHandlerRoutes>();
 
         // Act & Assert - Multiple threads can use the handler
@@ -1025,7 +1154,7 @@ public class RESTHTTPServerHandlerTests
             int index = i;
             tasks[i] = Task.Run(() =>
             {
-                var segments = handler.TestGetSegmentsFromAbsolutePath($"/api/users/{index}");
+                var segments = handler.TestFillSegmentsFromAbsolutePath($"/api/users/{index}");
                 Assert.Equal(3, segments.Count);
                 Assert.Equal("api", segments[0]);
                 Assert.Equal("users", segments[1]);
@@ -1037,16 +1166,16 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test thread-local buffers are isolated
+    /// Test concurrent path parsing results are isolated.
     /// </summary>
     [Fact]
-    public async Task Handler_ThreadLocalBuffers_ShouldBeIsolated()
+    public async Task Handler_ConcurrentPathParsing_ShouldKeepResultsIsolated()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
         var results = new System.Collections.Concurrent.ConcurrentBag<List<string>>();
 
-        // Act - Multiple threads parsing different paths
+        // Act - Concurrent callers parse different paths.
         var tasks = new Task[5];
         for (int i = 0; i < tasks.Length; i++)
         {
@@ -1054,7 +1183,7 @@ public class RESTHTTPServerHandlerTests
             tasks[i] = Task.Run(() =>
             {
                 var path = $"/thread{index}/segment{index}";
-                var segments = handler.TestGetSegmentsFromAbsolutePath(path);
+                var segments = handler.TestFillSegmentsFromAbsolutePath(path);
                 results.Add(new List<string>(segments));
             });
         }
@@ -1102,20 +1231,20 @@ public class RESTHTTPServerHandlerTests
     /// Test that segment parsing is efficient for repeated calls
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_RepeatedCalls_ShouldBeEfficient()
+    public void FillSegmentsFromAbsolutePath_RepeatedCalls_ShouldBeEfficient()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
         var path = "/api/v1/users/123/profile/settings/preferences";
 
-        // Act - Multiple calls should reuse buffer
+        // Act - Repeated fills should remain stable.
         for (int i = 0; i < 100; i++)
         {
-            var segments = handler.TestGetSegmentsFromAbsolutePath(path);
+            var segments = handler.TestFillSegmentsFromAbsolutePath(path);
             Assert.Equal(7, segments.Count);
         }
 
-        // Assert - If we get here without errors, buffer reuse works
+        // Assert - If we get here without errors, repeated parsing works.
         Assert.True(true);
     }
 
@@ -1151,16 +1280,16 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with path without leading slash
+    /// Test FillSegmentsFromAbsolutePath with path without leading slash
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithoutLeadingSlash_ShouldStillParse()
+    public void FillSegmentsFromAbsolutePath_WithoutLeadingSlash_ShouldStillParse()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath("api/users");
+        var segments = handler.TestFillSegmentsFromAbsolutePath("api/users");
 
         // Assert
         Assert.Equal(2, segments.Count);
@@ -1169,17 +1298,17 @@ public class RESTHTTPServerHandlerTests
     }
 
     /// <summary>
-    /// Test GetSegmentsFromAbsolutePath with very long path
+    /// Test FillSegmentsFromAbsolutePath with very long path
     /// </summary>
     [Fact]
-    public void GetSegmentsFromAbsolutePath_WithLongPath_ShouldHandleAll()
+    public void FillSegmentsFromAbsolutePath_WithLongPath_ShouldHandleAll()
     {
         // Arrange
-        var handler = new TestableRESTHTTPServerHandler();
+        var handler = new TestableApiHttpHandler();
         var longPath = "/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z";
 
         // Act
-        var segments = handler.TestGetSegmentsFromAbsolutePath(longPath);
+        var segments = handler.TestFillSegmentsFromAbsolutePath(longPath);
 
         // Assert
         Assert.Equal(26, segments.Count);

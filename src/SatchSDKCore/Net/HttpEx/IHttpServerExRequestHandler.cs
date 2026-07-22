@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using SSC.Misc.Hookable;
 
 namespace SSC.Net.HttpEx;
@@ -17,5 +19,7 @@ public interface IHttpServerExRequestHandler
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    bool TryHandle(HttpServerExRequestContext context);
+    ValueTask<bool> TryHandleAsync(
+        HttpServerExRequestContext context,
+        CancellationToken          cancellationToken = default);
 }

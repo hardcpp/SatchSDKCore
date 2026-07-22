@@ -9,7 +9,12 @@ namespace SSC.Misc;
 public static class Time
 {
     private static readonly DateTime s_UnixEpoch = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-    private static readonly string[] s_Months = [
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    public static string[] MonthNames { get; } =
+    [
         "January",
         "February",
         "March",
@@ -23,7 +28,9 @@ public static class Time
         "November",
         "December"
     ];
-    private static readonly string[] s_MonthsShort = [
+
+    public static string[] MonthNamesShort { get; } =
+    [
         "Jan.",
         "Feb.",
         "Mar.",
@@ -41,24 +48,20 @@ public static class Time
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public static string[] MonthNames => s_Months;
-    public static string[] MonthNamesShort => s_MonthsShort;
-
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-
     /// <summary>
     /// Get UnixTimestamp
     /// </summary>
     /// <returns>Unix timestamp</returns>
     public static long UnixTimeNow()
         => (long)(DateTime.UtcNow - s_UnixEpoch).TotalSeconds;
+
     /// <summary>
     /// Get UnixTimestamp
     /// </summary>
     /// <returns>Unix timestamp</returns>
     public static long UnixTimeNowMS()
         => (long)(DateTime.UtcNow - s_UnixEpoch).TotalMilliseconds;
+
     /// <summary>
     /// Convert DateTime to UnixTimestamp
     /// </summary>
@@ -66,6 +69,7 @@ public static class Time
     /// <returns></returns>
     public static long ToUnixTime(DateTime dateTime)
         => (long)dateTime.ToUniversalTime().Subtract(s_UnixEpoch).TotalSeconds;
+
     /// <summary>
     /// Convert DateTime to UnixTimestamp
     /// </summary>
@@ -73,6 +77,7 @@ public static class Time
     /// <returns></returns>
     public static long ToUnixTimeMS(DateTime dateTime)
         => (long)dateTime.ToUniversalTime().Subtract(s_UnixEpoch).TotalMilliseconds;
+
     /// <summary>
     /// Convert UnixTimestamp to DateTime
     /// </summary>
@@ -80,6 +85,7 @@ public static class Time
     /// <returns></returns>
     public static DateTime FromUnixTime(long timestamp)
         => s_UnixEpoch.AddSeconds(timestamp).ToLocalTime();
+
     /// <summary>
     /// Convert UnixTimestamp to DateTime
     /// </summary>
@@ -87,6 +93,7 @@ public static class Time
     /// <returns></returns>
     public static DateTime FromUnixTimeMS(long timestamp)
         => s_UnixEpoch.AddMilliseconds(timestamp).ToLocalTime();
+
     /// <summary>
     /// Try parse international data
     /// </summary>

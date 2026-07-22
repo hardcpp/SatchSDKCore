@@ -18,25 +18,23 @@ public sealed class HttpClientExResponse
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private byte[]? _bodyBytes;
-    private IHttpClientExDataHandler? _bodyDataHandler;
     private string? _bodyString;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public readonly HttpStatusCode StatusCode;
-    public readonly string? ReasonPhrase;
-    public HttpClientExRateLimitInfo? RateLimitInfo { get; private set; }
-    public readonly bool IsSuccessStatusCode;
-    public readonly bool ShouldRetry;
+    public readonly HttpStatusCode             StatusCode;
+    public readonly string?                    ReasonPhrase;
+    public          HttpClientExRateLimitInfo? RateLimitInfo { get; private set; }
+    public readonly bool                       IsSuccessStatusCode;
+    public readonly bool                       ShouldRetry;
 
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
 
     public bool IsRateLimited => !IsSuccessStatusCode && StatusCode == (HttpStatusCode)429;
-    public byte[]? BodyBytes => _bodyBytes;
-    public IHttpClientExDataHandler? BodyHandler => _bodyDataHandler;
+
+    public byte[]?                   BodyBytes   { get; private set; }
+    public IHttpClientExDataHandler? BodyHandler { get; private set; }
+
     public string? BodyString
     {
         get
@@ -44,22 +42,26 @@ public sealed class HttpClientExResponse
             if (_bodyString != null)
                 return _bodyString;
 
-            if (_bodyBytes == null)
+            if (BodyBytes == null)
             {
                 _bodyString = null;
                 return _bodyString;
             }
 
-            if (_bodyBytes.Length == 0)
+            if (BodyBytes.Length == 0)
             {
                 _bodyString = string.Empty;
                 return _bodyString;
             }
 
-            if (s_UTF8Preamble.Length > 0 && _bodyBytes!.Length >= s_UTF8Preamble.Length && _bodyBytes.Take(s_UTF8Preamble.Length).SequenceEqual(s_UTF8Preamble))
-                _bodyString = Encoding.UTF8.GetString(_bodyBytes, s_UTF8Preamble.Length, _bodyBytes.Length - s_UTF8Preamble.Length);
+            if (s_UTF8Preamble.Length > 0 && BodyBytes!.Length >= s_UTF8Preamble.Length &&
+                BodyBytes.Take(s_UTF8Preamble.Length).SequenceEqual(s_UTF8Preamble))
+            {
+                _bodyString = Encoding.UTF8.GetString(BodyBytes, s_UTF8Preamble.Length,
+                                                      BodyBytes.Length - s_UTF8Preamble.Length);
+            }
             else
-                _bodyString = Encoding.UTF8.GetString(_bodyBytes!);
+                _bodyString = Encoding.UTF8.GetString(BodyBytes!);
 
             return _bodyString;
         }
@@ -76,26 +78,29 @@ public sealed class HttpClientExResponse
     /// <param name="isSuccessStatusCode">If the status code considered success?</param>
     public HttpClientExResponse(
         HttpStatusCode statusCode,
-        string? reasonPhrase,
-        bool isSuccessStatusCode
+        string?        reasonPhrase,
+        bool           isSuccessStatusCode
     )
     {
-        StatusCode = statusCode;
-        ReasonPhrase = reasonPhrase;
+        StatusCode          = statusCode;
+        ReasonPhrase        = reasonPhrase;
         IsSuccessStatusCode = isSuccessStatusCode;
-        ShouldRetry = !IsSuccessStatusCode && ((int)statusCode < 400 || (int)statusCode >= 500);
+        ShouldRetry         = !IsSuccessStatusCode && ((int)statusCode < 400 || (int)statusCode >= 500);
     }
+
     /// <summary>
     /// Constructor
     /// </summary>
     /// <param name="coreHttpResponse">Reply status</param>
     public HttpClientExResponse(HttpResponseMessage coreHttpResponse)
     {
-        StatusCode = coreHttpResponse.StatusCode;
-        ReasonPhrase = coreHttpResponse.ReasonPhrase;
+        StatusCode          = coreHttpResponse.StatusCode;
+        ReasonPhrase        = coreHttpResponse.ReasonPhrase;
         IsSuccessStatusCode = coreHttpResponse.IsSuccessStatusCode;
-        ShouldRetry = !IsSuccessStatusCode && ((int)coreHttpResponse.StatusCode < 400 || (int)coreHttpResponse.StatusCode >= 500);
+        ShouldRetry = !IsSuccessStatusCode &&
+                      ((int)coreHttpResponse.StatusCode < 400 || (int)coreHttpResponse.StatusCode >= 500);
     }
+
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -109,13 +114,14 @@ public sealed class HttpClientExResponse
     {
         ArgumentNullException.ThrowIfNull(bodyBytes);
 
-        if (_bodyBytes != null || _bodyDataHandler != null)
+        if (BodyBytes != null || BodyHandler != null)
             throw new InvalidOperationException("Can not alter HTTPClientResponse body after initial set");
 
-        _bodyBytes = bodyBytes;
-        _bodyDataHandler = null;
+        BodyBytes   = bodyBytes;
+        BodyHandler = null;
         _bodyString = null;
     }
+
     /// <summary>
     /// Set the body data handler
     /// </summary>
@@ -125,21 +131,19 @@ public sealed class HttpClientExResponse
     {
         ArgumentNullException.ThrowIfNull(bodyDataHandler);
 
-        if (_bodyBytes != null || _bodyDataHandler != null)
+        if (BodyBytes != null || BodyHandler != null)
             throw new InvalidOperationException("Can not alter HTTPClientResponse body after initial set");
 
-        _bodyBytes = null;
-        _bodyDataHandler = bodyDataHandler;
+        BodyBytes   = null;
+        BodyHandler = bodyDataHandler;
         _bodyString = null;
     }
+
     /// <summary>
     /// Set rate limit info
     /// </summary>
     /// <param name="rateLimitInfo">New rate limit info</param>
-    public void DangerousSetRateLimit(HttpClientExRateLimitInfo rateLimitInfo)
-    {
-        RateLimitInfo = rateLimitInfo;
-    }
+    public void DangerousSetRateLimit(HttpClientExRateLimitInfo rateLimitInfo) => RateLimitInfo = rateLimitInfo;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -158,10 +162,14 @@ public sealed class HttpClientExResponse
         {
             resultJObject = JObject.Parse(BodyString);
         }
-        catch (Exception) { return false; }
+        catch (Exception)
+        {
+            return false;
+        }
 
         return resultJObject != null;
     }
+
     /// <summary>
     /// Get JObject from serialized JSON
     /// </summary>
@@ -177,7 +185,10 @@ public sealed class HttpClientExResponse
         {
             resultObject = JsonConvert.DeserializeObject<T>(BodyString);
         }
-        catch (Exception) { return false; }
+        catch (Exception)
+        {
+            return false;
+        }
 
         return resultObject != null;
     }

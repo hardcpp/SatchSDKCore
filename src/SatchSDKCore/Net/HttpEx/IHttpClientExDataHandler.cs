@@ -17,6 +17,7 @@ public interface IHttpClientExDataHandler
     /// When the reading begin
     /// </summary>
     void Begin();
+
     /// <summary>
     /// Process a buffer
     /// </summary>
@@ -24,6 +25,7 @@ public interface IHttpClientExDataHandler
     /// <param name="totalSize">Total size if known</param>
     /// <returns></returns>
     ValueTask ProcessAsync(ReadOnlySpan<byte> buffer, long? totalSize);
+
     /// <summary>
     /// When the reading end
     /// </summary>

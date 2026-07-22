@@ -1,4 +1,6 @@
 using System;
+using SSC.Api.Response;
+using SSC.Api.RouteContext;
 
 namespace SSC.Api.RouteHook;
 
@@ -14,5 +16,5 @@ public abstract class ApiRouteHook : Attribute
     /// <param name="routeContext">Route context</param>
     /// <param name="interceptionResult">Result to send if returned true</param>
     /// <returns>True if the route should be interrupted</returns>
-    public abstract bool TryIntercept(RouteContext.ApiRouteContext routeContext, out Response.ApiResponse interceptionResult);
+    public abstract bool TryIntercept(ApiRouteContext routeContext, out ApiResponse interceptionResult);
 }

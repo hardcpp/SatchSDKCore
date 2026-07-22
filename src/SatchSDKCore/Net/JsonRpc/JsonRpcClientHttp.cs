@@ -14,14 +14,10 @@ namespace SSC.Net.JsonRpc;
 /// </summary>
 public class JsonRpcClientHttp : JsonRpcClientBase
 {
-    private readonly IHttpClientEx _httpClient;
-    private readonly string? _overrideUrl;
+    public IHttpClientEx HttpClient { get; }
 
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
+    public string? OverrideUrl { get; }
 
-    public IHttpClientEx HttpClient => _httpClient;
-    public string? OverrideUrl => _overrideUrl;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -33,63 +29,72 @@ public class JsonRpcClientHttp : JsonRpcClientBase
     /// <param name="overrideUrl">Url override?</param>
     public JsonRpcClientHttp(IHttpClientEx httpClient, string? overrideUrl = null)
     {
-        _httpClient = httpClient;
-        _overrideUrl = overrideUrl;
+        HttpClient  = httpClient;
+        OverrideUrl = overrideUrl;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected override JsonRpcClientResult? DoCall(
         JsonRpcClientRequest request,
-        ECallOptions options
+        ECallOptions         options
     )
     {
-        var httpResult = _httpClient.DoRequest(
+        HttpClientExResponse httpResult = HttpClient.DoRequest(
             "POST",
-            _overrideUrl ?? string.Empty,
-            HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
+            OverrideUrl ?? string.Empty,
+            HttpClientExPayload.FromJsonString(JsonSerializer
+                                                   .Serialize(request,
+                                                              SDKConfig.JsonSerializerOptions)),
             CallOptionsToRequestOptions(options)
         );
 
         return BuildJSONRPCClientResult(request, httpResult);
     }
-    /// <inheritdoc/>
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected override void DoCallInBackground(
-        JsonRpcClientRequest request,
-        CancellationToken cancellationToken,
+        JsonRpcClientRequest          request,
+        CancellationToken             cancellationToken,
         Action<JsonRpcClientResult?>? callback,
-        ECallOptions options
+        ECallOptions                  options
     )
     {
-        _httpClient.DoRequestInBackground(
+        HttpClient.DoRequestInBackground(
             "POST",
-            _overrideUrl ?? string.Empty,
+            OverrideUrl ?? string.Empty,
             cancellationToken,
             httpResult => { callback?.Invoke(BuildJSONRPCClientResult(request, httpResult)); },
-            HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
+            HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request,
+                                                                        SDKConfig.JsonSerializerOptions)),
             CallOptionsToRequestOptions(options)
         );
     }
-    /// <inheritdoc/>
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     protected override async Task<JsonRpcClientResult?> DoCallAsync(
         JsonRpcClientRequest request,
-        CancellationToken cancellationToken,
-        ECallOptions options
+        CancellationToken    cancellationToken,
+        ECallOptions         options
     )
     {
-        var httpResult = await _httpClient.DoRequestAsync(
+        HttpClientExResponse httpResult = await HttpClient.DoRequestAsync(
             "POST",
-            _overrideUrl ?? string.Empty,
+            OverrideUrl ?? string.Empty,
             cancellationToken,
-            HttpClientExPayload.FromJsonString(JsonSerializer.Serialize(request, SDKConfig.JsonSerializerOptions)),
+            HttpClientExPayload
+                .FromJsonString(JsonSerializer
+                                    .Serialize(request,
+                                               SDKConfig
+                                                   .JsonSerializerOptions)),
             CallOptionsToRequestOptions(options)
         ).ConfigureAwait(false);
 
@@ -105,7 +110,9 @@ public class JsonRpcClientHttp : JsonRpcClientBase
     /// <param name="request">Request informations</param>
     /// <param name="httpResponse">Http client ex response</param>
     /// <returns></returns>
-    private static JsonRpcClientResult? BuildJSONRPCClientResult(JsonRpcClientRequest request, HttpClientExResponse? httpResponse)
+    private static JsonRpcClientResult? BuildJSONRPCClientResult(
+        JsonRpcClientRequest  request,
+        HttpClientExResponse? httpResponse)
     {
         if (httpResponse == null || string.IsNullOrEmpty(httpResponse.BodyString))
             return null;
@@ -117,12 +124,13 @@ public class JsonRpcClientHttp : JsonRpcClientBase
             return new JsonRpcClientResult
             {
                 Result = (jsonResult?["result"] ?? null) as JsonObject,
-                Error = (jsonResult?["error"] ?? null) as JsonObject
+                Error  = (jsonResult?["error"]  ?? null) as JsonObject
             };
         }
         catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[Net.JsonRPC][JsonRPCClient.JsonRpcClientHttp] Request {request.Method} failed parsing response:");
+            Logging.Log(ELogSeverity.Error,
+                        $"[Net.JsonRPC][JsonRPCClient.JsonRpcClientHttp] Request {request.Method} failed parsing response:");
             Logging.Log(ELogSeverity.Error, exception);
         }
 

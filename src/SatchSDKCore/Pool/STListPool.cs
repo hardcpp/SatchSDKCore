@@ -8,5 +8,4 @@ namespace SSC.Pool;
 public class STListPool<TValueType>
     : STCollectionPool<List<TValueType>, TValueType>
 {
-
 }

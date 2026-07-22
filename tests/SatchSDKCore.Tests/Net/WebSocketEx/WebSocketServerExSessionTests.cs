@@ -35,7 +35,7 @@ public class WebSocketServerExSessionTests
         public TestSession? FindSession(Func<TestSession, bool> predicate, TestSession? defaultValue = default)
             => defaultValue;
 
-        public bool TryHandle(HttpServerExRequestContext context) => false;
+        public async ValueTask<bool> TryHandleAsync(HttpServerExRequestContext context, CancellationToken cancellationToken = default) => false;
     }
 
     /// <summary>
@@ -504,7 +504,7 @@ public class WebSocketServerExSessionTests
         public ThrowingTestSession? FindSession(Func<ThrowingTestSession, bool> predicate, ThrowingTestSession? defaultValue = default)
             => defaultValue;
 
-        public bool TryHandle(HttpServerExRequestContext context) => false;
+        public async ValueTask<bool> TryHandleAsync(HttpServerExRequestContext context, CancellationToken cancellationToken = default) => false;
     }
 
     /// <summary>

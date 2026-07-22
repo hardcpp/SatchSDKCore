@@ -1,12 +1,18 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using SSC.Api.Blueprint;
+using SSC.Api.Request;
 using SSC.Api.Response;
 using SSC.Api.Route;
+using SSC.Api.RouteContext;
+using SSC.Misc;
 using SSC.Misc.Hookable;
 using SSC.Net.HttpEx;
 
@@ -15,17 +21,24 @@ namespace SSC.Api.Handler;
 /// <summary>
 /// HTTP Server handler
 /// </summary>
-public class ApiHttpHandler : IHttpServerExRequestHandler
+public class ApiHttpHandler : IHttpServerExRequestHandler, IFreezable
 {
-    public readonly Blueprint.ApiHttpBlueprint MainBlueprint = new("Main");
+    private const int MaxRetainedScratchBuffers      = 64;
+    private const int InitialRetainedSegmentCapacity = 10;
+    private const int MaxRetainedSegmentCapacity     = 128;
+    private const int MaxRetainedArgumentCapacity    = 64;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly ThreadLocal<List<string>> _segmentBuffers = new(() => new List<string>(10));
+    private readonly ConcurrentBag<RequestScratch> _scratchBuffers = new();
+    private          int                           _retainedScratchBufferCount;
 
-    private readonly ThreadLocal<Dictionary<string, string>> _argumentsCollectors =
-        new(() => new Dictionary<string, string>());
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    public readonly ApiHttpBlueprint MainBlueprint = new("Main");
+    public          bool             IsFrozen => MainBlueprint.IsFrozen;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -35,87 +48,110 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
+    /// <inheritdoc />
+    public void Freeze()
+        => MainBlueprint.Freeze();
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
     /// <summary>
     /// Try handle the request
     /// </summary>
     /// <param name="context">Request context</param>
     /// <returns>True if the request was handled</returns>
-    public bool TryHandle(HttpServerExRequestContext context)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpServerExRequestContext context,
+        CancellationToken          cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        HttpListenerRequest originalRequest = context.ListenerRequest;
+        RequestScratch                      scratch = RentScratch();
+        ApiHttpRoute                        route;
+        ApiHttpRouteContext                 httpContext;
+        EApiHttpMethod                      httpMethod;
+        ValueTask<ApiRouteInvocationResult> invocationTask;
 
-        List<string> segments = GetSegmentsFromAbsolutePath(
-            originalRequest.Url!.AbsolutePath);
-
-        Dictionary<string, string>? arguments = _argumentsCollectors.Value!;
-        arguments.Clear();
-
-        // First match only the path. This lets us distinguish 404 from 405.
-        if (!MainBlueprint.TryFindRoutes(
-                CollectionsMarshal.AsSpan(segments),
-                arguments,
-                out ApiHttpRoute?[]? routes))
+        try
         {
-            // The path does not exist. Let HttpServerExCore produce its
-            // normal 404 response.
-            return false;
+            HttpListenerRequest originalRequest = context.ListenerRequest;
+            FillSegmentsFromAbsolutePath(
+                originalRequest.Url!.AbsolutePath,
+                scratch.Segments);
+
+            // First match only the path. This lets us distinguish 404 from 405.
+            if (!MainBlueprint.TryFindRoutes(
+                    CollectionsMarshal.AsSpan(scratch.Segments),
+                    scratch.Arguments,
+                    out ApiHttpRoute?[]? routes))
+            {
+                // The path does not exist. Let HttpServerExCore produce its
+                // normal 404 response.
+                return false;
+            }
+
+            // The path exists, but the client used an extension or unsupported
+            // method such as PROPFIND.
+            if (!TryGetHttpMethod(
+                    originalRequest.HttpMethod,
+                    out httpMethod))
+            {
+                context.ServerResponse =
+                    CreateMethodNotAllowedResponse(routes);
+
+                return true;
+            }
+
+            // Explicitly registered OPTIONS routes take priority.
+            // Otherwise generate an automatic OPTIONS response.
+            if (httpMethod                          == EApiHttpMethod.Options &&
+                routes[(int)EApiHttpMethod.Options] == null)
+            {
+                context.ServerResponse =
+                    CreateAutomaticOptionsResponse(routes);
+
+                return true;
+            }
+
+            ApiHttpRoute? matchedRoute = routes[(int)httpMethod];
+
+            // Explicit HEAD route takes priority. Otherwise execute GET and
+            // suppress its response body.
+            if (httpMethod   == EApiHttpMethod.Head &&
+                matchedRoute == null)
+                matchedRoute = routes[(int)EApiHttpMethod.Get];
+
+            if (matchedRoute == null)
+            {
+                // The path exists, but not for this method.
+                context.ServerResponse =
+                    CreateMethodNotAllowedResponse(routes);
+
+                return true;
+            }
+
+            route = matchedRoute;
+
+            var httpRequest = new ApiHttpRequest(context);
+
+            httpContext = new ApiHttpRouteContext(
+                httpRequest,
+                httpMethod);
+
+            invocationTask = route.TryInvokeAsync(
+                httpContext,
+                scratch.Arguments,
+                cancellationToken);
+        }
+        finally
+        {
+            ReturnScratch(scratch);
         }
 
-        // The path exists, but the client used an extension or unsupported
-        // method such as PROPFIND.
-        if (!TryGetHttpMethod(
-                originalRequest.HttpMethod,
-                out EApiHttpMethod httpMethod))
-        {
-            context.ServerResponse =
-                CreateMethodNotAllowedResponse(routes);
+        ApiRouteInvocationResult invocation = await invocationTask.ConfigureAwait(false);
 
-            return true;
-        }
-
-        // Explicitly registered OPTIONS routes take priority.
-        // Otherwise generate an automatic OPTIONS response.
-        if (httpMethod == Route.EApiHttpMethod.Options &&
-            routes[(int)Route.EApiHttpMethod.Options] == null)
-        {
-            context.ServerResponse =
-                CreateAutomaticOptionsResponse(routes);
-
-            return true;
-        }
-
-        ApiHttpRoute? route = routes[(int)httpMethod];
-
-        // Explicit HEAD route takes priority. Otherwise execute GET and
-        // suppress its response body.
-        if (httpMethod == Route.EApiHttpMethod.Head &&
-            route == null)
-        {
-            route = routes[(int)Route.EApiHttpMethod.Get];
-        }
-
-        if (route == null)
-        {
-            // The path exists, but not for this method.
-            context.ServerResponse =
-                CreateMethodNotAllowedResponse(routes);
-
-            return true;
-        }
-
-        var httpRequest = new Request.ApiHttpRequest(context);
-
-        var httpContext = new RouteContext.ApiHttpRouteContext(
-            httpRequest,
-            httpMethod);
-
-        route.TryInvoke(
-            httpContext,
-            arguments,
-            out string? error,
-            out ApiResponse? response);
+        string?      error    = invocation.Error;
+        ApiResponse? response = invocation.Response;
 
         if (response != null)
         {
@@ -123,7 +159,7 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
                 response.AsHttpResponse()?.HttpServerExResponse;
 
             if (serverResponse != null &&
-                httpMethod == Route.EApiHttpMethod.Head)
+                httpMethod     == EApiHttpMethod.Head)
             {
                 serverResponse =
                     serverResponse.WithSuppressedBody();
@@ -142,12 +178,8 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
                 HttpStatusCode.InternalServerError
             ).HttpServerExResponse;
 
-            // HEAD responses must not contain a body, including error
-            // responses.
-            if (httpMethod == Route.EApiHttpMethod.Head)
-            {
-                serverResponse = serverResponse.WithSuppressedBody();
-            }
+            // HEAD responses must not contain a body, including error responses.
+            if (httpMethod == EApiHttpMethod.Head) serverResponse = serverResponse.WithSuppressedBody();
 
             context.ServerResponse = serverResponse;
         }
@@ -157,41 +189,42 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
+
     /// <summary>
     /// Try to convert an HTTP method string to an API HTTP method.
     /// </summary>
     private static bool TryGetHttpMethod(
-        string originalMethod,
-        out Route.EApiHttpMethod method)
+        string             originalMethod,
+        out EApiHttpMethod method)
     {
         switch (originalMethod)
         {
             case "GET":
-                method = Route.EApiHttpMethod.Get;
+                method = EApiHttpMethod.Get;
                 return true;
 
             case "HEAD":
-                method = Route.EApiHttpMethod.Head;
+                method = EApiHttpMethod.Head;
                 return true;
 
             case "POST":
-                method = Route.EApiHttpMethod.Post;
+                method = EApiHttpMethod.Post;
                 return true;
 
             case "PUT":
-                method = Route.EApiHttpMethod.Put;
+                method = EApiHttpMethod.Put;
                 return true;
 
             case "PATCH":
-                method = Route.EApiHttpMethod.Patch;
+                method = EApiHttpMethod.Patch;
                 return true;
 
             case "DELETE":
-                method = Route.EApiHttpMethod.Delete;
+                method = EApiHttpMethod.Delete;
                 return true;
 
             case "OPTIONS":
-                method = Route.EApiHttpMethod.Options;
+                method = EApiHttpMethod.Options;
                 return true;
 
             default:
@@ -204,7 +237,7 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
     /// Create a 405 Method Not Allowed response.
     /// </summary>
     private static HttpServerExResponse CreateMethodNotAllowedResponse(
-        Route.ApiHttpRoute?[] routes)
+        ApiHttpRoute?[] routes)
     {
         var headers = new Dictionary<string, string>(1) { ["Allow"] = BuildAllowHeader(routes) };
 
@@ -222,7 +255,7 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
     /// Create an automatic OPTIONS response.
     /// </summary>
     private static HttpServerExResponse CreateAutomaticOptionsResponse(
-        Route.ApiHttpRoute?[] routes)
+        ApiHttpRoute?[] routes)
     {
         var headers = new Dictionary<string, string>(1) { ["Allow"] = BuildAllowHeader(routes) };
 
@@ -237,54 +270,34 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
     /// Build the Allow header for a matched route path.
     /// </summary>
     private static string BuildAllowHeader(
-        Route.ApiHttpRoute?[] routes)
+        ApiHttpRoute?[] routes)
     {
         var result = new StringBuilder(48);
 
-        bool HasRoute(Route.EApiHttpMethod method)
+        bool HasRoute(EApiHttpMethod method)
             => routes[(int)method] != null;
 
         void Append(string method)
         {
-            if (result.Length > 0)
-            {
-                result.Append(", ");
-            }
+            if (result.Length > 0) result.Append(", ");
 
             result.Append(method);
         }
 
-        if (HasRoute(Route.EApiHttpMethod.Get))
-        {
-            Append("GET");
-        }
+        if (HasRoute(EApiHttpMethod.Get)) Append("GET");
 
         // HEAD is automatically supported when GET exists.
-        if (HasRoute(Route.EApiHttpMethod.Head) ||
-            HasRoute(Route.EApiHttpMethod.Get))
-        {
+        if (HasRoute(EApiHttpMethod.Head) ||
+            HasRoute(EApiHttpMethod.Get))
             Append("HEAD");
-        }
 
-        if (HasRoute(Route.EApiHttpMethod.Post))
-        {
-            Append("POST");
-        }
+        if (HasRoute(EApiHttpMethod.Post)) Append("POST");
 
-        if (HasRoute(Route.EApiHttpMethod.Put))
-        {
-            Append("PUT");
-        }
+        if (HasRoute(EApiHttpMethod.Put)) Append("PUT");
 
-        if (HasRoute(Route.EApiHttpMethod.Patch))
-        {
-            Append("PATCH");
-        }
+        if (HasRoute(EApiHttpMethod.Patch)) Append("PATCH");
 
-        if (HasRoute(Route.EApiHttpMethod.Delete))
-        {
-            Append("DELETE");
-        }
+        if (HasRoute(EApiHttpMethod.Delete)) Append("DELETE");
 
         // OPTIONS is automatically available for every matched path.
         Append("OPTIONS");
@@ -293,21 +306,19 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
     }
 
     /// <summary>
-    /// Get splitted segment from an absolute Url
+    /// Fill a segment list from an absolute path parts
     /// </summary>
-    /// <param name="absolutePath">Absolut Url</param>
-    /// <returns>List of segments</returns>
-    protected List<string> GetSegmentsFromAbsolutePath(string absolutePath)
+    /// <param name="absolutePath">Absolute path</param>
+    /// <param name="result">Target list</param>
+    protected static void FillSegmentsFromAbsolutePath(
+        string       absolutePath,
+        List<string> result)
     {
-        List<string>? result = _segmentBuffers.Value!;
         result.Clear();
 
         for (int i = 0; i < absolutePath.Length; ++i)
         {
-            if (absolutePath[i] == '/')
-            {
-                continue;
-            }
+            if (absolutePath[i] == '/') continue;
 
             int nextSeparator = absolutePath.IndexOf('/', i);
             if (nextSeparator == -1)
@@ -321,7 +332,58 @@ public class ApiHttpHandler : IHttpServerExRequestHandler
                 i = nextSeparator;
             }
         }
+    }
 
-        return result;
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// <summary>
+    /// Rent a scratch buffer for handling the request, or create an extra one if none available
+    /// </summary>
+    /// <returns>Rented scratch</returns>
+    private RequestScratch RentScratch()
+    {
+        if (_scratchBuffers.TryTake(out RequestScratch? scratch))
+        {
+            Interlocked.Decrement(ref _retainedScratchBufferCount);
+            return scratch;
+        }
+
+        return new RequestScratch();
+    }
+
+    /// <summary>
+    /// Return a rented scratch buffer
+    /// </summary>
+    /// <param name="scratch">Buffer to return</param>
+    private void ReturnScratch(RequestScratch scratch)
+    {
+        if (scratch.Segments.Capacity > MaxRetainedSegmentCapacity)
+            scratch.Segments = new List<string>(InitialRetainedSegmentCapacity);
+        else
+            scratch.Segments.Clear();
+
+        if (scratch.Arguments.EnsureCapacity(0) > MaxRetainedArgumentCapacity)
+            scratch.Arguments = new Dictionary<string, string>();
+        else
+            scratch.Arguments.Clear();
+
+        if (Interlocked.Increment(ref _retainedScratchBufferCount) <=
+            MaxRetainedScratchBuffers)
+        {
+            _scratchBuffers.Add(scratch);
+            return;
+        }
+
+        Interlocked.Decrement(ref _retainedScratchBufferCount);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    private sealed class RequestScratch
+    {
+        public List<string>               Segments  { get; set; } = new(InitialRetainedSegmentCapacity);
+        public Dictionary<string, string> Arguments { get; set; } = new();
     }
 }

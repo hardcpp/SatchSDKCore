@@ -1,13 +1,20 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using SSC.Api.Response;
+using SSC.Api.RouteContext;
+using SSC.Api.RouteHook;
+using SSC.Reflection;
 
 namespace SSC.Api.Route;
 
@@ -17,24 +24,31 @@ namespace SSC.Api.Route;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public abstract class ApiRoute : Attribute
 {
-    public MethodInfo? Method { get; private set; }
-    public ParameterInfo[]? Parameters { get; private set; }
-    public Type[]? ParametersType { get; private set; }
-    public bool[]? ParametersOptional { get; private set; }
-    public string[]? ParametersFixedName { get; private set; }
-    public string[]? ParametersHint { get; private set; }
-    public RouteHook.ApiRouteHook[]? Hooks { get; private set; }
-    public bool IsAsync { get; private set; }
-    public TimeSpan? AsyncTimeout { get; private set; }
-    public bool HasContextParameter { get; private set; }
-    public int UserParametersOffset { get; private set; }
+    private const int MaxRetainedInvokeBuffers = 32;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private ThreadLocal<object[]>? _invokeBuffer;
-    private Func<object[], object?>? _compiledInvoker;
-    private readonly string? _asyncTimeoutStr;
+    private readonly string?                  _asyncTimeoutStr;
+    private          Func<object[], object?>? _compiledInvoker;
+
+    private ConcurrentBag<object[]>? _invokeBuffers;
+    private int                      _retainedInvokeBufferCount;
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    public MethodInfo?      Method               { get; private set; }
+    public ParameterInfo[]? Parameters           { get; private set; }
+    public Type[]?          ParametersType       { get; private set; }
+    public bool[]?          ParametersOptional   { get; private set; }
+    public string[]?        ParametersFixedName  { get; private set; }
+    public string[]?        ParametersHint       { get; private set; }
+    public ApiRouteHook[]?  Hooks                { get; private set; }
+    public bool             IsAsync              { get; private set; }
+    public TimeSpan?        AsyncTimeout         { get; private set; }
+    public bool             HasContextParameter  { get; private set; }
+    public int              UserParametersOffset { get; private set; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -77,61 +91,45 @@ public abstract class ApiRoute : Attribute
                 $"Route method '{method.DeclaringType?.FullName}.{method.Name}' cannot contain unbound generic parameters");
         }
 
-        Method = method;
-        Parameters = method.GetParameters();
-        ParametersType = new Type[Parameters.Length];
-        ParametersOptional = new bool[Parameters.Length];
+        Method              = method;
+        Parameters          = method.GetParameters();
+        ParametersType      = new Type[Parameters.Length];
+        ParametersOptional  = new bool[Parameters.Length];
         ParametersFixedName = new string[Parameters.Length];
-        ParametersHint = new string[Parameters.Length];
+        ParametersHint      = new string[Parameters.Length];
 
-        // Check if the method is async first
-        static bool IsTaskType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type returnType)
-            => returnType.GetMethod(nameof(Task.GetAwaiter)) != null;
+        IsAsync = method.ReturnType == typeof(Task<ApiResponse>);
 
-        // Suppress IL2072: We're only checking for GetAwaiter which is a standard method on Task types
-        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2072",
-            Justification = "Checking for GetAwaiter method is a standard pattern to detect Task types")]
-        static bool CheckIfAsync(MethodInfo methodInfo) => IsTaskType(methodInfo.ReturnType);
-
-        IsAsync = CheckIfAsync(method);
-
-        // Validate return type based on whether it's async or not
-        if (IsAsync)
+        if (!IsAsync &&
+            !method.ReturnType.IsAssignableTo(typeof(ApiResponse)))
         {
-            // For async methods, check if it's Task<ApiResponse>
-            if (!method.ReturnType.IsGenericType ||
-                method.ReturnType.GetGenericTypeDefinition() != typeof(Task<>) ||
-                !method.ReturnType.GetGenericArguments()[0].IsAssignableTo(typeof(Response.ApiResponse)))
-            {
-                throw new Exception($"Route {method.Name} has wrong return Type, should be of Task<ApiResponse>");
-            }
-        }
-        else
-        {
-            // For sync methods, check if it's ApiResponse
-            if (!Method.ReturnType.IsAssignableTo(typeof(Response.ApiResponse)))
-                throw new Exception($"Route {method.Name} has wrong return Type, should be of ApiResponse");
+            throw new Exception(
+                $"Route '{method.DeclaringType?.FullName}.{method.Name}' " +
+                "must return ApiResponse or Task<ApiResponse>");
         }
 
-        var hooks = Method.GetCustomAttributes<RouteHook.ApiRouteHook>(true);
-        Hooks = hooks.Any() ? hooks.ToArray() : Array.Empty<RouteHook.ApiRouteHook>();
+        IEnumerable<ApiRouteHook> hooks = Method.GetCustomAttributes<ApiRouteHook>(true);
+        Hooks = hooks.Any() ? hooks.ToArray() : Array.Empty<ApiRouteHook>();
         if (IsAsync)
         {
             if (Parameters.Length == 0 || Parameters[0].ParameterType != typeof(CancellationToken))
-                throw new Exception($"Route {method.Name} has wrong parameter Type, Arg 0 should be of CancellationToken");
+            {
+                throw new Exception(
+                    $"Route {method.Name} has wrong parameter Type, Arg 0 should be of CancellationToken");
+            }
 
-            if (Parameters.Length >= 2 && typeof(RouteContext.ApiRouteContext).IsAssignableFrom(Parameters[1].ParameterType))
+            if (Parameters.Length >= 2 && typeof(ApiRouteContext).IsAssignableFrom(Parameters[1].ParameterType))
                 HasContextParameter = true;
 
             UserParametersOffset = HasContextParameter ? 2 : 1;
 
             AsyncTimeout = _asyncTimeoutStr != null
-                ? TimeSpan.ParseExact(_asyncTimeoutStr, @"m\:s\.fff", System.Globalization.CultureInfo.InvariantCulture)
+                ? TimeSpan.ParseExact(_asyncTimeoutStr, @"m\:s\.fff", CultureInfo.InvariantCulture)
                 : TimeSpan.FromSeconds(60);
         }
         else
         {
-            if (Parameters.Length > 0 && typeof(RouteContext.ApiRouteContext).IsAssignableFrom(Parameters[0].ParameterType))
+            if (Parameters.Length > 0 && typeof(ApiRouteContext).IsAssignableFrom(Parameters[0].ParameterType))
                 HasContextParameter = true;
 
             UserParametersOffset = HasContextParameter ? 1 : 0;
@@ -140,9 +138,9 @@ public abstract class ApiRoute : Attribute
                 throw new Exception($"Route {method.Name} has timeout but is not async");
         }
 
-        for (var i = 0; i < Parameters.Length; ++i)
+        for (int i = 0; i < Parameters.Length; ++i)
         {
-            var parameter = Parameters[i]!;
+            ParameterInfo parameter = Parameters[i]!;
 
             if (parameter.ParameterType.IsByRef || parameter.IsOut)
             {
@@ -151,8 +149,9 @@ public abstract class ApiRoute : Attribute
                     $"contains unsupported ref/out parameter '{parameter.Name}'");
             }
 
-            var isNullable = parameter.ParameterType.IsGenericType && parameter.ParameterType.GetGenericTypeDefinition() == typeof(Nullable<>);
-            var hasDefaultValue = parameter.HasDefaultValue;
+            bool isNullable = parameter.ParameterType.IsGenericType &&
+                              parameter.ParameterType.GetGenericTypeDefinition() == typeof(Nullable<>);
+            bool hasDefaultValue = parameter.HasDefaultValue;
 
             ParametersType[i] = isNullable ? parameter.ParameterType.GenericTypeArguments[0] : parameter.ParameterType;
             ParametersOptional[i] = isNullable || hasDefaultValue;
@@ -164,23 +163,22 @@ public abstract class ApiRoute : Attribute
                 continue;
             }
 
-            ParametersHint[i] = $"{(i - UserParametersOffset) + 1}:{ParametersFixedName[i]}";
+            ParametersHint[i] = $"{i - UserParametersOffset + 1}:{ParametersFixedName[i]}";
         }
 
-        _invokeBuffer = new ThreadLocal<object[]>(() => new object[Parameters.Length]);
+        _invokeBuffers = new ConcurrentBag<object[]>();
 
         if (RuntimeFeature.IsDynamicCodeCompiled)
             _compiledInvoker = CompileInvoker(method);
     }
+
     /// <summary>
     /// Compile a route method into a common invocation signature.
-    ///
     /// Generated code is conceptually equivalent to:
-    ///
     /// return RouteMethod(
-    ///     (Parameter0Type)arguments[0],
-    ///     (Parameter1Type)arguments[1],
-    ///     ...);
+    /// (Parameter0Type)arguments[0],
+    /// (Parameter1Type)arguments[1],
+    /// ...);
     /// </summary>
     private static Func<object[], object?> CompileInvoker(
         MethodInfo method)
@@ -194,14 +192,14 @@ public abstract class ApiRoute : Attribute
                 nameof(method));
         }
 
-        var methodParameters = method.GetParameters();
+        ParameterInfo[] methodParameters = method.GetParameters();
 
-        var argumentsParameter = Expression.Parameter(typeof(object[]), "arguments");
-        var callArguments = new Expression[methodParameters.Length];
+        ParameterExpression argumentsParameter = Expression.Parameter(typeof(object[]), "arguments");
+        var                 callArguments      = new Expression[methodParameters.Length];
 
-        for (var i = 0; i < methodParameters.Length; i++)
+        for (int i = 0; i < methodParameters.Length; i++)
         {
-            var bufferAccess = Expression.ArrayIndex(
+            BinaryExpression bufferAccess = Expression.ArrayIndex(
                 argumentsParameter,
                 Expression.Constant(i));
 
@@ -210,8 +208,8 @@ public abstract class ApiRoute : Attribute
                 methodParameters[i].ParameterType);
         }
 
-        var methodCall = Expression.Call(method, callArguments);
-        var boxedResult = Expression.Convert(methodCall, typeof(object));
+        MethodCallExpression methodCall  = Expression.Call(method, callArguments);
+        UnaryExpression      boxedResult = Expression.Convert(methodCall, typeof(object));
 
         return Expression
             .Lambda<Func<object[], object?>>(boxedResult, argumentsParameter)
@@ -221,202 +219,254 @@ public abstract class ApiRoute : Attribute
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>
-    /// Invoke the route
-    /// </summary>
-    /// <param name="routeContext">Route context</param>
-    /// <param name="parameters">Parameters</param>
-    /// <param name="outError">Output error message</param>
-    /// <param name="outResponse">Output response</param>
-    public bool TryInvoke(RouteContext.ApiRouteContext routeContext, JArray parameters, out string? outError, out Response.ApiResponse? outResponse)
+    public ValueTask<ApiRouteInvocationResult> TryInvokeAsync(
+        ApiRouteContext   routeContext,
+        JArray            parameters,
+        CancellationToken cancellationToken = default)
+        => TryInvokeWithBufferAsync(routeContext, parameters, cancellationToken);
+
+    public ValueTask<ApiRouteInvocationResult> TryInvokeAsync(
+        ApiRouteContext   routeContext,
+        JObject           parameters,
+        CancellationToken cancellationToken = default)
+        => TryInvokeWithBufferAsync(routeContext, parameters, cancellationToken);
+
+    public ValueTask<ApiRouteInvocationResult> TryInvokeAsync(
+        ApiRouteContext                     routeContext,
+        IReadOnlyDictionary<string, string> parameters,
+        CancellationToken                   cancellationToken = default)
+        => TryInvokeWithBufferAsync(routeContext, parameters, cancellationToken);
+
+    private ValueTask<ApiRouteInvocationResult> TryInvokeWithBufferAsync(
+        ApiRouteContext   routeContext,
+        object            parameters,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(routeContext);
         ArgumentNullException.ThrowIfNull(parameters);
 
-        if (!TryTransferParameters(parameters, out outError))
-        {
-            outResponse = GetResponseForBadRequest(routeContext, outError ?? "Bad parameters");
-            return false;
-        }
-
-        return TryInvokeInternal(routeContext, out outError, out outResponse);
-    }
-    /// <summary>
-    /// Call the handler
-    /// </summary>
-    /// <param name="routeContext">Route context</param>
-    /// <param name="parameters">Parameters</param>
-    /// <param name="outError">Output error message</param>
-    /// <param name="outResponse">Output response</param>
-    public bool TryInvoke(RouteContext.ApiRouteContext routeContext, JObject parameters, out string? outError, out Response.ApiResponse? outResponse)
-    {
-        ArgumentNullException.ThrowIfNull(routeContext);
-        ArgumentNullException.ThrowIfNull(parameters);
-
-        if (!TryTransferParameters(parameters, out outError))
-        {
-            outResponse = GetResponseForBadRequest(routeContext, outError ?? "Bad parameters");
-            return false;
-        }
-
-        return TryInvokeInternal(routeContext, out outError, out outResponse);
-    }
-    /// <summary>
-    /// Call the handler
-    /// </summary>
-    /// <param name="routeContext">Route context</param>
-    /// <param name="parameters">Parameters</param>
-    /// <param name="outError">Output error message</param>
-    /// <param name="outResponse">Output response</param>
-    public bool TryInvoke(RouteContext.ApiRouteContext routeContext, IReadOnlyDictionary<string, string> parameters, out string? outError, out Response.ApiResponse? outResponse)
-    {
-        ArgumentNullException.ThrowIfNull(routeContext);
-        ArgumentNullException.ThrowIfNull(parameters);
-
-        if (!TryTransferParameters(parameters, out outError))
-        {
-            outResponse = GetResponseForBadRequest(routeContext, outError ?? "Bad parameters");
-            return false;
-        }
-
-        return TryInvokeInternal(routeContext, out outError, out outResponse);
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////
-
-    /// <summary>
-    /// Do final call
-    /// </summary>
-    /// <param name="routeContext">Route context</param>
-    /// <param name="outError">Output error message</param>
-    /// <param name="outResponse">Output result</param>
-    /// <returns>Call status</returns>
-    private bool TryInvokeInternal(RouteContext.ApiRouteContext routeContext, out string? outError, out Response.ApiResponse? outResponse)
-    {
-        outError = null;
-        outResponse = null;
-
-        object[] invokeBuffer = _invokeBuffer!.Value!;
-
-        if (HasContextParameter)
-            invokeBuffer[IsAsync ? 1 : 0] = routeContext;
-
-        for (var i = 0; i < Hooks!.Length; ++i)
-        {
-            if (!Hooks![i].TryIntercept(routeContext, out var interceptResult))
-                continue;
-
-            if (interceptResult == null)
-            {
-                Logging.Log(ELogSeverity.Error, $"[ApiRoute.TryInvokeInternal] Invalid result type for hook {Hooks[i].GetType().FullName}");
-
-                Array.Clear(invokeBuffer);
-
-                return false;
-            }
-
-            outResponse = interceptResult;
-            Array.Clear(invokeBuffer);
-
-            return true;
-        }
-
-        var cancellationTokenSource = null as CancellationTokenSource;
-        if (IsAsync)
-        {
-            cancellationTokenSource = new CancellationTokenSource();
-            invokeBuffer[0] = cancellationTokenSource.Token;
-        }
-
-        object? returnValue;
+        object[]? invokeBuffer = RentInvokeBuffer();
         try
         {
-            // JIT/CoreCLR fast path: invoke the compiled delegate.
-            //
-            // Native AOT fallback: retain reflection invocation until route
-            // invokers are produced by a source generator.
-            returnValue = _compiledInvoker != null
+            string? error;
+            bool transferred = parameters switch
+            {
+                JArray array    => TryTransferParameters(array,   invokeBuffer, out error),
+                JObject jobject => TryTransferParameters(jobject, invokeBuffer, out error),
+                IReadOnlyDictionary<string, string> dictionary =>
+                    TryTransferParameters(dictionary, invokeBuffer, out error),
+                _ => throw new ArgumentException("Unsupported route parameters", nameof(parameters))
+            };
+
+            if (!transferred)
+            {
+                ApiResponse response = GetResponseForBadRequest(
+                    routeContext,
+                    error ?? "Bad parameters");
+                ReturnInvokeBuffer(invokeBuffer);
+                invokeBuffer = null;
+                return ValueTask.FromResult(new ApiRouteInvocationResult(
+                                                false,
+                                                error,
+                                                response));
+            }
+
+            object[] transferredBuffer = invokeBuffer;
+            invokeBuffer = null;
+            return TryInvokeInternalAsync(
+                routeContext,
+                transferredBuffer,
+                cancellationToken);
+        }
+        catch
+        {
+            if (invokeBuffer != null)
+                ReturnInvokeBuffer(invokeBuffer);
+            throw;
+        }
+    }
+
+    private ValueTask<ApiRouteInvocationResult> TryInvokeInternalAsync(
+        ApiRouteContext   routeContext,
+        object[]          rentedInvokeBuffer,
+        CancellationToken cancellationToken)
+    {
+        object[]?                invokeBuffer      = rentedInvokeBuffer;
+        CancellationTokenSource? routeCancellation = null;
+
+        try
+        {
+            if (HasContextParameter)
+                invokeBuffer[IsAsync ? 1 : 0] = routeContext;
+
+            for (int i = 0; i < Hooks!.Length; ++i)
+            {
+                if (!Hooks[i].TryIntercept(routeContext, out ApiResponse? interceptResult))
+                    continue;
+
+                if (interceptResult == null)
+                {
+                    Logging.Log(
+                        ELogSeverity.Error,
+                        "[ApiRoute.TryInvokeInternalAsync] Invalid result from hook " +
+                        $"'{Hooks[i].GetType().FullName}'");
+                    return ValueTask.FromResult(new ApiRouteInvocationResult(
+                                                    false,
+                                                    "Invalid route hook result",
+                                                    null));
+                }
+
+                return ValueTask.FromResult(new ApiRouteInvocationResult(
+                                                true,
+                                                null,
+                                                interceptResult));
+            }
+
+            if (IsAsync)
+            {
+                routeCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken);
+                if (AsyncTimeout.HasValue)
+                    routeCancellation.CancelAfter(AsyncTimeout.Value);
+                invokeBuffer[0] = routeCancellation.Token;
+            }
+
+            object? returnValue = _compiledInvoker != null
                 ? _compiledInvoker(invokeBuffer)
                 : Method!.Invoke(null, invokeBuffer);
+
+            ReturnInvokeBuffer(invokeBuffer);
+            invokeBuffer = null;
+
+            if (!IsAsync)
+            {
+                if (returnValue is not ApiResponse response)
+                {
+                    return ValueTask.FromResult(new ApiRouteInvocationResult(
+                                                    false,
+                                                    "Route returned an invalid response",
+                                                    null));
+                }
+
+                return ValueTask.FromResult(new ApiRouteInvocationResult(
+                                                true,
+                                                null,
+                                                response));
+            }
+
+            if (returnValue is not Task<ApiResponse> task)
+            {
+                return ValueTask.FromResult(new ApiRouteInvocationResult(
+                                                false,
+                                                "Async route returned an invalid task",
+                                                null));
+            }
+
+            CancellationTokenSource ownedCancellation = routeCancellation!;
+            routeCancellation = null;
+            return AwaitRouteAsync(
+                routeContext,
+                task,
+                ownedCancellation,
+                cancellationToken);
         }
         catch (Exception exception)
         {
-            // MethodInfo.Invoke wraps route exceptions in
-            // TargetInvocationException. The compiled delegate does not.
-            // Unwrap the reflection fallback so both paths behave identically.
-            Exception routeException =
-                exception is TargetInvocationException
-                {
-                    InnerException: not null
-                } invocationException
-                    ? invocationException.InnerException!
-                    : exception;
-
-            // Rethrow critical exceptions that should not be handled as regular route failures.
-            if (routeException is OutOfMemoryException or StackOverflowException or ThreadAbortException or ThreadInterruptedException)
-                throw routeException;
-
-            Logging.Log(
-                ELogSeverity.Error,
-                $"[ApiRoute.TryInvokeInternal] Route '{Method!.DeclaringType?.FullName}.{Method.Name}' failed with exception:"
-            );
-            Logging.Log(ELogSeverity.Error, routeException);
-
-            outError = "Request failed";
-            outResponse = GetResponseForException(routeContext, routeException);
-
-            return false;
+            return ValueTask.FromResult(HandleRouteException(routeContext, exception));
         }
         finally
         {
-            Array.Clear(invokeBuffer);
+            if (invokeBuffer != null)
+                ReturnInvokeBuffer(invokeBuffer);
+            routeCancellation?.Dispose();
         }
+    }
 
-        if (returnValue != null)
+    private async ValueTask<ApiRouteInvocationResult> AwaitRouteAsync(
+        ApiRouteContext         routeContext,
+        Task<ApiResponse>       routeTask,
+        CancellationTokenSource routeCancellation,
+        CancellationToken       serverCancellationToken)
+    {
+        try
         {
-            if (IsAsync)
+            ApiResponse response = await routeTask
+                .WaitAsync(routeCancellation.Token)
+                .ConfigureAwait(false);
+
+            if (response == null)
             {
-                var task = returnValue as Task<Response.ApiResponse>;
-                if (task!.Exception?.InnerException != null)
-                    throw task.Exception?.InnerException!;
-                if (AsyncTimeout.HasValue)
-                    task.Wait(AsyncTimeout.Value);
-                else
-                    task.Wait();
-
-                if (task.IsCompletedSuccessfully)
-                    outResponse = task.Result;
-                else
-                {
-                    if (task.Exception?.InnerException != null || task.Exception != null)
-                    {
-                        var exception = task.Exception?.InnerException ?? task.Exception;
-                        Logging.Log(ELogSeverity.Error, $"[ApiRoute.TryInvokeInternal] Route {Method!.GetType().FullName} failed with exception:");
-                        Logging.Log(ELogSeverity.Error, exception!);
-
-                        outError = "Request failed";
-                        outResponse = GetResponseForException(routeContext, exception!);
-
-                        return false;
-                    }
-
-                    if (AsyncTimeout.HasValue)
-                        cancellationTokenSource!.Cancel();
-
-                    outError = "Request failed/timeout";
-                    outResponse = GetResponseForAsyncTimeout(routeContext);
-
-                    cancellationTokenSource!.Dispose();
-
-                    return false;
-                }
+                return new ApiRouteInvocationResult(
+                    false,
+                    "Route returned no response",
+                    null);
             }
-            else
-                outResponse = returnValue as Response.ApiResponse;
+
+            return new ApiRouteInvocationResult(true, null, response);
+        }
+        catch (OperationCanceledException) when (serverCancellationToken.IsCancellationRequested)
+        {
+            ObserveLateFault(routeTask);
+            throw;
+        }
+        catch (OperationCanceledException) when (routeCancellation.IsCancellationRequested)
+        {
+            ObserveLateFault(routeTask);
+            return new ApiRouteInvocationResult(
+                false,
+                "Request failed/timeout",
+                GetResponseForAsyncTimeout(routeContext));
+        }
+        catch (Exception exception)
+        {
+            return HandleRouteException(routeContext, exception);
+        }
+        finally
+        {
+            routeCancellation.Dispose();
+        }
+    }
+
+    private ApiRouteInvocationResult HandleRouteException(
+        ApiRouteContext routeContext,
+        Exception       exception)
+    {
+        Exception routeException = exception is TargetInvocationException
+        {
+            InnerException: not null
+        } invocationException
+            ? invocationException.InnerException!
+            : exception;
+
+        if (routeException is OutOfMemoryException or StackOverflowException or
+                              ThreadAbortException or ThreadInterruptedException)
+            ExceptionDispatchInfo.Capture(routeException).Throw();
+
+        Logging.Log(
+            ELogSeverity.Error,
+            $"[ApiRoute] Route '{Method!.DeclaringType?.FullName}.{Method.Name}' failed with exception:");
+        Logging.Log(ELogSeverity.Error, routeException);
+
+        return new ApiRouteInvocationResult(
+            false,
+            "Request failed",
+            GetResponseForException(routeContext, routeException));
+    }
+
+    private static void ObserveLateFault(Task task)
+    {
+        if (task.IsCompleted)
+        {
+            _ = task.Exception;
+            return;
         }
 
-        return true;
+        _ = task.ContinueWith(
+            static completedTask => _ = completedTask.Exception,
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously |
+            TaskContinuationOptions.OnlyOnFaulted,
+            TaskScheduler.Default);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -428,19 +478,18 @@ public abstract class ApiRoute : Attribute
     /// <param name="inParameters">Input parameters</param>
     /// <param name="outError">Error if any</param>
     /// <returns>True if succeeded</returns>
-    protected bool TryTransferParameters(JArray? inParameters, out string? outError)
+    protected bool TryTransferParameters(JArray? inParameters, object[] invokeBuffer, out string? outError)
     {
-        object[] invokeBuffer = _invokeBuffer!.Value!;
-        Array.Clear(invokeBuffer);
+        Array.Clear(invokeBuffer, 0, Parameters!.Length);
 
         outError = null;
 
-        for (var i = UserParametersOffset; i < Parameters!.Length; ++i)
+        for (int i = UserParametersOffset; i < Parameters!.Length; ++i)
         {
-            var parameterInfo = Parameters[i];
-            var parameterHint = ParametersHint![i];
+            ParameterInfo parameterInfo = Parameters[i];
+            string        parameterHint = ParametersHint![i];
 
-            if (inParameters == null || (i - UserParametersOffset) >= inParameters.Count)
+            if (inParameters == null || i - UserParametersOffset >= inParameters.Count)
             {
                 if (!parameterInfo.HasDefaultValue && !ParametersOptional![i])
                 {
@@ -456,7 +505,7 @@ public abstract class ApiRoute : Attribute
             }
             else
             {
-                var result = Reflection.TypeConverter.TryGetValueAsFromJToken(
+                bool result = TypeConverter.TryGetValueAsFromJToken(
                     ParametersType![i],
                     inParameters[i - UserParametersOffset],
                     parameterHint,
@@ -471,24 +520,24 @@ public abstract class ApiRoute : Attribute
 
         return true;
     }
+
     /// <summary>
     /// Transfer input parameters checking type
     /// </summary>
     /// <param name="inParameters">Input parameters</param>
     /// <param name="outError">Error if any</param>
     /// <returns>True if succeeded</returns>
-    protected bool TryTransferParameters(JObject? inParameters, out string? outError)
+    protected bool TryTransferParameters(JObject? inParameters, object[] invokeBuffer, out string? outError)
     {
-        object[] invokeBuffer = _invokeBuffer!.Value!;
-        Array.Clear(invokeBuffer);
+        Array.Clear(invokeBuffer, 0, Parameters!.Length);
 
         outError = null;
 
-        for (var i = UserParametersOffset; i < Parameters!.Length; ++i)
+        for (int i = UserParametersOffset; i < Parameters!.Length; ++i)
         {
-            var parameterInfo = Parameters[i];
-            var parameterFixedName = ParametersFixedName![i];
-            var parameterHint = ParametersHint![i];
+            ParameterInfo parameterInfo      = Parameters[i];
+            string        parameterFixedName = ParametersFixedName![i];
+            string        parameterHint      = ParametersHint![i];
 
             if (inParameters == null || !inParameters.ContainsKey(parameterFixedName))
             {
@@ -506,7 +555,7 @@ public abstract class ApiRoute : Attribute
             }
             else
             {
-                var result = Reflection.TypeConverter.TryGetValueAsFromJToken(
+                bool result = TypeConverter.TryGetValueAsFromJToken(
                     ParametersType![i],
                     inParameters![parameterFixedName]!,
                     parameterHint,
@@ -521,26 +570,29 @@ public abstract class ApiRoute : Attribute
 
         return true;
     }
+
     /// <summary>
     /// Transfer input parameters checking type
     /// </summary>
     /// <param name="inParameters">Input parameters</param>
     /// <param name="outError">Error if any</param>
     /// <returns>True if succeeded</returns>
-    protected bool TryTransferParameters(IReadOnlyDictionary<string, string>? inParameters, out string? outError)
+    protected bool TryTransferParameters(
+        IReadOnlyDictionary<string, string>? inParameters,
+        object[]                             invokeBuffer,
+        out string?                          outError)
     {
-        object[] invokeBuffer = _invokeBuffer!.Value!;
-        Array.Clear(invokeBuffer);
+        Array.Clear(invokeBuffer, 0, Parameters!.Length);
 
         outError = null;
 
-        for (var i = UserParametersOffset; i < Parameters!.Length; ++i)
+        for (int i = UserParametersOffset; i < Parameters!.Length; ++i)
         {
-            var parameterInfo = Parameters[i];
-            var parameterFixedName = ParametersFixedName![i];
-            var parameterHint = ParametersHint![i];
+            ParameterInfo parameterInfo      = Parameters[i];
+            string        parameterFixedName = ParametersFixedName![i];
+            string        parameterHint      = ParametersHint![i];
 
-            if (inParameters == null || !inParameters.TryGetValue(parameterFixedName, out var dictInParameter))
+            if (inParameters == null || !inParameters.TryGetValue(parameterFixedName, out string? dictInParameter))
             {
                 if (!parameterInfo.HasDefaultValue && !ParametersOptional![i])
                 {
@@ -556,7 +608,7 @@ public abstract class ApiRoute : Attribute
             }
             else
             {
-                var result = Reflection.TypeConverter.TryGetValueAsFromString(
+                bool result = TypeConverter.TryGetValueAsFromString(
                     ParametersType![i],
                     dictInParameter ?? string.Empty,
                     parameterHint,
@@ -579,20 +631,57 @@ public abstract class ApiRoute : Attribute
     /// Get exception response
     /// </summary>
     /// <param name="routeContext">Route context</param>
-    /// <param name="p_Exception">Exception if any</param>
+    /// <param name="exception">Exception if any</param>
     /// <returns></returns>
-    protected abstract Response.ApiResponse GetResponseForException(RouteContext.ApiRouteContext routeContext, Exception p_Exception);
+    protected abstract ApiResponse GetResponseForException(ApiRouteContext routeContext, Exception exception);
+
     /// <summary>
     /// Get response for bad request
     /// </summary>
     /// <param name="routeContext">Route context</param>
     /// <param name="error">Error message</param>
     /// <returns></returns>
-    protected abstract Response.ApiResponse GetResponseForBadRequest(RouteContext.ApiRouteContext routeContext, string error);
+    protected abstract ApiResponse GetResponseForBadRequest(ApiRouteContext routeContext, string error);
+
     /// <summary>
     /// Get async timeout response
     /// </summary>
     /// <param name="routeContext">Route context</param>
     /// <returns></returns>
-    protected abstract Response.ApiResponse GetResponseForAsyncTimeout(RouteContext.ApiRouteContext routeContext);
+    protected abstract ApiResponse GetResponseForAsyncTimeout(ApiRouteContext routeContext);
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// <summary>
+    /// Rent an invocation buffer
+    /// </summary>
+    /// <returns>Rented buffer</returns>
+    private object[] RentInvokeBuffer()
+    {
+        if (_invokeBuffers!.TryTake(out object[]? buffer))
+        {
+            Interlocked.Decrement(ref _retainedInvokeBufferCount);
+            return buffer;
+        }
+
+        return new object[Parameters!.Length];
+    }
+
+    /// <summary>
+    /// Return an invocation buffer
+    /// </summary>
+    /// <param name="buffer">Buffer to return</param>
+    private void ReturnInvokeBuffer(object[] buffer)
+    {
+        Array.Clear(buffer, 0, Parameters!.Length);
+        if (Interlocked.Increment(ref _retainedInvokeBufferCount) <=
+            MaxRetainedInvokeBuffers)
+        {
+            _invokeBuffers!.Add(buffer);
+            return;
+        }
+
+        Interlocked.Decrement(ref _retainedInvokeBufferCount);
+    }
 }

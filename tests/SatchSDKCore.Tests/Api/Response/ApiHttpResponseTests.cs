@@ -174,7 +174,7 @@ public class RESTResponseTests
         const string content = "Test content";
 
         // Act
-        var response = ApiHttpResponse.Result(mockContext, HttpStatusCode.OK, content);
+        var response = ApiHttpResponse.ContentResult(mockContext, HttpStatusCode.OK, content);
 
         // Assert
         Assert.NotNull(response);
@@ -194,7 +194,7 @@ public class RESTResponseTests
         const string content = "{\"test\":\"value\"}";
 
         // Act
-        var response = ApiHttpResponse.Result(mockContext, HttpStatusCode.OK, content, ApiHttpResponse.ContentType_AppJson);
+        var response = ApiHttpResponse.ContentResult(mockContext, HttpStatusCode.OK, content, ApiHttpResponse.ContentType_AppJson);
 
         // Assert
         Assert.NotNull(response);
@@ -213,7 +213,7 @@ public class RESTResponseTests
         const string content = "<html><body>Test</body></html>";
 
         // Act
-        var response = ApiHttpResponse.Result(mockContext, HttpStatusCode.OK, content, ApiHttpResponse.ContentType_TextHTML);
+        var response = ApiHttpResponse.ContentResult(mockContext, HttpStatusCode.OK, content, ApiHttpResponse.ContentType_TextHTML);
 
         // Assert
         Assert.NotNull(response);
@@ -231,7 +231,7 @@ public class RESTResponseTests
         var mockContext = new MockRouteContext(mockRequest);
 
         // Act
-        var response = ApiHttpResponse.Result(mockContext, HttpStatusCode.OK, string.Empty);
+        var response = ApiHttpResponse.ContentResult(mockContext, HttpStatusCode.OK, string.Empty);
 
         // Assert
         Assert.NotNull(response);
@@ -319,7 +319,7 @@ public class RESTResponseTests
         var mockContext = new MockRouteContext(mockRequest);
 
         // Act
-        var response = ApiHttpResponse.Result(mockContext, status, content);
+        var response = ApiHttpResponse.ContentResult(mockContext, status, content);
 
         // Assert
         Assert.NotNull(response);
@@ -360,7 +360,7 @@ public class RESTResponseTests
         var mockContext = new MockRouteContext(mockRequest);
 
         // Act
-        var response = ApiHttpResponse.Result(mockContext, HttpStatusCode.OK, "content", contentType);
+        var response = ApiHttpResponse.ContentResult(mockContext, HttpStatusCode.OK, "content", contentType);
 
         // Assert
         Assert.NotNull(response);
@@ -417,7 +417,7 @@ public class RESTResponseTests
         var largeContent = new string('x', 10000);
 
         // Act
-        var response = ApiHttpResponse.Result(mockContext, HttpStatusCode.OK, largeContent);
+        var response = ApiHttpResponse.ContentResult(mockContext, HttpStatusCode.OK, largeContent);
 
         // Assert
         Assert.NotNull(response);
@@ -436,7 +436,7 @@ public class RESTResponseTests
         const string content = "Test with special chars: <>&\"'€©®™";
 
         // Act
-        var response = ApiHttpResponse.Result(mockContext, HttpStatusCode.OK, content);
+        var response = ApiHttpResponse.ContentResult(mockContext, HttpStatusCode.OK, content);
 
         // Assert
         Assert.NotNull(response);
@@ -455,7 +455,7 @@ public class RESTResponseTests
 
         // Act
         var codeResponse = ApiHttpResponse.CodeResult(mockContext, HttpStatusCode.OK);
-        var contentResponse = ApiHttpResponse.Result(mockContext, HttpStatusCode.OK, "content");
+        var contentResponse = ApiHttpResponse.ContentResult(mockContext, HttpStatusCode.OK, "content");
 
         // Assert
         Assert.NotNull(codeResponse);

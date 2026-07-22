@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SSC.Misc;
 
 namespace SSC.Config;
 
@@ -15,20 +16,20 @@ public abstract class JsonConfig
     <[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] TConfigType>
     where TConfigType : JsonConfig<TConfigType>, new()
 {
-    private static TConfigType? s_Instance;
-    private static readonly string s_Name = typeof(TConfigType).Name;
+    private static          TConfigType? s_Instance;
+    private static readonly string       s_Name = typeof(TConfigType).Name;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     private readonly string _directoryPath = string.Empty;
-    private readonly string _filePath = string.Empty;
+    private readonly string _filePath      = string.Empty;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     protected JsonSerializerSettings _jsonSerializerSettings = new();
-    protected JObject? _rawLoaded;
+    protected JObject?               _rawLoaded;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -56,11 +57,11 @@ public abstract class JsonConfig
     public JsonConfig(string relativePath)
     {
         _directoryPath = Path.GetFullPath(relativePath);
-        _filePath = Path.Join(_directoryPath, $"{s_Name}.json");
+        _filePath      = Path.Join(_directoryPath, $"{s_Name}.json");
 
-        _jsonSerializerSettings = new JsonSerializerSettings();
+        _jsonSerializerSettings                      = new JsonSerializerSettings();
         _jsonSerializerSettings.DefaultValueHandling = DefaultValueHandling.Include;
-        _jsonSerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+        _jsonSerializerSettings.NullValueHandling    = NullValueHandling.Ignore;
 
         if (!TryCreateFolder())
             Environment.Exit(-1);
@@ -73,7 +74,7 @@ public abstract class JsonConfig
                 {
                     using (var streamReader = new StreamReader(fileStream, Encoding.UTF8))
                     {
-                        var content = streamReader.ReadToEnd();
+                        string content = streamReader.ReadToEnd();
 
                         _rawLoaded = JObject.Parse(content);
                         JsonConvert.PopulateObject(content, this, _jsonSerializerSettings);
@@ -84,15 +85,14 @@ public abstract class JsonConfig
                 _rawLoaded = null;
             }
             else
-            {
                 OnInit(true);
-            }
 
             Save();
         }
         catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{s_Name}>.ReadImplementation] Failed to read config file in {_directoryPath}");
+            Logging.Log(ELogSeverity.Error,
+                        $"[Config][JSONConfig<{s_Name}>.ReadImplementation] Failed to read config file in {_directoryPath}");
             Logging.Log(ELogSeverity.Error, exception);
 
             TryBackupAndReset();
@@ -109,6 +109,7 @@ public abstract class JsonConfig
     {
         ;
     }
+
     /// <summary>
     /// Reset config to default
     /// </summary>
@@ -119,8 +120,8 @@ public abstract class JsonConfig
 
         try
         {
-            var defaultInstance = new TConfigType();
-            var defaultSerialized = JsonConvert.SerializeObject(defaultInstance, _jsonSerializerSettings);
+            var    defaultInstance   = new TConfigType();
+            string defaultSerialized = JsonConvert.SerializeObject(defaultInstance, _jsonSerializerSettings);
             JsonConvert.PopulateObject(defaultSerialized, this, _jsonSerializerSettings);
 
             Save();
@@ -131,6 +132,7 @@ public abstract class JsonConfig
             Logging.Log(ELogSeverity.Error, exception);
         }
     }
+
     /// <summary>
     /// Save config file
     /// </summary>
@@ -143,16 +145,13 @@ public abstract class JsonConfig
         {
             string data = JsonConvert.SerializeObject(this, Formatting.Indented, _jsonSerializerSettings);
             using (var fileStream = new FileStream(_filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-            {
-                using (var streamWritter = new StreamWriter(fileStream, Encoding.UTF8))
-                {
-                    streamWritter.WriteLine(data);
-                }
-            }
+            using (var streamWritter = new StreamWriter(fileStream, Encoding.UTF8))
+                streamWritter.WriteLine(data);
         }
         catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{s_Name}>.WriteFile] Failed to write file {_filePath}");
+            Logging.Log(ELogSeverity.Error,
+                        $"[Config][JSONConfig<{s_Name}>.WriteFile] Failed to write file {_filePath}");
             Logging.Log(ELogSeverity.Error, exception);
         }
     }
@@ -166,7 +165,6 @@ public abstract class JsonConfig
     /// <param name="onFileCreate">On file create?</param>
     protected virtual void OnInit(bool onFileCreate)
     {
-
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -178,7 +176,7 @@ public abstract class JsonConfig
     /// <returns></returns>
     private bool TryCreateFolder()
     {
-        var directory = Path.GetDirectoryName(_filePath);
+        string? directory = Path.GetDirectoryName(_filePath);
 
         try
         {
@@ -189,12 +187,15 @@ public abstract class JsonConfig
         }
         catch (Exception exception)
         {
-            Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{typeof(TConfigType).Name}>.WriteFile] Failed to create directory " + directory!);
+            Logging.Log(ELogSeverity.Error,
+                        $"[Config][JSONConfig<{typeof(TConfigType).Name}>.WriteFile] Failed to create directory " +
+                        directory!);
             Logging.Log(ELogSeverity.Error, exception);
         }
 
         return false;
     }
+
     /// <summary>
     /// Try to backup the existing file and then reset this config
     /// </summary>
@@ -205,15 +206,17 @@ public abstract class JsonConfig
             try
             {
                 File.Move(_filePath,
-                    Path.Combine(
-                        _directoryPath,
-                        Path.GetFileNameWithoutExtension(_filePath) + ".broken_" + Misc.Time.UnixTimeNowMS() + ".json"
-                    )
+                          Path.Combine(
+                              _directoryPath,
+                              Path.GetFileNameWithoutExtension(_filePath) + ".broken_" + Time.UnixTimeNowMS() +
+                              ".json"
+                          )
                 );
             }
             catch (Exception exception)
             {
-                Logging.Log(ELogSeverity.Error, $"[Config][JSONConfig<{s_Name}>.WriteFile] Failed to backup file {_filePath}, trying deletion...");
+                Logging.Log(ELogSeverity.Error,
+                            $"[Config][JSONConfig<{s_Name}>.WriteFile] Failed to backup file {_filePath}, trying deletion...");
                 Logging.Log(ELogSeverity.Error, exception);
 
                 File.Delete(_filePath);

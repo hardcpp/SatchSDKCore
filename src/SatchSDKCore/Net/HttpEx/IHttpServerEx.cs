@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using SSC.Misc.Hookable;
 
 namespace SSC.Net.HttpEx;
@@ -18,6 +19,7 @@ public interface IHttpServerEx : IDisposable
     /// </summary>
     /// <param name="handler">Handler to add</param>
     void AddRequestHandler(IHttpServerExRequestHandler handler);
+
     /// <summary>
     /// Remove a request handler
     /// </summary>
@@ -31,12 +33,24 @@ public interface IHttpServerEx : IDisposable
     /// Start the HttpServerEx server and threads
     /// </summary>
     void Start();
+
     /// <summary>
     /// Wait for the server
     /// </summary>
     void Wait();
+
+    /// <summary>
+    /// Wait for the server
+    /// </summary>
+    Task WaitAsync();
+
     /// <summary>
     /// Stop the HttpServerEx server and wait for all the threads to stop
     /// </summary>
     void Stop();
+
+    /// <summary>
+    /// Stop the HttpServerEx server and wait for all the threads to stop
+    /// </summary>
+    ValueTask StopAsync();
 }

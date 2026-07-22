@@ -7,8 +7,8 @@ namespace SSC.Pool;
 public interface IObjectPool<TObjectType>
     where TObjectType : class
 {
-    int CountAll { get; }
-    int CountActive { get; }
+    int CountAll      { get; }
+    int CountActive   { get; }
     int CountInactive { get; }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -19,12 +19,14 @@ public interface IObjectPool<TObjectType>
     /// </summary>
     /// <returns></returns>
     TObjectType Get();
+
     /// <summary>
     /// Managed object get
     /// </summary>
     /// <param name="p_Element">Result value</param>
     /// <returns></returns>
     PooledObject<TObjectType> Get(out TObjectType p_Element);
+
     /// <summary>
     /// Release an element
     /// </summary>

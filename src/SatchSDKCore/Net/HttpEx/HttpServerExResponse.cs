@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SSC.Net.HttpEx;
 
@@ -12,9 +14,9 @@ namespace SSC.Net.HttpEx;
 public class HttpServerExResponse
 {
     public readonly HttpStatusCode Code;
-    public readonly HttpContent? Content;
-    public readonly Encoding? ContentEncoding;
-    public readonly string? ContentType;
+    public readonly HttpContent?   Content;
+    public readonly Encoding?      ContentEncoding;
+    public readonly string?        ContentType;
 
     /// <summary>
     /// Additional HTTP response headers.
@@ -34,17 +36,17 @@ public class HttpServerExResponse
     /// Constructor.
     /// </summary>
     public HttpServerExResponse(
-        HttpStatusCode code,
-        HttpContent? content,
-        Encoding? contentEncoding,
-        IReadOnlyDictionary<string, string>? headers = null,
-        bool suppressBody = false)
+        HttpStatusCode                       code,
+        HttpContent?                         content,
+        Encoding?                            contentEncoding,
+        IReadOnlyDictionary<string, string>? headers      = null,
+        bool                                 suppressBody = false)
     {
-        Code = code;
-        Content = content;
+        Code            = code;
+        Content         = content;
         ContentEncoding = contentEncoding;
-        Headers = headers;
-        SuppressBody = suppressBody;
+        Headers         = headers;
+        SuppressBody    = suppressBody;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -64,7 +66,7 @@ public class HttpServerExResponse
             Content,
             ContentEncoding,
             Headers,
-            suppressBody: true);
+            true);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -75,7 +77,7 @@ public class HttpServerExResponse
     /// </summary>
     public bool TryWrite(
         HttpListenerResponse httpResponse,
-        out string? outError)
+        out string?          outError)
     {
         outError = null;
 
@@ -97,14 +99,14 @@ public class HttpServerExResponse
 
         if (Headers != null)
         {
-            foreach (var header in Headers)
+            foreach (KeyValuePair<string, string> header in Headers)
                 httpResponse.Headers.Set(header.Key, header.Value);
         }
 
         if (Content == null)
             return true;
 
-        var mediaType = Content.Headers.ContentType?.MediaType;
+        string? mediaType = Content.Headers.ContentType?.MediaType;
 
         if (!string.IsNullOrEmpty(mediaType))
             httpResponse.Headers.Set("Content-Type", mediaType);
@@ -139,5 +141,57 @@ public class HttpServerExResponse
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Asynchronously write the response to an HttpListenerResponse.
+    /// </summary>
+    public async ValueTask WriteAsync(
+        HttpListenerResponse httpResponse,
+        CancellationToken    cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(httpResponse);
+
+        if (!httpResponse.OutputStream.CanWrite)
+        {
+            throw new InvalidOperationException(
+                "The HTTP response output stream is not writable");
+        }
+
+        httpResponse.StatusCode = (int)Code;
+
+        if (Headers != null)
+        {
+            foreach (KeyValuePair<string, string> header in Headers)
+                httpResponse.Headers.Set(header.Key, header.Value);
+        }
+
+        if (Content == null)
+            return;
+
+        string? mediaType = Content.Headers.ContentType?.MediaType;
+        if (!string.IsNullOrEmpty(mediaType))
+            httpResponse.Headers.Set("Content-Type", mediaType);
+
+        if (ContentEncoding != null)
+        {
+            httpResponse.ContentEncoding = ContentEncoding;
+            if (ContentEncoding == Encoding.UTF8 && !string.IsNullOrEmpty(mediaType))
+            {
+                httpResponse.Headers.Set(
+                    "Content-Type",
+                    $"{mediaType}; charset=utf-8");
+            }
+        }
+
+        if (Content.Headers.ContentLength.HasValue)
+            httpResponse.ContentLength64 = Content.Headers.ContentLength.Value;
+
+        if (!SuppressBody)
+        {
+            await Content
+                .CopyToAsync(httpResponse.OutputStream, cancellationToken)
+                .ConfigureAwait(false);
+        }
     }
 }

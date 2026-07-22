@@ -10,7 +10,7 @@ namespace SSC.Reflection;
 public static class TypeConverter
 {
     /// <summary>
-    /// Try get value as <paramref name="type"/> from JToken
+    /// Try get value as <paramref name="type" /> from JToken
     /// </summary>
     /// <param name="type">Value type</param>
     /// <param name="token">Input</param>
@@ -18,7 +18,12 @@ public static class TypeConverter
     /// <param name="outError">Output error message</param>
     /// <param name="outValue">Output parameter</param>
     /// <returns></returns>
-    public static bool TryGetValueAsFromJToken(Type type, JToken token, string hint, out string? outError, ref object outValue)
+    public static bool TryGetValueAsFromJToken(
+        Type        type,
+        JToken      token,
+        string      hint,
+        out string? outError,
+        ref object  outValue)
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentNullException.ThrowIfNull(token);
@@ -28,73 +33,74 @@ public static class TypeConverter
         if (type == typeof(ulong))
         {
             if (token.Type == JTokenType.Integer) outValue = token.Value<ulong>();
-            else outError = $"Value {hint} is expected to be ulong";
+            else outError                                  = $"Value {hint} is expected to be ulong";
         }
         else if (type == typeof(long))
         {
             if (token.Type == JTokenType.Integer) outValue = token.Value<long>();
-            else outError = $"Value {hint} is expected to be long";
+            else outError                                  = $"Value {hint} is expected to be long";
         }
         else if (type == typeof(uint))
         {
             if (token.Type == JTokenType.Integer) outValue = token.Value<uint>();
-            else outError = $"Value {hint} is expected to be uint";
+            else outError                                  = $"Value {hint} is expected to be uint";
         }
         else if (type == typeof(int))
         {
             if (token.Type == JTokenType.Integer) outValue = token.Value<int>();
-            else outError = $"Value {hint} is expected to be int";
+            else outError                                  = $"Value {hint} is expected to be int";
         }
         else if (type == typeof(ushort))
         {
             if (token.Type == JTokenType.Integer) outValue = token.Value<ushort>();
-            else outError = $"Value {hint} is expected to be ushort";
+            else outError                                  = $"Value {hint} is expected to be ushort";
         }
         else if (type == typeof(short))
         {
             if (token.Type == JTokenType.Integer) outValue = token.Value<short>();
-            else outError = $"Value {hint} is expected to be short";
+            else outError                                  = $"Value {hint} is expected to be short";
         }
         else if (type == typeof(byte))
         {
             if (token.Type == JTokenType.Integer) outValue = token.Value<byte>();
-            else outError = $"Value {hint} is expected to be byte";
+            else outError                                  = $"Value {hint} is expected to be byte";
         }
         else if (type == typeof(sbyte))
         {
             if (token.Type == JTokenType.Integer) outValue = token.Value<sbyte>();
-            else outError = $"Value {hint} is expected to be sbyte";
+            else outError                                  = $"Value {hint} is expected to be sbyte";
         }
         else if (type == typeof(bool))
         {
             if (token.Type == JTokenType.Boolean) outValue = token.Value<bool>();
-            else outError = $"Value {hint} is expected to be bool";
+            else outError                                  = $"Value {hint} is expected to be bool";
         }
         else if (type == typeof(string))
         {
             if (token.Type == JTokenType.String) outValue = token.Value<string>()!;
-            else outError = $"Value {hint} is expected to be string";
+            else outError                                 = $"Value {hint} is expected to be string";
         }
         else if (type == typeof(float))
         {
             if (token.Type == JTokenType.Float) outValue = token.Value<float>();
-            else outError = $"Value {hint} is expected to be float";
+            else outError                                = $"Value {hint} is expected to be float";
         }
         else if (type == typeof(double))
         {
             if (token.Type == JTokenType.Float) outValue = token.Value<double>();
-            else outError = $"Value {hint} is expected to be double";
+            else outError                                = $"Value {hint} is expected to be double";
         }
         else if (type.BaseType == typeof(Enum))
         {
             if (token.Type == JTokenType.String)
             {
-                if (Enum.TryParse(type, token.Value<string>(), true, out var enumValue))
+                if (Enum.TryParse(type, token.Value<string>(), true, out object? enumValue))
                     outValue = enumValue;
                 else
                 {
-                    outError = $"Unrecognized constant \"{token.Value<string>()}\" for parameter {hint}, candidates are: "
-                                        + string.Join(", ", Enum.GetNames(type));
+                    outError =
+                        $"Unrecognized constant \"{token.Value<string>()}\" for parameter {hint}, candidates are: "
+                      + string.Join(", ", Enum.GetNames(type));
                 }
             }
             else outError = $"Parameter {hint} is expected to be string/enum";
@@ -104,8 +110,9 @@ public static class TypeConverter
 
         return string.IsNullOrEmpty(outError);
     }
+
     /// <summary>
-    /// Try get value as <paramref name="type"/> from string
+    /// Try get value as <paramref name="type" /> from string
     /// </summary>
     /// <param name="type">Value type</param>
     /// <param name="input">Input</param>
@@ -113,7 +120,12 @@ public static class TypeConverter
     /// <param name="outError">Output error message</param>
     /// <param name="outValue">Output parameter</param>
     /// <returns></returns>
-    public static bool TryGetValueAsFromString(Type type, string input, string? hint, out string? outError, ref object outValue)
+    public static bool TryGetValueAsFromString(
+        Type        type,
+        string      input,
+        string?     hint,
+        out string? outError,
+        ref object  outValue)
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentNullException.ThrowIfNull(input);
@@ -122,71 +134,69 @@ public static class TypeConverter
 
         if (type == typeof(ulong))
         {
-            if (ulong.TryParse(input, out var parsed)) outValue = parsed;
+            if (ulong.TryParse(input, out ulong parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be ulong";
         }
         else if (type == typeof(long))
         {
-            if (long.TryParse(input, out var parsed)) outValue = parsed;
+            if (long.TryParse(input, out long parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be long";
         }
         else if (type == typeof(uint))
         {
-            if (uint.TryParse(input, out var parsed)) outValue = parsed;
+            if (uint.TryParse(input, out uint parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be uint";
         }
         else if (type == typeof(int))
         {
-            if (int.TryParse(input, out var parsed)) outValue = parsed;
-            else outError = $"Value {hint ?? string.Empty} is expected to be int";
+            if (int.TryParse(input, out int parsed)) outValue = parsed;
+            else outError                                     = $"Value {hint ?? string.Empty} is expected to be int";
         }
         else if (type == typeof(ushort))
         {
-            if (ushort.TryParse(input, out var parsed)) outValue = parsed;
+            if (ushort.TryParse(input, out ushort parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be ushort";
         }
         else if (type == typeof(short))
         {
-            if (short.TryParse(input, out var parsed)) outValue = parsed;
+            if (short.TryParse(input, out short parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be short";
         }
         else if (type == typeof(byte))
         {
-            if (byte.TryParse(input, out var parsed)) outValue = parsed;
+            if (byte.TryParse(input, out byte parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be byte";
         }
         else if (type == typeof(sbyte))
         {
-            if (sbyte.TryParse(input, out var parsed)) outValue = parsed;
+            if (sbyte.TryParse(input, out sbyte parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be sbyte";
         }
         else if (type == typeof(bool))
         {
-            if (bool.TryParse(input, out var parsed)) outValue = parsed;
+            if (bool.TryParse(input, out bool parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be bool";
         }
         else if (type == typeof(string))
-        {
             outValue = input;
-        }
         else if (type == typeof(float))
         {
-            if (float.TryParse(input, CultureInfo.InvariantCulture, out var parsed)) outValue = parsed;
+            if (float.TryParse(input, CultureInfo.InvariantCulture, out float parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be float";
         }
         else if (type == typeof(double))
         {
-            if (double.TryParse(input, CultureInfo.InvariantCulture, out var parsed)) outValue = parsed;
+            if (double.TryParse(input, CultureInfo.InvariantCulture, out double parsed)) outValue = parsed;
             else outError = $"Value {hint ?? string.Empty} is expected to be double";
         }
         else if (type.BaseType == typeof(Enum))
         {
-            if (Enum.TryParse(type, input, true, out var parsed))
+            if (Enum.TryParse(type, input, true, out object? parsed))
                 outValue = parsed;
             else
             {
                 outError = $"Unrecognized constant \"{input}\" for parameter {hint ?? string.Empty}, candidates are: "
-                                    + string.Join(", ", Enum.GetNames(type));
+                         + string.Join(", ", Enum.GetNames(type));
             }
         }
         else

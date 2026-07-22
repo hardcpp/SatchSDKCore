@@ -19,7 +19,7 @@ public enum ELogSeverity
 /// </summary>
 public static class Logging
 {
-    public static event Action<ELogSeverity, string>? OnLogMessage;
+    public static event Action<ELogSeverity, string>?    OnLogMessage;
     public static event Action<ELogSeverity, Exception>? OnLogException;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -32,6 +32,7 @@ public static class Logging
     /// <param name="message">Message to log</param>
     public static void Log(ELogSeverity severity, string message)
         => OnLogMessage?.Invoke(severity, message);
+
     /// <summary>
     /// Log an exception
     /// </summary>

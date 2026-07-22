@@ -17,7 +17,7 @@ public interface IJsonRpcClient
     [Flags]
     enum ECallOptions
     {
-        None = 0,
+        None              = 0,
         IgnoreRetryPolicy = 1 << 0
     }
 
@@ -34,10 +34,11 @@ public interface IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     JsonRpcClientResult? Call(
-        string method,
+        string              method,
         IEnumerable<object> parameters,
-        ECallOptions options = ECallOptions.None
+        ECallOptions        options = ECallOptions.None
     );
+
     /// <summary>
     /// Do a sync call
     /// </summary>
@@ -48,10 +49,11 @@ public interface IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     JsonRpcClientResult? Call(
-        string method,
+        string                              method,
         IReadOnlyDictionary<string, object> parameters,
-        ECallOptions options = ECallOptions.None
+        ECallOptions                        options = ECallOptions.None
     );
+
     /// <summary>
     /// Do a non-blocking call in the background with a callback
     /// </summary>
@@ -63,12 +65,13 @@ public interface IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     void CallInBackground(
-        string method,
-        IEnumerable<object> parameters,
-        CancellationToken cancellationToken,
+        string                        method,
+        IEnumerable<object>           parameters,
+        CancellationToken             cancellationToken,
         Action<JsonRpcClientResult?>? callback,
-        ECallOptions options = ECallOptions.None
+        ECallOptions                  options = ECallOptions.None
     );
+
     /// <summary>
     /// Do a non-blocking call in the background with a callback
     /// </summary>
@@ -80,12 +83,13 @@ public interface IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     void CallInBackground(
-        string method,
+        string                              method,
         IReadOnlyDictionary<string, object> parameters,
-        CancellationToken cancellationToken,
-        Action<JsonRpcClientResult?>? callback,
-        ECallOptions options = ECallOptions.None
+        CancellationToken                   cancellationToken,
+        Action<JsonRpcClientResult?>?       callback,
+        ECallOptions                        options = ECallOptions.None
     );
+
     /// <summary>
     /// Do an async call
     /// </summary>
@@ -97,11 +101,12 @@ public interface IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     Task<JsonRpcClientResult?> CallAsync(
-        string method,
+        string              method,
         IEnumerable<object> parameters,
-        CancellationToken cancellationToken,
-        ECallOptions options = ECallOptions.None
+        CancellationToken   cancellationToken,
+        ECallOptions        options = ECallOptions.None
     );
+
     /// <summary>
     /// Do an async call
     /// </summary>
@@ -113,9 +118,9 @@ public interface IJsonRpcClient
     [RequiresUnreferencedCode(SDKConfig.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SDKConfig.SerializationDynamicCodeMessage)]
     Task<JsonRpcClientResult?> CallAsync(
-        string method,
+        string                              method,
         IReadOnlyDictionary<string, object> parameters,
-        CancellationToken cancellationToken,
-        ECallOptions options = ECallOptions.None
+        CancellationToken                   cancellationToken,
+        ECallOptions                        options = ECallOptions.None
     );
 }

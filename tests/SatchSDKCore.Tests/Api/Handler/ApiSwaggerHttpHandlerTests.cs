@@ -67,14 +67,14 @@ public class SwaggerHTTPServerHandlerTests
     /// Test TryHandle with null context throws
     /// </summary>
     [Fact]
-    public void TryHandle_WithNullContext_ShouldThrow()
+    public async Task TryHandle_WithNullContext_ShouldThrow()
     {
         // Arrange
         var blueprint = new ApiHttpBlueprint("Test");
         var handler = new ApiSwaggerHttpHandler(blueprint);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => handler.TryHandle(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await handler.TryHandleAsync(null!));
     }
 
     /// <summary>
@@ -389,7 +389,7 @@ public class SwaggerHTTPServerHandlerTests
     /// Test handler has all required interface members
     /// </summary>
     [Fact]
-    public void Handler_ShouldHaveRequiredMembers()
+    public async Task Handler_ShouldHaveRequiredMembers()
     {
         // Arrange
         var blueprint = new ApiHttpBlueprint("Test");
@@ -400,7 +400,7 @@ public class SwaggerHTTPServerHandlerTests
         Assert.NotNull(handler.MainBlueprint);
 
         // Verify TryHandle method exists (already tested it throws with null)
-        Assert.Throws<ArgumentNullException>(() => handler.TryHandle(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await handler.TryHandleAsync(null!));
     }
 
     #endregion
@@ -565,14 +565,14 @@ public class SwaggerHTTPServerHandlerTests
     /// Test TryHandle validates context is not null
     /// </summary>
     [Fact]
-    public void TryHandle_ValidatesContext()
+    public async Task TryHandle_ValidatesContext()
     {
         // Arrange
         var blueprint = new ApiHttpBlueprint("Test");
         var handler = new ApiSwaggerHttpHandler(blueprint);
 
         // Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() => handler.TryHandle(null!));
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () => await handler.TryHandleAsync(null!));
         Assert.NotNull(exception);
     }
 

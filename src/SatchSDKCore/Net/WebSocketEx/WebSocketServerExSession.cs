@@ -11,7 +11,7 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
     where TSessionID : notnull
 {
     public readonly IWebSocketServerEx<TSession, TSessionID> Server;
-    public readonly TSessionID SessionID;
+    public readonly TSessionID                               SessionID;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -23,14 +23,15 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
     /// <param name="webSocket">WebSocket instance</param>
     public WebSocketServerExSession(
         IWebSocketServerEx<TSession, TSessionID> server,
-        WebSocket webSocket,
-        TSessionID sessionID
-    ) : base(webSocket, server.Allocator, server.MaxFrameLength, server.MaxMessageLength, server.MaxReceiveQueueSize)
+        WebSocket                                webSocket,
+        TSessionID                               sessionID
+    )
+        : base(webSocket, server.Allocator, server.MaxFrameLength, server.MaxMessageLength, server.MaxReceiveQueueSize)
     {
         ArgumentNullException.ThrowIfNull(server);
         ArgumentNullException.ThrowIfNull(webSocket);
 
-        Server = server;
+        Server    = server;
         SessionID = sessionID;
     }
 
@@ -41,10 +42,12 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
     /// On session open
     /// </summary>
     protected abstract void OnSessionOpen();
+
     /// <summary>
     /// On session update
     /// </summary>
     protected abstract void OnSessionUpdate();
+
     /// <summary>
     /// When the session is removed
     /// </summary>
@@ -75,14 +78,15 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
             Logging.Log(ELogSeverity.Error, exception);
         }
     }
+
     /// <summary>
     /// On session update
     /// </summary>
     internal virtual void InternalOnSessionUpdate()
     {
-        while (_receivedMessages.TryTake(out var message))
+        while (_receivedMessages.TryTake(out (byte[] data, int size, WebSocketMessageType messageType) message))
         {
-            var lastMsgBytes = message.data;
+            byte[]? lastMsgBytes = message.data;
             try
             {
                 OnSocketMessage(message.data.AsSpan(0, message.size), message.messageType);
@@ -118,6 +122,7 @@ public abstract class WebSocketServerExSession<TSession, TSessionID> : WebSocket
             Logging.Log(ELogSeverity.Error, exception);
         }
     }
+
     /// <summary>
     /// When the session is removed
     /// </summary>

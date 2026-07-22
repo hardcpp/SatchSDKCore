@@ -59,8 +59,9 @@ public sealed class ApiHttpRequest : ApiRequest
     /// <returns></returns>
     public string GetBody()
     {
-        var requestBody = null as string;
-        using (var streamReader = new StreamReader(Context.ListenerRequest.InputStream, Context.ListenerRequest.ContentEncoding))
+        string? requestBody = null;
+        using (var streamReader =
+               new StreamReader(Context.ListenerRequest.InputStream, Context.ListenerRequest.ContentEncoding))
         {
             requestBody = streamReader.ReadToEnd();
             streamReader.Close();

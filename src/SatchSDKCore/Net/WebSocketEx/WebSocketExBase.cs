@@ -17,29 +17,31 @@ namespace SSC.Net.WebSocketEx;
 /// </summary>
 public abstract class WebSocketExBase
 {
-    protected readonly SemaphoreSlim _sendSemaphore = new(1, 1);
+    private readonly int    _maxFrameLength;
+    private readonly int    _maxMessageLength;
+    private readonly byte[] _receiveBuffer = null!;
+    private          bool   _closeSignaled;
+    private          int    _receiveBufferWPos;
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     protected readonly BlockingCollection<(byte[] data, int size, WebSocketMessageType messageType)>
         _receivedMessages;
 
-    protected CancellationTokenSource _cancellationTokenSource = new();
-
-    private readonly int _maxFrameLength;
-    private readonly int _maxMessageLength;
-
-    private bool _closeSignaled;
-    private readonly byte[] _receiveBuffer = null!;
-    private int _receiveBufferWPos;
+    protected readonly SemaphoreSlim           _sendSemaphore           = new(1, 1);
+    protected          CancellationTokenSource _cancellationTokenSource = new();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     public readonly ArrayPool<byte> Allocator;
 
-    public WebSocket? Socket { get; protected set; }
+    public WebSocket?          Socket             { get; protected set; }
     public NameValueCollection NegociatingHeaders { get; internal set; } = null!;
-    public IPEndPoint LocalEndPoint { get; internal set; } = null!;
-    public IPEndPoint RemoteEndPoint { get; internal set; } = null!;
+    public IPEndPoint          LocalEndPoint      { get; internal set; } = null!;
+    public IPEndPoint          RemoteEndPoint     { get; internal set; } = null!;
+
 
     public bool IsConnected => Socket?.State == WebSocketState.Open;
 
@@ -55,21 +57,21 @@ public abstract class WebSocketExBase
     /// <param name="maxMessageLength">Max length of a single message</param>
     /// <param name="maxReceiveQueueSize">Max length of the message queue</param>
     public WebSocketExBase(
-        WebSocket? webSocket,
-        ArrayPool<byte>? allocator = null,
-        int maxFrameLength = 1024,
-        int maxMessageLength = 5 * 1024 * 1024,
-        int maxReceiveQueueSize = 50
-        )
+        WebSocket?       webSocket,
+        ArrayPool<byte>? allocator           = null,
+        int              maxFrameLength      = 1024,
+        int              maxMessageLength    = 5 * 1024 * 1024,
+        int              maxReceiveQueueSize = 50
+    )
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxMessageLength, maxFrameLength);
 
-        Socket = webSocket;
+        Socket    = webSocket;
         Allocator = allocator ?? ArrayPool<byte>.Shared;
 
         _receivedMessages = new BlockingCollection<(byte[], int, WebSocketMessageType)>(maxReceiveQueueSize);
 
-        _maxFrameLength = maxFrameLength;
+        _maxFrameLength   = maxFrameLength;
         _maxMessageLength = maxMessageLength;
 
         _receiveBuffer = new byte[_maxMessageLength];
@@ -92,12 +94,14 @@ public abstract class WebSocketExBase
     /// On session open
     /// </summary>
     protected abstract void OnSocketOpen();
+
     /// <summary>
     /// On socket message
     /// </summary>
     /// <param name="data">Message data</param>
     /// <param name="type">Message type</param>
     protected abstract void OnSocketMessage(ReadOnlySpan<byte> data, WebSocketMessageType type);
+
     /// <summary>
     /// On socket close
     /// </summary>
@@ -125,11 +129,15 @@ public abstract class WebSocketExBase
 
             try
             {
-                var idealSize = Math.Min(_maxFrameLength, _receiveBuffer.Length - _receiveBufferWPos);
+                int idealSize           = Math.Min(_maxFrameLength, _receiveBuffer.Length - _receiveBufferWPos);
                 var receiveArraySegment = new ArraySegment<byte>(_receiveBuffer, _receiveBufferWPos, idealSize);
-                var received = await Socket.ReceiveAsync(receiveArraySegment, _cancellationTokenSource.Token).ConfigureAwait(false);
+                WebSocketReceiveResult received = await Socket
+                    .ReceiveAsync(receiveArraySegment,
+                                  _cancellationTokenSource.Token)
+                    .ConfigureAwait(false);
 
-                if (received.MessageType == WebSocketMessageType.Binary || received.MessageType == WebSocketMessageType.Text)
+                if (received.MessageType == WebSocketMessageType.Binary ||
+                    received.MessageType == WebSocketMessageType.Text)
                 {
                     _receiveBufferWPos += received.Count;
 
@@ -137,7 +145,7 @@ public abstract class WebSocketExBase
                     {
                         if (!_closeSignaled)
                         {
-                            var array = Allocator.Rent(_receiveBufferWPos);
+                            byte[] array = Allocator.Rent(_receiveBufferWPos);
                             try
                             {
                                 _receiveBuffer.AsMemory(0, _receiveBufferWPos).CopyTo(array);
@@ -154,7 +162,7 @@ public abstract class WebSocketExBase
                                 );
                                 Logging.Log(ELogSeverity.Error, exception);
 
-                                Close(WebSocketCloseStatus.InternalServerError, "Internal error", sendClosure: true, fromRemote: false);
+                                Close(WebSocketCloseStatus.InternalServerError, "Internal error", true);
 
                                 break;
                             }
@@ -163,23 +171,22 @@ public abstract class WebSocketExBase
                         _receiveBufferWPos = 0;
 
                         /// Continue reading
-                        continue;
                     }
                     /// Overflow detection
-                    else if ((_receiveBuffer.Length - _receiveBufferWPos) == 0)
+                    else if (_receiveBuffer.Length - _receiveBufferWPos == 0)
                     {
                         Logging.Log(
                             ELogSeverity.Error,
                             "[Network.WebSocket][WebSocketSession.ReadSocket] Message size overflow, closing socket..."
                         );
 
-                        Close(WebSocketCloseStatus.MessageTooBig, "Message too big", sendClosure: true, fromRemote: false);
+                        Close(WebSocketCloseStatus.MessageTooBig, "Message too big", true);
                         break;
                     }
                 }
                 else if (received.MessageType == WebSocketMessageType.Close)
                 {
-                    Close(received.CloseStatus, received.CloseStatusDescription, sendClosure: false);
+                    Close(received.CloseStatus, received.CloseStatusDescription, false);
                     break;
                 }
             }
@@ -194,11 +201,12 @@ public abstract class WebSocketExBase
                     Logging.Log(ELogSeverity.Error, exception);
                 }
 
-                Close(WebSocketCloseStatus.ProtocolError, "Failed to read", sendClosure: true, fromRemote: false);
+                Close(WebSocketCloseStatus.ProtocolError, "Failed to read", true);
                 break;
             }
         }
     }
+
     /// <summary>
     /// Send a text message
     /// </summary>
@@ -212,12 +220,12 @@ public abstract class WebSocketExBase
         if (encoding == null)
             encoding = Encoding.UTF8;
 
-        var bytesSize = FastTextEncoding.GetByteCount(data, encoding);
-        var array = Allocator.Rent(bytesSize);
+        int    bytesSize = FastTextEncoding.GetByteCount(data, encoding);
+        byte[] array     = Allocator.Rent(bytesSize);
 
         try
         {
-            var finalSize = FastTextEncoding.GetBytes(data, encoding, array.AsSpan());
+            int finalSize = FastTextEncoding.GetBytes(data, encoding, array.AsSpan());
             return Send(array.AsMemory(0, finalSize), WebSocketMessageType.Text);
         }
         finally
@@ -225,6 +233,7 @@ public abstract class WebSocketExBase
             Allocator.Return(array);
         }
     }
+
     /// <summary>
     /// Send a raw message
     /// </summary>
@@ -233,13 +242,18 @@ public abstract class WebSocketExBase
     /// <param name="length">Length to send</param>
     /// <param name="type">Message type</param>
     /// <returns>True if sended</returns>
-    protected bool Send(byte[] data, int offset = 0, int length = -1, WebSocketMessageType type = WebSocketMessageType.Binary)
+    protected bool Send(
+        byte[]               data,
+        int                  offset = 0,
+        int                  length = -1,
+        WebSocketMessageType type   = WebSocketMessageType.Binary)
     {
         ArgumentNullException.ThrowIfNull(data);
 
-        var fixedLength = length != -1 ? length : data!.Length;
+        int fixedLength = length != -1 ? length : data!.Length;
         return Send(new ReadOnlyMemory<byte>(data, offset, fixedLength), type);
     }
+
     /// <summary>
     /// Send a raw message
     /// </summary>
@@ -261,7 +275,7 @@ public abstract class WebSocketExBase
         }
 
         /// Get the ArraySegment to avoid potential copy in native send implementation
-        if (!MemoryMarshal.TryGetArray(data, out var arraySegment))
+        if (!MemoryMarshal.TryGetArray(data, out ArraySegment<byte> arraySegment))
         {
             Logging.Log(
                 ELogSeverity.Error,
@@ -270,20 +284,21 @@ public abstract class WebSocketExBase
             return false;
         }
 
-        var skipRelease = false;
+        bool skipRelease = false;
         try
         {
             _sendSemaphore.Wait();
 
-            var totalSentSize = 0;
-            var remainingSize = arraySegment.Count;
+            int totalSentSize = 0;
+            int remainingSize = arraySegment.Count;
 
             while (remainingSize > 0)
             {
-                var frameSize = Math.Min(remainingSize, _maxFrameLength);
-                var isLastFrame = frameSize == remainingSize;
+                int  frameSize   = Math.Min(remainingSize, _maxFrameLength);
+                bool isLastFrame = frameSize == remainingSize;
 
-                var sendTask = Socket.SendAsync(arraySegment.Slice(totalSentSize, frameSize), type, isLastFrame, _cancellationTokenSource.Token);
+                Task sendTask = Socket.SendAsync(arraySegment.Slice(totalSentSize, frameSize), type, isLastFrame,
+                                                 _cancellationTokenSource.Token);
                 sendTask.ConfigureAwait(false);
                 sendTask.Wait();
 
@@ -304,7 +319,7 @@ public abstract class WebSocketExBase
             _sendSemaphore.Release();
             skipRelease = true;
 
-            Close(WebSocketCloseStatus.ProtocolError, "Error while writting", sendClosure: true, fromRemote: false);
+            Close(WebSocketCloseStatus.ProtocolError, "Error while writting", true);
 
             return false;
         }
@@ -314,6 +329,7 @@ public abstract class WebSocketExBase
                 _sendSemaphore.Release();
         }
     }
+
     /// <summary>
     /// Close
     /// </summary>
@@ -337,7 +353,8 @@ public abstract class WebSocketExBase
 
             try
             {
-                var closeTask = Socket.CloseOutputAsync(closeStatus ?? WebSocketCloseStatus.NormalClosure, reason ?? string.Empty, CancellationToken.None);
+                Task closeTask = Socket.CloseOutputAsync(closeStatus ?? WebSocketCloseStatus.NormalClosure,
+                                                         reason      ?? string.Empty, CancellationToken.None);
                 closeTask.ConfigureAwait(false);
                 closeTask.Wait();
             }
@@ -372,7 +389,7 @@ public abstract class WebSocketExBase
 
         Socket = null;
 
-        while (_receivedMessages.TryTake(out var pendingMessage))
+        while (_receivedMessages.TryTake(out (byte[] data, int size, WebSocketMessageType messageType) pendingMessage))
             Allocator.Return(pendingMessage.data);
     }
 }

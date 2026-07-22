@@ -14,7 +14,6 @@ public abstract class ApiRequest
     /// </summary>
     public ApiRequest()
     {
-
     }
 
     ////////////////////////////////////////////////////////////////////////////

@@ -6,7 +6,7 @@ namespace SSC.Pool;
 public class MTGenericPool<TObjectType>
     where TObjectType : class, new()
 {
-    private static readonly MTObjectPool<TObjectType> s_Pool = new(() => new());
+    private static readonly MTObjectPool<TObjectType> s_Pool = new(() => new TObjectType());
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -17,6 +17,7 @@ public class MTGenericPool<TObjectType>
     /// <returns></returns>
     public static TObjectType Get()
         => s_Pool.Get();
+
     /// <summary>
     /// Release an element
     /// </summary>

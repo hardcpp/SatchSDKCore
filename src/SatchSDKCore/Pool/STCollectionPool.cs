@@ -8,7 +8,10 @@ namespace SSC.Pool;
 public class STCollectionPool<TCollectionType, TItemType>
     where TCollectionType : class, ICollection<TItemType>, new()
 {
-    private static readonly STObjectPool<TCollectionType> s_Pool = new(() => new(), actionOnRelease: (x => x.Clear()), defaultCapacity: 100);
+    private static readonly STObjectPool<TCollectionType> s_Pool = new(
+        () => new TCollectionType(),
+        actionOnRelease: x => x.Clear(),
+        defaultCapacity: 100);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -19,6 +22,7 @@ public class STCollectionPool<TCollectionType, TItemType>
     /// <returns></returns>
     public static TCollectionType Get()
         => s_Pool.Get();
+
     /// <summary>
     /// Release an element
     /// </summary>

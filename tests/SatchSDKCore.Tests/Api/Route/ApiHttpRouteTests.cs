@@ -32,25 +32,25 @@ public class ApiHttpRouteTests
         [ApiHttpRoute(EApiHttpMethod.Get, "/test")]
         public static ApiResponse SimpleRoute(ApiHttpRouteContext context)
         {
-            return ApiHttpResponse.Result(context, HttpStatusCode.OK, "test");
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.OK, "test");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Post, "/test-params")]
         public static ApiResponse RouteWithParams(ApiHttpRouteContext context, int id, string name)
         {
-            return ApiHttpResponse.Result(context, HttpStatusCode.OK, $"{id}:{name}");
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.OK, $"{id}:{name}");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Get, "/test-optional")]
         public static ApiResponse RouteWithOptionalParams(ApiHttpRouteContext context, int id, string? name = null)
         {
-            return ApiHttpResponse.Result(context, HttpStatusCode.OK, $"{id}:{name ?? "default"}");
+            return ApiHttpResponse.ContentResult(context, HttpStatusCode.OK, $"{id}:{name ?? "default"}");
         }
 
         [ApiHttpRoute(EApiHttpMethod.Get, "/test-async", "0:30.000")]
         public static Task<ApiResponse> AsyncRoute(CancellationToken ct, ApiHttpRouteContext context)
         {
-            return Task.FromResult<ApiResponse>(ApiHttpResponse.Result(context, HttpStatusCode.OK, "async"));
+            return Task.FromResult<ApiResponse>(ApiHttpResponse.ContentResult(context, HttpStatusCode.OK, "async"));
         }
 
         public static ApiResponse InvalidReturnType()
@@ -296,7 +296,7 @@ public class ApiHttpRouteTests
     /// Verifies that TryInvoke works with simple route.
     /// </summary>
     [Fact]
-    public void TryInvoke_WithSimpleRoute_ReturnsSuccess()
+    public async Task TryInvoke_WithSimpleRoute_ReturnsSuccess()
     {
         // Arrange
         var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
@@ -307,7 +307,10 @@ public class ApiHttpRouteTests
         var parameters = new JArray();
 
         // Act
-        var result = route.TryInvoke(mockContext, parameters, out var error, out var response);
+        var invocation = await route.TryInvokeAsync(mockContext, parameters);
+        var result = invocation.Success;
+        var error = invocation.Error;
+        var response = invocation.Response;
 
         // Assert
         Assert.True(result);
@@ -319,7 +322,7 @@ public class ApiHttpRouteTests
     /// Verifies that TryInvoke with missing required parameters fails.
     /// </summary>
     [Fact]
-    public void TryInvoke_WithMissingRequiredParams_ReturnsFalse()
+    public async Task TryInvoke_WithMissingRequiredParams_ReturnsFalse()
     {
         // Arrange
         var route = new ApiHttpRoute(EApiHttpMethod.Post, "/test");
@@ -330,7 +333,10 @@ public class ApiHttpRouteTests
         var parameters = new JArray();
 
         // Act
-        var result = route.TryInvoke(mockContext, parameters, out var error, out var response);
+        var invocation = await route.TryInvokeAsync(mockContext, parameters);
+        var result = invocation.Success;
+        var error = invocation.Error;
+        var response = invocation.Response;
 
         // Assert
         Assert.False(result);
@@ -342,7 +348,7 @@ public class ApiHttpRouteTests
     /// Verifies that TryInvoke with valid parameters succeeds.
     /// </summary>
     [Fact]
-    public void TryInvoke_WithValidParams_ReturnsSuccess()
+    public async Task TryInvoke_WithValidParams_ReturnsSuccess()
     {
         // Arrange
         var route = new ApiHttpRoute(EApiHttpMethod.Post, "/test");
@@ -353,7 +359,10 @@ public class ApiHttpRouteTests
         var parameters = new JArray { 123, "test" };
 
         // Act
-        var result = route.TryInvoke(mockContext, parameters, out var error, out var response);
+        var invocation = await route.TryInvokeAsync(mockContext, parameters);
+        var result = invocation.Success;
+        var error = invocation.Error;
+        var response = invocation.Response;
 
         // Assert
         Assert.True(result);
@@ -365,7 +374,7 @@ public class ApiHttpRouteTests
     /// Verifies that TryInvoke with JObject parameters works.
     /// </summary>
     [Fact]
-    public void TryInvoke_WithJObjectParams_ReturnsSuccess()
+    public async Task TryInvoke_WithJObjectParams_ReturnsSuccess()
     {
         // Arrange
         var route = new ApiHttpRoute(EApiHttpMethod.Post, "/test");
@@ -380,7 +389,10 @@ public class ApiHttpRouteTests
         };
 
         // Act
-        var result = route.TryInvoke(mockContext, parameters, out var error, out var response);
+        var invocation = await route.TryInvokeAsync(mockContext, parameters);
+        var result = invocation.Success;
+        var error = invocation.Error;
+        var response = invocation.Response;
 
         // Assert
         Assert.True(result);
@@ -392,7 +404,7 @@ public class ApiHttpRouteTests
     /// Verifies that TryInvoke with dictionary parameters works.
     /// </summary>
     [Fact]
-    public void TryInvoke_WithDictionaryParams_ReturnsSuccess()
+    public async Task TryInvoke_WithDictionaryParams_ReturnsSuccess()
     {
         // Arrange
         var route = new ApiHttpRoute(EApiHttpMethod.Post, "/test");
@@ -407,7 +419,10 @@ public class ApiHttpRouteTests
         };
 
         // Act
-        var result = route.TryInvoke(mockContext, parameters, out var error, out var response);
+        var invocation = await route.TryInvokeAsync(mockContext, parameters);
+        var result = invocation.Success;
+        var error = invocation.Error;
+        var response = invocation.Response;
 
         // Assert
         Assert.True(result);
@@ -419,7 +434,7 @@ public class ApiHttpRouteTests
     /// Verifies that TryInvoke throws on null context.
     /// </summary>
     [Fact]
-    public void TryInvoke_WithNullContext_ThrowsArgumentNullException()
+    public async Task TryInvoke_WithNullContext_ThrowsArgumentNullException()
     {
         // Arrange
         var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
@@ -428,15 +443,15 @@ public class ApiHttpRouteTests
         var parameters = new JArray();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            route.TryInvoke(null!, parameters, out _, out _));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await route.TryInvokeAsync(null!, parameters));
     }
 
     /// <summary>
     /// Verifies that TryInvoke throws on null parameters (JArray).
     /// </summary>
     [Fact]
-    public void TryInvoke_WithNullJArrayParameters_ThrowsArgumentNullException()
+    public async Task TryInvoke_WithNullJArrayParameters_ThrowsArgumentNullException()
     {
         // Arrange
         var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
@@ -446,8 +461,8 @@ public class ApiHttpRouteTests
         var mockContext = new ApiHttpRouteContext(mockRequest, EApiHttpMethod.Get);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            route.TryInvoke(mockContext, (JArray)null!, out _, out _));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await route.TryInvokeAsync(mockContext, (JArray)null!));
     }
 
     /// <summary>
@@ -553,7 +568,7 @@ public class ApiHttpRouteTests
     /// Verifies that TryInvoke with JObject and missing optional param succeeds.
     /// </summary>
     [Fact]
-    public void TryInvoke_JObject_WithMissingOptionalParam_Succeeds()
+    public async Task TryInvoke_JObject_WithMissingOptionalParam_Succeeds()
     {
         // Arrange
         var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
@@ -567,7 +582,10 @@ public class ApiHttpRouteTests
         };
 
         // Act
-        var result = route.TryInvoke(mockContext, parameters, out var error, out var response);
+        var invocation = await route.TryInvokeAsync(mockContext, parameters);
+        var result = invocation.Success;
+        var error = invocation.Error;
+        var response = invocation.Response;
 
         // Assert
         Assert.True(result);
@@ -579,7 +597,7 @@ public class ApiHttpRouteTests
     /// Verifies that TryInvoke with Dictionary and missing optional param succeeds.
     /// </summary>
     [Fact]
-    public void TryInvoke_Dictionary_WithMissingOptionalParam_Succeeds()
+    public async Task TryInvoke_Dictionary_WithMissingOptionalParam_Succeeds()
     {
         // Arrange
         var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test");
@@ -593,7 +611,10 @@ public class ApiHttpRouteTests
         };
 
         // Act
-        var result = route.TryInvoke(mockContext, parameters, out var error, out var response);
+        var invocation = await route.TryInvokeAsync(mockContext, parameters);
+        var result = invocation.Success;
+        var error = invocation.Error;
+        var response = invocation.Response;
 
         // Assert
         Assert.True(result);
@@ -605,7 +626,7 @@ public class ApiHttpRouteTests
     /// Verifies that async route invocation works correctly.
     /// </summary>
     [Fact]
-    public void TryInvoke_WithAsyncRoute_Succeeds()
+    public async Task TryInvoke_WithAsyncRoute_Succeeds()
     {
         // Arrange
         var route = new ApiHttpRoute(EApiHttpMethod.Get, "/test-async", "0:30.000");
@@ -616,7 +637,10 @@ public class ApiHttpRouteTests
         var parameters = new JArray();
 
         // Act
-        var result = route.TryInvoke(mockContext, parameters, out var error, out var response);
+        var invocation = await route.TryInvokeAsync(mockContext, parameters);
+        var result = invocation.Success;
+        var error = invocation.Error;
+        var response = invocation.Response;
 
         // Assert
         Assert.True(result);

@@ -8,11 +8,11 @@ public interface IWebSocketServerEx<TSession, TSessionID> : IHttpServerExRequest
     where TSession : WebSocketServerExSession<TSession, TSessionID>
     where TSessionID : notnull
 {
-    string AbsolutePath { get; }
-    int MaxReceiveQueueSize { get; }
-    int MaxFrameLength { get; }
-    int MaxMessageLength { get; }
-    ArrayPool<byte> Allocator { get; }
+    string          AbsolutePath        { get; }
+    int             MaxReceiveQueueSize { get; }
+    int             MaxFrameLength      { get; }
+    int             MaxMessageLength    { get; }
+    ArrayPool<byte> Allocator           { get; }
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -21,6 +21,7 @@ public interface IWebSocketServerEx<TSession, TSessionID> : IHttpServerExRequest
     /// Start the HttpServerEx server and threads
     /// </summary>
     void Start();
+
     /// <summary>
     /// Stop the HttpServerEx server and wait for all the threads to stop
     /// </summary>

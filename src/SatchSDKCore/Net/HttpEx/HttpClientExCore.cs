@@ -22,7 +22,7 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    private readonly HttpClient _client;
+    private readonly HttpClient        _client;
     private readonly HttpClientHandler _clientHandler;
 
     private CookieContainer? _cookieContainer;
@@ -30,10 +30,12 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public EOptions Options { get; private set; }
-    public int MaxRetry { get; set; } = 2;
-    public TimeSpan RetryInterval { get; set; } = TimeSpan.FromSeconds(5);
+
+    public EOptions           Options       { get; }
+    public int                MaxRetry      { get; set; } = 2;
+    public TimeSpan           RetryInterval { get; set; } = TimeSpan.FromSeconds(5);
     public HttpRequestHeaders GlobalHeaders => _client.DefaultRequestHeaders;
+
     public CookieContainer? CookieJar
     {
         get => _cookieContainer;
@@ -47,6 +49,7 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
             _clientHandler.UseCookies = _cookieContainer != null;
         }
     }
+
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -67,9 +70,9 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
 
         _client = new HttpClient(_clientHandler)
         {
-            Timeout = timeout,
+            Timeout               = timeout,
             DefaultRequestVersion = HttpVersion.Version11,
-            DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
+            DefaultVersionPolicy  = HttpVersionPolicy.RequestVersionOrHigher
         };
 
         if (!string.IsNullOrEmpty(baseURL))
@@ -79,66 +82,69 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
         {
             _client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue
             {
-                NoCache = true,
-                NoStore = false,
-                MustRevalidate = true,
+                NoCache         = true,
+                NoStore         = false,
+                MustRevalidate  = true,
                 ProxyRevalidate = true,
-                MaxAge = TimeSpan.FromSeconds(0),
-                SharedMaxAge = TimeSpan.FromMilliseconds(0),
-                MaxStaleLimit = TimeSpan.FromMilliseconds(0)
+                MaxAge          = TimeSpan.FromSeconds(0),
+                SharedMaxAge    = TimeSpan.FromMilliseconds(0),
+                MaxStaleLimit   = TimeSpan.FromMilliseconds(0)
             };
         }
 
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
+        string version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
 
         _client.DefaultRequestHeaders.ConnectionClose = !Options.HasFlag(EOptions.KeepAlive);
         _client.DefaultRequestHeaders.Add("User-Agent", $"SatchSDKCore/{version}");
     }
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-        _client.Dispose();
-    }
+
+    /// <inheritdoc />
+    public void Dispose() => _client.Dispose();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public HttpClientExResponse DoRequest(
-        string method,
-        string url,
-        HttpClientExPayload? payload = null,
-        ERequestOptions options = ERequestOptions.None,
-        IHttpClientExDataHandler? dataHandler = null,
-        IProgress<float>? progressHandler = null
+        string                    method,
+        string                    url,
+        HttpClientExPayload?      payload         = null,
+        ERequestOptions           options         = ERequestOptions.None,
+        IHttpClientExDataHandler? dataHandler     = null,
+        IProgress<float>?         progressHandler = null
     )
     {
-        var task = DoRequestImpl(method, url, payload, CancellationToken.None, null, options, dataHandler, progressHandler);
+        Task<HttpClientExResponse> task = DoRequestImpl(method, url, payload, CancellationToken.None, null, options,
+                                                        dataHandler, progressHandler);
         task.Wait();
 
         return task.Result;
     }
-    /// <inheritdoc/>
+
+    /// <inheritdoc />
     public void DoRequestInBackground(
-        string method,
-        string url,
-        CancellationToken cancellationToken,
+        string                         method,
+        string                         url,
+        CancellationToken              cancellationToken,
         Action<HttpClientExResponse?>? callback,
-        HttpClientExPayload? payload = null,
-        ERequestOptions options = ERequestOptions.None,
-        IHttpClientExDataHandler? dataHandler = null,
-        IProgress<float>? progressHandler = null
-    ) => DoRequestImpl(method, url, payload, cancellationToken, callback, options, dataHandler, progressHandler).ConfigureAwait(false);
-    /// <inheritdoc/>
+        HttpClientExPayload?           payload         = null,
+        ERequestOptions                options         = ERequestOptions.None,
+        IHttpClientExDataHandler?      dataHandler     = null,
+        IProgress<float>?              progressHandler = null
+    ) => DoRequestImpl(method, url, payload, cancellationToken, callback, options, dataHandler, progressHandler)
+        .ConfigureAwait(false);
+
+    /// <inheritdoc />
     public async Task<HttpClientExResponse> DoRequestAsync(
-        string method,
-        string url,
-        CancellationToken cancellationToken,
-        HttpClientExPayload? payload = null,
-        ERequestOptions options = ERequestOptions.None,
-        IHttpClientExDataHandler? dataHandler = null,
-        IProgress<float>? progressHandler = null
-    ) => await DoRequestImpl(method, url, payload, cancellationToken, null, options, dataHandler, progressHandler).ConfigureAwait(false);
+        string                    method,
+        string                    url,
+        CancellationToken         cancellationToken,
+        HttpClientExPayload?      payload         = null,
+        ERequestOptions           options         = ERequestOptions.None,
+        IHttpClientExDataHandler? dataHandler     = null,
+        IProgress<float>?         progressHandler = null
+    ) => await DoRequestImpl(method, url, payload, cancellationToken, null, options, dataHandler, progressHandler)
+        .ConfigureAwait(false);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -150,7 +156,7 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
     /// <returns></returns>
     private string SafeURL(string url)
     {
-        var result = url;
+        string result = url;
 
         if (!url.Contains("://"))
             result = _client.BaseAddress + result;
@@ -177,23 +183,23 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
     /// <param name="progressHandler">Progress reporter</param>
     /// <returns></returns>
     private async Task<HttpClientExResponse> DoRequestImpl(
-        string method,
-        string url,
-        HttpClientExPayload? payload,
-        CancellationToken cancellationToken,
+        string                         method,
+        string                         url,
+        HttpClientExPayload?           payload,
+        CancellationToken              cancellationToken,
         Action<HttpClientExResponse?>? callback,
-        ERequestOptions options,
-        IHttpClientExDataHandler? dataHandler,
-        IProgress<float>? progressHandler
+        ERequestOptions                options,
+        IHttpClientExDataHandler?      dataHandler,
+        IProgress<float>?              progressHandler
     )
     {
 #if DEBUG
         Logging.Log(ELogSeverity.Debug, $"[Net.HttpEx][HttpClientExCore] {method} " + url);
 #endif
 
-        Exception? lastException = null;
-        HttpClientExResponse? lastResponse = null;
-        ENestedFlowControl flowControl;
+        Exception?            lastException = null;
+        HttpClientExResponse? lastResponse  = null;
+        ENestedFlowControl    flowControl;
 
         for (int currentRetryI = 0; currentRetryI < MaxRetry; currentRetryI++)
         {
@@ -209,7 +215,8 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
                 progressHandler?.Report(0.0f);
 
                 lastResponse = null;
-                baseHttpResponse = await PrepareAndStartRequest(method, url, payload, cancellationToken).ConfigureAwait(false);
+                baseHttpResponse = await PrepareAndStartRequest(method, url, payload, cancellationToken)
+                    .ConfigureAwait(false);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -224,7 +231,8 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
                         break;
                 }
 
-                await HandleResponse(baseHttpResponse, lastResponse, cancellationToken, options, dataHandler, progressHandler);
+                await HandleResponse(baseHttpResponse, lastResponse, cancellationToken, options, dataHandler,
+                                     progressHandler);
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
@@ -232,13 +240,15 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
                 {
                     if (!lastResponse.ShouldRetry || options.HasFlag(ERequestOptions.IgnoreRetryPolicy))
                     {
-                        Logging.Log(ELogSeverity.Debug, $"[Net.HttpEx][HttpClientExCore] Request {SafeURL(url)} failed with code {lastResponse.StatusCode}:\"{lastResponse.ReasonPhrase}\", not retrying");
+                        Logging.Log(ELogSeverity.Debug,
+                                    $"[Net.HttpEx][HttpClientExCore] Request {SafeURL(url)} failed with code {lastResponse.StatusCode}:\"{lastResponse.ReasonPhrase}\", not retrying");
                         break;
                     }
 
-                    Logging.Log(ELogSeverity.Debug, $"[Net.HttpEx][HttpClientExCore] Request {SafeURL(url)} failed with code {lastResponse.StatusCode}:\"{lastResponse.ReasonPhrase}\", next try in {RetryInterval} seconds...");
+                    Logging.Log(ELogSeverity.Debug,
+                                $"[Net.HttpEx][HttpClientExCore] Request {SafeURL(url)} failed with code {lastResponse.StatusCode}:\"{lastResponse.ReasonPhrase}\", next try in {RetryInterval} seconds...");
 
-                    if (currentRetryI != (MaxRetry - 1))
+                    if (currentRetryI != MaxRetry - 1)
                         await Task.Delay(RetryInterval, cancellationToken).ConfigureAwait(false);
 
                     continue;
@@ -250,9 +260,10 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
             }
             catch (Exception exception)
             {
-                if (currentRetryI != (MaxRetry - 1))
+                if (currentRetryI != MaxRetry - 1)
                 {
-                    Logging.Log(ELogSeverity.Debug, $"[Net.HttpEx][HttpClientExCore] Request failed, retry in {RetryInterval.TotalSeconds} seconds...");
+                    Logging.Log(ELogSeverity.Debug,
+                                $"[Net.HttpEx][HttpClientExCore] Request failed, retry in {RetryInterval.TotalSeconds} seconds...");
                     await Task.Delay(RetryInterval, cancellationToken).ConfigureAwait(false);
                 }
 
@@ -266,7 +277,7 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
 
         if (cancellationToken.IsCancellationRequested)
         {
-            lastResponse = null;
+            lastResponse  = null;
             lastException = new TaskCanceledException();
         }
 
@@ -296,16 +307,16 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
     /// <returns>The prepared and started core http request resultResponse</returns>
     /// <exception cref="ArgumentException">If the method is not supported/implemented</exception>
     private async ValueTask<HttpResponseMessage> PrepareAndStartRequest(
-        string method,
-        string url,
+        string               method,
+        string               url,
         HttpClientExPayload? payload,
-        CancellationToken cancellationToken
+        CancellationToken    cancellationToken
     )
     {
         ByteArrayContent? content = null;
         if (payload != null)
         {
-            content = new ByteArrayContent(payload.Bytes);
+            content                     = new ByteArrayContent(payload.Bytes);
             content.Headers.ContentType = null;
             content.Headers.Remove("Content-Type");
             content.Headers.TryAddWithoutValidation("Content-Type", payload.Type);
@@ -316,6 +327,7 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
 
         return await _client.SendAsync(requestMessage, cancellationToken).ConfigureAwait(false);
     }
+
     /// <summary>
     /// Handle the rate limit response
     /// </summary>
@@ -325,13 +337,13 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
     /// <param name="options">Request options</param>
     /// <returns>ENestedFlowControl for the caller</returns>
     private async ValueTask<ENestedFlowControl> HandleRateLimit(
-        HttpResponseMessage baseHttpResponse,
+        HttpResponseMessage  baseHttpResponse,
         HttpClientExResponse resultResponse,
-        CancellationToken cancellationToken,
-        ERequestOptions options
+        CancellationToken    cancellationToken,
+        ERequestOptions      options
     )
     {
-        var rateLimitInfo = HttpClientExRateLimitInfo.Get(baseHttpResponse);
+        HttpClientExRateLimitInfo? rateLimitInfo = HttpClientExRateLimitInfo.Get(baseHttpResponse);
         if (rateLimitInfo == null)
         {
             // TODO log unable to get rate limit info
@@ -345,7 +357,8 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
         if (options.HasFlag(ERequestOptions.NoRetryOnRateLimit) || Options.HasFlag(EOptions.NoRetryOnRateLimit))
             return ENestedFlowControl.Break;
 
-        Logging.Log(ELogSeverity.Debug, $"[Net.HttpEx][HttpClientExCore] Request {SafeURL("todo")} was rate limited, retrying in {remainingMilliseconds}ms...");
+        Logging.Log(ELogSeverity.Debug,
+                    $"[Net.HttpEx][HttpClientExCore] Request {SafeURL("todo")} was rate limited, retrying in {remainingMilliseconds}ms...");
 
         await Task.Delay(remainingMilliseconds, cancellationToken).ConfigureAwait(false);
         if (cancellationToken.IsCancellationRequested)
@@ -356,6 +369,7 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
 
         return ENestedFlowControl.Loop;
     }
+
     /// <summary>
     /// Handle the resultResponse from the core http client
     /// </summary>
@@ -366,21 +380,22 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
     /// <param name="dataHandler">Optional data handler</param>
     /// <param name="progressHandler">Progress reporter</param>
     private async ValueTask HandleResponse(
-        HttpResponseMessage baseHttpResponse,
-        HttpClientExResponse resultResponse,
-        CancellationToken cancellationToken,
-        ERequestOptions options,
+        HttpResponseMessage       baseHttpResponse,
+        HttpClientExResponse      resultResponse,
+        CancellationToken         cancellationToken,
+        ERequestOptions           options,
         IHttpClientExDataHandler? dataHandler,
-        IProgress<float>? progressHandler
+        IProgress<float>?         progressHandler
     )
     {
-        using (var responseStream = await baseHttpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
+        using (Stream responseStream =
+               await baseHttpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
         {
-            using (var memoryStream = dataHandler != null ? null : new MemoryStream())
+            using (MemoryStream? memoryStream = dataHandler != null ? null : new MemoryStream())
             {
-                var readBuffer = new byte[dataHandler?.IdealBufferSize ?? 8 * 1024];
-                var contentLength = baseHttpResponse.Content.Headers.ContentLength;
-                var totalReaded = 0L;
+                byte[] readBuffer    = new byte[dataHandler?.IdealBufferSize ?? 8 * 1024];
+                long?  contentLength = baseHttpResponse.Content.Headers.ContentLength;
+                long   totalReaded   = 0L;
 
                 // TODO handle chunked encoding
                 dataHandler?.Begin();
@@ -388,15 +403,24 @@ public class HttpClientExCore : IHttpClientEx, IDisposable
                 while (true)
                 {
                     int currentReaded;
-                    if ((currentReaded = await responseStream.ReadAsync(readBuffer, 0, readBuffer.Length, cancellationToken).ConfigureAwait(false)) > 0)
+                    if ((currentReaded = await responseStream
+                            .ReadAsync(readBuffer, 0, readBuffer.Length, cancellationToken)
+                            .ConfigureAwait(false)) > 0)
                     {
                         // Handle potential late cancel at the end of ReadAsync
                         cancellationToken.ThrowIfCancellationRequested();
 
                         if (dataHandler != null)
-                            await dataHandler.ProcessAsync(readBuffer.AsSpan(0, currentReaded), contentLength.HasValue ? contentLength.Value : null).ConfigureAwait(false);
+                        {
+                            await dataHandler.ProcessAsync(readBuffer.AsSpan(0, currentReaded),
+                                                           contentLength.HasValue ? contentLength.Value : null)
+                                .ConfigureAwait(false);
+                        }
                         else
-                            await memoryStream!.WriteAsync(readBuffer, 0, currentReaded, cancellationToken).ConfigureAwait(false);
+                        {
+                            await memoryStream!.WriteAsync(readBuffer, 0, currentReaded, cancellationToken)
+                                .ConfigureAwait(false);
+                        }
 
                         totalReaded += currentReaded;
 

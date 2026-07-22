@@ -22,7 +22,7 @@ public class HttpServerExCoreTests
         public bool ShouldHandle { get; set; } = true;
         public HttpServerExResponse? ResponseToReturn { get; set; }
 
-        public bool TryHandle(HttpServerExRequestContext context)
+        public async ValueTask<bool> TryHandleAsync(HttpServerExRequestContext context, CancellationToken cancellationToken = default)
         {
             Interlocked.Increment(ref CallCount);
 

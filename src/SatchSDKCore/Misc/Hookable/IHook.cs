@@ -10,6 +10,6 @@ public interface IHook<T>
     /// Intercept
     /// </summary>
     /// <param name="context">Context</param>
-    /// <returns>True if should interrupt context</returns>
+    /// <returns>True if it should interrupt context</returns>
     bool Intercept(T context);
 }

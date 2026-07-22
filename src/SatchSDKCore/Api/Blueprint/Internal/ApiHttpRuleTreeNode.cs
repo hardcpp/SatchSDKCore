@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Web;
+using SSC.Api.Route;
 
 namespace SSC.Api.Blueprint.Internal;
 
@@ -9,13 +10,13 @@ namespace SSC.Api.Blueprint.Internal;
 /// </summary>
 internal class ApiHttpRuleTreeNode
 {
-    internal ApiHttpRuleTreeNode? Parent;
-    internal string Key = null!;
-    internal bool IsArg;
+    internal readonly ApiHttpRoute?[]    Routes     = new ApiHttpRoute?[ApiHttpBlueprint.HTTP_METHOD_COUNT];
+    internal          ApiHttpBlueprint[] Blueprints = Array.Empty<ApiHttpBlueprint>();
 
     internal ApiHttpRuleTreeNode[] Childs = Array.Empty<ApiHttpRuleTreeNode>();
-    internal ApiHttpBlueprint[] Blueprints = Array.Empty<ApiHttpBlueprint>();
-    internal readonly Route.ApiHttpRoute?[] Routes = new Route.ApiHttpRoute?[ApiHttpBlueprint.HTTP_METHOD_COUNT];
+    internal bool                  IsArg;
+    internal string                Key = null!;
+    internal ApiHttpRuleTreeNode?  Parent;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -27,24 +28,27 @@ internal class ApiHttpRuleTreeNode
     /// <param name="segmentIndex">Current segment index</param>
     /// <param name="argumentsCollector">Arguments collector</param>
     /// <returns>Found RESTRuleTreeNode, null if not found</returns>
-    internal ApiHttpRuleTreeNode? Walk(ReadOnlySpan<string> segments, int segmentIndex, Dictionary<string, string> argumentsCollector)
+    internal ApiHttpRuleTreeNode? Walk(
+        ReadOnlySpan<string>       segments,
+        int                        segmentIndex,
+        Dictionary<string, string> argumentsCollector)
     {
         if (segmentIndex == segments.Length)
             return this;
 
-        var current = segments[segmentIndex];
+        string current = segments[segmentIndex];
 
         // First, try to match child nodes
-        for (var cI = 0; cI < Childs.Length; ++cI)
+        for (int cI = 0; cI < Childs.Length; ++cI)
         {
-            var child = Childs[cI];
+            ApiHttpRuleTreeNode child = Childs[cI];
 
             if (child.IsArg)
             {
                 // URL decode the argument value before storing it
                 argumentsCollector[child.Key] = HttpUtility.UrlDecode(current);
 
-                var result = child.Walk(segments, segmentIndex + 1, argumentsCollector);
+                ApiHttpRuleTreeNode? result = child.Walk(segments, segmentIndex + 1, argumentsCollector);
                 if (result != null)
                     return result;
 
@@ -52,20 +56,20 @@ internal class ApiHttpRuleTreeNode
             }
             else if (child.Key == current)
             {
-                var result = child.Walk(segments, segmentIndex + 1, argumentsCollector);
+                ApiHttpRuleTreeNode? result = child.Walk(segments, segmentIndex + 1, argumentsCollector);
                 if (result != null)
                     return result;
             }
         }
 
         // If no child matched, try blueprints at this node
-        for (var bI = 0; bI < Blueprints.Length; ++bI)
+        for (int bI = 0; bI < Blueprints.Length; ++bI)
         {
-            var blueprint = Blueprints[bI];
+            ApiHttpBlueprint blueprint = Blueprints[bI];
 
             // Try to match the remaining segments through the blueprint
-            var remainingSegments = segments.Slice(segmentIndex);
-            var result = blueprint._routeTreeNode.Walk(remainingSegments, 0, argumentsCollector);
+            ReadOnlySpan<string> remainingSegments = segments.Slice(segmentIndex);
+            ApiHttpRuleTreeNode? result = blueprint._routeTreeNode.Walk(remainingSegments, 0, argumentsCollector);
 
             if (result != null)
                 return result;

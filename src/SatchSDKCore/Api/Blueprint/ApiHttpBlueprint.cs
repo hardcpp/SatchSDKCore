@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using SSC.Api.Blueprint.Internal;
+using SSC.Api.Route;
 
 namespace SSC.Api.Blueprint;
 
@@ -12,18 +14,18 @@ namespace SSC.Api.Blueprint;
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public class ApiHttpBlueprint : ApiBlueprint
 {
-    public static readonly int HTTP_METHOD_COUNT = Enum.GetValues<Route.EApiHttpMethod>().Length;
+    public static readonly int HTTP_METHOD_COUNT = Enum.GetValues<EApiHttpMethod>().Length;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
     public override Type BlueprintType => typeof(ApiHttpBlueprint);
-    public override Type RouteType => typeof(Route.ApiHttpRoute);
+    public override Type RouteType     => typeof(ApiHttpRoute);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    internal readonly Internal.ApiHttpRuleTreeNode _routeTreeNode;
+    internal readonly ApiHttpRuleTreeNode _routeTreeNode;
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -41,51 +43,52 @@ public class ApiHttpBlueprint : ApiBlueprint
             throw new Exception($"ApiHttpBlueprint prefixes can not start or end by '/' -> {prefix}");
 
         /// Create the root tree node
-        _routeTreeNode = new Internal.ApiHttpRuleTreeNode
+        _routeTreeNode = new ApiHttpRuleTreeNode
         {
             Parent = null,
-            Key = null!,
-            IsArg = false
+            Key    = null!,
+            IsArg  = false
         };
 
         /// Register the prefix
-        TryGetHttpRuleTreeNodeFor(ComposeRule(Prefix), createMissings: true, out _);
+        TryGetHttpRuleTreeNodeFor(ComposeRule(Prefix), true, out _);
     }
 
+
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>
-    /// Register blueprint
-    /// </summary>
-    /// <param name="blueprint">Blueprint to register</param>
+    /// <inheritdoc />
     protected override void RegisterBlueprint(ApiBlueprint blueprint)
     {
+        ThrowIfFrozen();
         ArgumentNullException.ThrowIfNull(blueprint);
 
         var httpBlueprint = (ApiHttpBlueprint)blueprint;
 
-        if (!TryGetHttpRuleTreeNodeFor(ComposeRule(Prefix), createMissings: true, out var targetRuleTreeNode))
+        if (!TryGetHttpRuleTreeNodeFor(ComposeRule(Prefix), true, out ApiHttpRuleTreeNode? targetRuleTreeNode))
             throw new Exception($"Failed to register ApiHttpBlueprint {httpBlueprint.Name}");
 
         if (Array.IndexOf(targetRuleTreeNode!.Blueprints, httpBlueprint) != -1)
-            throw new Exception($"ApiHttpBlueprint '{httpBlueprint.Name}' is already registered in ApiHttpBlueprint '{Name}'");
+        {
+            throw new Exception(
+                $"ApiHttpBlueprint '{httpBlueprint.Name}' is already registered in ApiHttpBlueprint '{Name}'");
+        }
 
         Array.Resize(ref targetRuleTreeNode.Blueprints, targetRuleTreeNode.Blueprints.Length + 1);
         targetRuleTreeNode.Blueprints[^1] = httpBlueprint;
     }
-    /// <summary>
-    /// Register route
-    /// </summary>
-    /// <param name="route">Route to register</param>
-    protected override void RegisterRoute(Route.ApiRoute route)
+
+    /// <inheritdoc />
+    protected override void RegisterRoute(ApiRoute route)
     {
+        ThrowIfFrozen();
         ArgumentNullException.ThrowIfNull(route);
 
-        var httpRoute = (Route.ApiHttpRoute)route;
-        var rule = ComposeRule(Prefix, httpRoute.HttpEndpoint);
+        var    httpRoute = (ApiHttpRoute)route;
+        string rule      = ComposeRule(Prefix, httpRoute.HttpEndpoint);
 
-        if (!TryGetHttpRuleTreeNodeFor(rule, createMissings: true, out var targetRuleTreeNode))
+        if (!TryGetHttpRuleTreeNodeFor(rule, true, out ApiHttpRuleTreeNode? targetRuleTreeNode))
             throw new Exception($"Failed to register HTTP rule {httpRoute.HttpMethod}:{rule}");
 
         if (targetRuleTreeNode.Routes[(int)httpRoute.HttpMethod] != null)
@@ -104,35 +107,38 @@ public class ApiHttpBlueprint : ApiBlueprint
     /// <param name="createMissings">Create missing nodes on the path?</param>
     /// <param name="result">Output result</param>
     /// <returns>True if a ApiHttpRuleTreeNode was found</returns>
-    private bool TryGetHttpRuleTreeNodeFor(string composedRule, bool createMissings, [NotNullWhen(true)] out Internal.ApiHttpRuleTreeNode? result)
+    private bool TryGetHttpRuleTreeNodeFor(
+        string                                       composedRule,
+        bool                                         createMissings,
+        [NotNullWhen(true)] out ApiHttpRuleTreeNode? result)
     {
         result = null;
 
         ArgumentNullException.ThrowIfNull(composedRule);
 
-        var parts = composedRule.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var currentNode = _routeTreeNode;
+        string[]            parts       = composedRule.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        ApiHttpRuleTreeNode currentNode = _routeTreeNode;
 
-        for (var segI = 0; segI < parts.Length; segI++)
+        for (int segI = 0; segI < parts.Length; segI++)
         {
-            var currentSegment = parts[segI];
-            var key = currentSegment;
-            var isArg = currentSegment[0] == '<' && currentSegment[^1] == '>';
+            string currentSegment = parts[segI];
+            string key            = currentSegment;
+            bool   isArg          = currentSegment[0] == '<' && currentSegment[^1] == '>';
 
             if (isArg)
                 key = key[1..^1];
 
-            var existingSub = currentNode!.Childs?.FirstOrDefault(x => x.Key == key);
+            ApiHttpRuleTreeNode? existingSub = currentNode!.Childs?.FirstOrDefault(x => x.Key == key);
 
             if (existingSub != null)
                 currentNode = existingSub;
             else if (createMissings)
             {
-                var nextSub = new Internal.ApiHttpRuleTreeNode
+                var nextSub = new ApiHttpRuleTreeNode
                 {
                     Parent = currentNode,
-                    Key = key,
-                    IsArg = isArg
+                    Key    = key,
+                    IsArg  = isArg
                 };
 
                 Array.Resize(ref currentNode!.Childs, currentNode!.Childs!.Length + 1);
@@ -147,6 +153,7 @@ public class ApiHttpBlueprint : ApiBlueprint
         result = currentNode;
         return result != null;
     }
+
     /// <summary>
     /// Try to find a route
     /// </summary>
@@ -155,13 +162,13 @@ public class ApiHttpBlueprint : ApiBlueprint
     /// <param name="routes">Output found ApiHttpRoute</param>
     /// <returns>True if a route is found</returns>
     internal bool TryFindRoutes(
-        ReadOnlySpan<string> segments,
-        Dictionary<string, string> argumentsCollector,
-        [NotNullWhen(true)] out Route.ApiHttpRoute?[]? routes)
+        ReadOnlySpan<string>                     segments,
+        Dictionary<string, string>               argumentsCollector,
+        [NotNullWhen(true)] out ApiHttpRoute?[]? routes)
     {
         routes = null;
 
-        var routeTreeNode = _routeTreeNode.Walk(
+        ApiHttpRuleTreeNode? routeTreeNode = _routeTreeNode.Walk(
             segments,
             0,
             argumentsCollector);
@@ -171,7 +178,7 @@ public class ApiHttpBlueprint : ApiBlueprint
 
         // A tree node may exist only because it is an intermediate node.
         // Only consider the path matched when at least one route exists.
-        for (var i = 0; i < routeTreeNode.Routes.Length; i++)
+        for (int i = 0; i < routeTreeNode.Routes.Length; i++)
         {
             if (routeTreeNode.Routes[i] == null)
                 continue;
@@ -192,14 +199,14 @@ public class ApiHttpBlueprint : ApiBlueprint
     /// <param name="httpRoute">The matching route, when found.</param>
     /// <returns>True when the path and method match a route.</returns>
     public bool TryFindRoute(
-        Route.EApiHttpMethod httpMethod,
-        ReadOnlySpan<string> segments,
-        Dictionary<string, string> argumentsCollector,
-        [NotNullWhen(true)] out Route.ApiHttpRoute? httpRoute)
+        EApiHttpMethod                        httpMethod,
+        ReadOnlySpan<string>                  segments,
+        Dictionary<string, string>            argumentsCollector,
+        [NotNullWhen(true)] out ApiHttpRoute? httpRoute)
     {
         httpRoute = null;
 
-        if (!TryFindRoutes(segments, argumentsCollector, out var routes))
+        if (!TryFindRoutes(segments, argumentsCollector, out ApiHttpRoute?[]? routes))
             return false;
 
         httpRoute = routes[(int)httpMethod];
@@ -219,7 +226,7 @@ public class ApiHttpBlueprint : ApiBlueprint
         var builder = new StringBuilder();
         for (int i = 0; i < segments.Length; i++)
         {
-            var current = segments[i];
+            string? current = segments[i];
             if (string.IsNullOrEmpty(current))
                 continue;
 
